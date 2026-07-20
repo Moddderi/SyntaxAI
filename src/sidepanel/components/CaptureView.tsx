@@ -3,6 +3,7 @@ import { useCaptureInput } from '../hooks/useCaptureInput';
 import type { DetectedNote } from '../types/capture.types';
 import { CaptureTextArea } from './CaptureTextArea';
 import { DetectedNoteBlock } from './DetectedNoteBlock';
+import { RecentNotesSection } from './RecentNotesSection';
 import { SaveToLibraryButton } from './SaveToLibraryButton';
 
 const MOCK_DETECTED_NOTE: DetectedNote = {
@@ -11,7 +12,7 @@ const MOCK_DETECTED_NOTE: DetectedNote = {
   tags: ['#prisma', '#db', '#auth'],
 };
 
-export function ActiveCaptureTab(): ReactElement {
+export function CaptureView(): ReactElement {
   const capture = useCaptureInput();
 
   const handleSave = (): void => {
@@ -22,7 +23,7 @@ export function ActiveCaptureTab(): ReactElement {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       <CaptureTextArea
         isDragging={capture.isDragging}
         onDragLeave={capture.handleDragLeave}
@@ -38,6 +39,10 @@ export function ActiveCaptureTab(): ReactElement {
       <DetectedNoteBlock note={MOCK_DETECTED_NOTE} />
 
       <SaveToLibraryButton onClick={handleSave} />
+
+      <div className="mt-auto shrink-0 border-t border-syntax-border pt-3">
+        <RecentNotesSection />
+      </div>
     </div>
   );
 }

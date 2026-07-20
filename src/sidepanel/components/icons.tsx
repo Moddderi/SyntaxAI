@@ -1,4 +1,6 @@
-import type { ReactElement } from 'react';
+import type { ReactElement, SVGProps } from 'react';
+
+type IconProps = SVGProps<SVGSVGElement>;
 
 export function SettingsIcon(): ReactElement {
   return (
@@ -33,6 +35,77 @@ export function ImageDropIcon(): ReactElement {
       <rect height="18" rx="2" width="18" x="3" y="3" />
       <circle cx="9" cy="9" r="2" />
       <path d="m21 15-5-5L5 21" />
+    </svg>
+  );
+}
+
+export function LightningIcon({ className = 'h-3.5 w-3.5' }: IconProps): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <path d="M13 2 3 14h8l-1 8 10-12h-8l1-8Z" />
+    </svg>
+  );
+}
+
+export function SearchIcon({ className = 'h-3.5 w-3.5' }: IconProps): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
+export function HomeIcon({ className = 'h-4 w-4' }: IconProps): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.75"
+      viewBox="0 0 24 24"
+    >
+      <path d="m3 10.5 9-7 9 7" />
+      <path d="M5 10v10h14V10" />
+    </svg>
+  );
+}
+
+export function ClockIcon({ className = 'h-3.5 w-3.5' }: IconProps): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.75"
+      viewBox="0 0 24 24"
+    >
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v4l2.5 2.5" />
     </svg>
   );
 }

@@ -1,4 +1,4 @@
-export type SidePanelTab = 'active-capture' | 'recent-logs';
+export type SidePanelMode = 'capture' | 'search';
 
 export const MAX_CAPTURE_IMAGES = 3;
 
@@ -17,9 +17,20 @@ export interface DetectedNote {
   tags: string[];
 }
 
-export interface RecentLogItem {
+export type LanguageFilterId = 'all' | 'ts' | 'py' | 'go' | 'sql' | 'rs';
+
+export interface LanguageFilterOption {
+  id: LanguageFilterId;
+  label: string;
+  tech?: string;
+}
+
+export interface SearchResultItem {
   id: string;
+  tech: string;
   title: string;
-  tags: string[];
   capturedAt: string;
+  codePreview: string;
+  tags: string[];
+  language: LanguageFilterId;
 }
