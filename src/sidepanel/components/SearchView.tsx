@@ -1,5 +1,12 @@
 import { useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
+import { useNotes } from '../../hooks/useNotes';
+import {
+  formatRelativeTime,
+  getCodePreview,
+  noteLanguageToFilterId,
+} from '../../utils/noteHelpers';
+import { resolveDeviconSlug } from '../../utils/techIcon';
 import type {
   LanguageFilterId,
   LanguageFilterOption,
@@ -15,36 +22,6 @@ const LANGUAGE_FILTERS: LanguageFilterOption[] = [
   { id: 'go', label: 'GO', tech: 'go' },
   { id: 'sql', label: 'SQL', tech: 'postgresql' },
   { id: 'rs', label: 'RS', tech: 'rust' },
-];
-
-const MOCK_SEARCH_RESULTS: SearchResultItem[] = [
-  {
-    id: 'result-1',
-    tech: 'typescript',
-    title: 'useDebouncedValue',
-    capturedAt: '12m ago',
-    codePreview: 'const debounced = useDebouncedValue(value, 300);',
-    tags: ['#react', '#hooks'],
-    language: 'ts',
-  },
-  {
-    id: 'result-2',
-    tech: 'python',
-    title: 'FastAPI dependency injection',
-    capturedAt: '34m ago',
-    codePreview: 'def get_db() -> Generator[Session, None, None]:',
-    tags: ['#fastapi', '#python'],
-    language: 'py',
-  },
-  {
-    id: 'result-3',
-    tech: 'go',
-    title: 'Context timeout pattern',
-    capturedAt: '1h ago',
-    codePreview: 'ctx, cancel := context.WithTimeout(ctx, 5*time.Second)',
-    tags: ['#go', '#context'],
-    language: 'go',
-  },
 ];
 
 function SearchResultCard({ result }: { result: SearchResultItem }): ReactElement {
@@ -77,13 +54,28 @@ function SearchResultCard({ result }: { result: SearchResultItem }): ReactElemen
 }
 
 export function SearchView(): ReactElement {
+  const { notes } = useNotes();
   const [query, setQuery] = useState('');
   const [activeLanguage, setActiveLanguage] = useState<LanguageFilterId>('all');
+
+  const searchResults = useMemo<SearchResultItem[]>(
+    () =>
+      notes.map((note) => ({
+        id: note.id,
+        tech: resolveDeviconSlug(note.language),
+        title: note.title,
+        capturedAt: formatRelativeTime(note.createdAt),
+        codePreview: getCodePreview(note.code),
+        tags: note.tags,
+        language: noteLanguageToFilterId(note.language),
+      })),
+    [notes],
+  );
 
   const filteredResults = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return MOCK_SEARCH_RESULTS.filter((result) => {
+    return searchResults.filter((result) => {
       const matchesLanguage =
         activeLanguage === 'all' || result.language === activeLanguage;
 
@@ -106,7 +98,7 @@ export function SearchView(): ReactElement {
 
       return searchableText.includes(normalizedQuery);
     });
-  }, [activeLanguage, query]);
+  }, [activeLanguage, query, searchResults]);
 
   return (
     <div className="flex flex-col gap-4">

@@ -30,3 +30,11 @@ export interface SnippetItem {
 }
 
 export type SnippetViewMode = 'grid' | 'list';
+
+export type LibraryTabId =
+  | 'all'
+  | 'starred'
+  | 'recent'
+  | 'analytics'
+  | 'tags'
+  | 'trash';

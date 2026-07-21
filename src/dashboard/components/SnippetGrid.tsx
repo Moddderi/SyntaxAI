@@ -1,21 +1,44 @@
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
-import { SNIPPET_ITEMS } from '../data/mockDashboardData';
+import { toggleStar } from '../../storage/notesStorage';
+import type { Note } from '../../types/note';
+import { noteToSnippetItem } from '../../utils/noteHelpers';
 import type { SnippetViewMode } from '../types/dashboard.types';
 import { GridIcon, ListIcon } from './icons';
 import { SnippetCard } from './SnippetCard';
 
-export function SnippetGrid(): ReactElement {
+interface SnippetGridProps {
+  notes: Note[];
+  isLoading: boolean;
+  title?: string;
+  emptyMessage?: string;
+}
+
+export function SnippetGrid({
+  notes,
+  isLoading,
+  title = 'All notes',
+  emptyMessage,
+}: SnippetGridProps): ReactElement {
   const [viewMode, setViewMode] = useState<SnippetViewMode>('grid');
-  const totalCount = SNIPPET_ITEMS.length;
+  const totalCount = notes.length;
+
+  const snippets = useMemo(
+    () => notes.map((note) => noteToSnippetItem(note)),
+    [notes],
+  );
+
+  const handleToggleStar = useCallback((id: string): void => {
+    void toggleStar(id);
+  }, []);
 
   return (
     <section>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-white">All notes</h2>
+          <h2 className="text-lg font-semibold text-white">{title}</h2>
           <p className="text-sm text-gray-400">
-            {totalCount} of {totalCount} snippets
+            {isLoading ? 'Loading…' : `${totalCount} snippet${totalCount === 1 ? '' : 's'}`}
           </p>
         </div>
 
@@ -56,17 +79,32 @@ export function SnippetGrid(): ReactElement {
         </div>
       </div>
 
-      <div
-        className={
-          viewMode === 'grid'
-            ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'
-            : 'flex flex-col gap-3'
-        }
-      >
-        {SNIPPET_ITEMS.map((snippet) => (
-          <SnippetCard key={snippet.id} snippet={snippet} />
-        ))}
-      </div>
+      {snippets.length > 0 ? (
+        <div
+          className={
+            viewMode === 'grid'
+              ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'
+              : 'flex flex-col gap-3'
+          }
+        >
+          {snippets.map((snippet) => (
+            <SnippetCard
+              key={snippet.id}
+              onToggleStar={handleToggleStar}
+              snippet={snippet}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-[#1c1c20] bg-[#141417] p-10 text-center">
+          <p className="text-sm text-gray-400">
+            {isLoading
+              ? 'Loading your library…'
+              : (emptyMessage ??
+                'No notes yet. Add code from the side panel to get started.')}
+          </p>
+        </div>
+      )}
     </section>
   );
 }

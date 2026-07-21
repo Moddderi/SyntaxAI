@@ -1,4 +1,6 @@
-import type { ReactElement } from 'react';
+import { useCallback, useState, type ReactElement } from 'react';
+import { saveNote } from '../../storage/notesStorage';
+import { buildNoteFromCapture } from '../../utils/noteHelpers';
 import { useCaptureInput } from '../hooks/useCaptureInput';
 import type { DetectedNote } from '../types/capture.types';
 import { CaptureTextArea } from './CaptureTextArea';
@@ -14,13 +16,26 @@ const MOCK_DETECTED_NOTE: DetectedNote = {
 
 export function CaptureView(): ReactElement {
   const capture = useCaptureInput();
+  const [isSaving, setIsSaving] = useState(false);
+  const { text, reset } = capture;
 
-  const handleSave = (): void => {
-    console.info('[SyntaxAI] Save to library', {
-      text: capture.text,
-      imageCount: capture.pastedImages.length,
-    });
-  };
+  const handleSave = useCallback(async (): Promise<void> => {
+    const trimmedCode = text.trim();
+
+    if (!trimmedCode || isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const note = buildNoteFromCapture(trimmedCode, MOCK_DETECTED_NOTE);
+      await saveNote(note);
+      reset();
+    } finally {
+      setIsSaving(false);
+    }
+  }, [isSaving, reset, text]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
@@ -38,7 +53,13 @@ export function CaptureView(): ReactElement {
 
       <DetectedNoteBlock note={MOCK_DETECTED_NOTE} />
 
-      <SaveToLibraryButton onClick={handleSave} />
+      <SaveToLibraryButton
+        disabled={!text.trim() || isSaving}
+        isSaving={isSaving}
+        onClick={() => {
+          void handleSave();
+        }}
+      />
 
       <div className="mt-auto shrink-0 border-t border-syntax-border pt-3">
         <RecentNotesSection />

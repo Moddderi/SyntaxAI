@@ -1,10 +1,18 @@
 import type { ReactElement } from 'react';
-import { STAT_CARDS } from '../data/mockDashboardData';
+import type { Note } from '../../types/note';
+import { computeStatCards } from '../../utils/noteHelpers';
 
-export function StatsGrid(): ReactElement {
+interface StatsGridProps {
+  notes: Note[];
+  isLoading: boolean;
+}
+
+export function StatsGrid({ notes, isLoading }: StatsGridProps): ReactElement {
+  const statCards = computeStatCards(notes);
+
   return (
     <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {STAT_CARDS.map((stat) => (
+      {statCards.map((stat) => (
         <article
           key={stat.id}
           className="rounded-2xl border border-[#1c1c20] bg-[#141417] p-5"
@@ -13,7 +21,7 @@ export function StatsGrid(): ReactElement {
             {stat.label}
           </p>
           <p className="mt-2 text-3xl font-semibold tracking-tight text-white">
-            {stat.value}
+            {isLoading ? '—' : stat.value}
           </p>
           <p className="mt-1 text-xs text-[#00eaff]/80">{stat.hint}</p>
         </article>

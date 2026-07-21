@@ -3,5 +3,10 @@
 @tailwind utilities;
 
 body {
-  @apply m-0 bg-syntax-bg text-white antialiased;
+  @apply m-0 h-full bg-syntax-bg text-white antialiased;
+}
+
+html,
+#root {
+  @apply h-full;
 }

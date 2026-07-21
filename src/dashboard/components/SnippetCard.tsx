@@ -5,17 +5,28 @@ import { StarIcon } from './icons';
 
 interface SnippetCardProps {
   snippet: SnippetItem;
+  onToggleStar: (id: string) => void;
 }
 
-export function SnippetCard({ snippet }: SnippetCardProps): ReactElement {
+export function SnippetCard({
+  snippet,
+  onToggleStar,
+}: SnippetCardProps): ReactElement {
   return (
     <article className="flex flex-col rounded-2xl border border-[#1c1c20] bg-[#141417] p-4 transition hover:border-[#00eaff]/30">
       <div className="mb-3 flex items-start justify-between gap-2">
         <TechIcon size="md" tech={snippet.tech} />
-        <StarIcon
-          className={snippet.isStarred ? 'text-[#00eaff]' : 'text-gray-600'}
-          filled={snippet.isStarred}
-        />
+        <button
+          aria-label={snippet.isStarred ? 'Remove from starred' : 'Add to starred'}
+          className="rounded-lg p-1 transition hover:bg-[#0d0d0f]"
+          onClick={() => onToggleStar(snippet.id)}
+          type="button"
+        >
+          <StarIcon
+            className={snippet.isStarred ? 'text-[#00eaff]' : 'text-gray-600'}
+            filled={snippet.isStarred}
+          />
+        </button>
       </div>
 
       <div className="mb-3 flex items-start justify-between gap-2">

@@ -12,7 +12,7 @@ const HEADER_ICON_BUTTON_CLASS =
   'text-gray-400 transition hover:text-syntax-accent';
 
 function getSubtitle(mode: SidePanelMode): string {
-  return mode === 'search' ? 'quick search' : 'quick capture';
+  return mode === 'search' ? 'quick search' : 'quick note';
 }
 
 export function SidePanelHeader({ mode }: SidePanelHeaderProps): ReactElement {

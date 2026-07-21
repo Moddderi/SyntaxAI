@@ -161,3 +161,119 @@ export function ChatIcon({ className = 'h-4 w-4' }: IconProps): ReactElement {
     </svg>
   );
 }
+
+export function NotesIcon({ className = 'h-4 w-4' }: IconProps): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.75"
+      viewBox="0 0 24 24"
+    >
+      <path d="M8 6h13" />
+      <path d="M8 12h13" />
+      <path d="M8 18h13" />
+      <path d="M3 6h.01" />
+      <path d="M3 12h.01" />
+      <path d="M3 18h.01" />
+    </svg>
+  );
+}
+
+export function ClockIcon({ className = 'h-4 w-4' }: IconProps): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.75"
+      viewBox="0 0 24 24"
+    >
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v4l2.5 2.5" />
+    </svg>
+  );
+}
+
+export function TagIcon({ className = 'h-4 w-4' }: IconProps): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.75"
+      viewBox="0 0 24 24"
+    >
+      <path d="M4 12V4h8l8 8-8 8-8-8Z" />
+      <circle cx="9" cy="9" r="1.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function TrashIcon({ className = 'h-4 w-4' }: IconProps): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.75"
+      viewBox="0 0 24 24"
+    >
+      <path d="M4 7h16" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+      <path d="M6 7l1-3h10l1 3" />
+      <path d="M8 7v12h8V7" />
+    </svg>
+  );
+}
+
+export function ChartBarIcon({ className = 'h-4 w-4' }: IconProps): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.75"
+      viewBox="0 0 24 24"
+    >
+      <path d="M6 20V10" />
+      <path d="M12 20V4" />
+      <path d="M18 20v-6" />
+    </svg>
+  );
+}
+
+export function FlameIcon({ className = 'h-4 w-4' }: IconProps): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path d="M12 2c-1.2 2.2-3.4 3.8-3.4 6.4 0 1.1.4 2.1 1.1 2.9-.8-.2-1.4-.9-1.4-1.8 0-.9.6-1.7 1.2-2.5C8.8 5.6 8 3.8 8 2c-2.2 2.4-4 5.2-4 8.6 0 4.4 3.6 8 8 8s8-3.6 8-8c0-4.6-3.8-8.4-8-8.6Z" />
+      <path
+        d="M12 20c-2.2 0-4-1.6-4-3.8 0-1.2.7-2.3 1.8-3.1.3 1.4 1.4 2.5 2.8 2.9-.5-1.1-.2-2.4.7-3.2.8 1 .9 2.4.1 3.4.6-.4 1-1 1-1.7 0 1.4-1.1 2.5-2.4 2.5Z"
+        fill="currentColor"
+        opacity="0.55"
+      />
+    </svg>
+  );
+}

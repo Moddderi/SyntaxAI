@@ -38,10 +38,10 @@ export const STAT_CARDS: StatCardItem[] = [
     hint: 'across your stack',
   },
   {
-    id: 'captures-today',
-    label: 'Captures Today',
+    id: 'notes-today',
+    label: 'Notes Today',
     value: '3',
-    hint: 'active capture day',
+    hint: 'active note day',
   },
   {
     id: 'ai-credits',

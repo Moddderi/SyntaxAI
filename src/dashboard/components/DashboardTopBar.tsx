@@ -21,7 +21,7 @@ export function DashboardTopBar(): ReactElement {
         className="h-12 shrink-0 rounded-full bg-[#00eaff] px-5 text-sm font-semibold text-black transition hover:bg-[#00eaff]/90"
         type="button"
       >
-        + Capture
+        + New Note
       </button>
     </div>
   );

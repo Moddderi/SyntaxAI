@@ -16,7 +16,7 @@ interface ModeTabConfig {
 const MODE_TABS: ModeTabConfig[] = [
   {
     id: 'capture',
-    label: 'Capture',
+    label: 'New Note',
     icon: <LightningIcon />,
   },
   {

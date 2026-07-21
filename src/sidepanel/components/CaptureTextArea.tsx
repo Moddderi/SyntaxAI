@@ -66,7 +66,7 @@ export function CaptureTextArea({
       onDrop={onDrop}
     >
       <textarea
-        aria-label="Smart capture input"
+        aria-label="Note input"
         className={`min-h-[220px] w-full resize-none bg-transparent px-4 pt-4 font-mono text-[13px] leading-relaxed text-white outline-none placeholder:text-gray-500 ${
           hasImages ? 'pb-24' : 'pb-12'
         }`}
@@ -101,7 +101,7 @@ export function CaptureTextArea({
             {pastedImages.map((image) => (
               <div key={image.id} className="relative shrink-0">
                 <img
-                  alt="Pasted capture preview"
+                  alt="Pasted note preview"
                   className="h-16 w-16 rounded-xl border border-syntax-accent/40 object-cover shadow-[0_0_16px_rgba(0,234,255,0.15)]"
                   src={image.previewUrl}
                 />

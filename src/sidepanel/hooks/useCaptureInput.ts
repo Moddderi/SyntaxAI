@@ -7,6 +7,7 @@ interface UseCaptureInputResult {
   setText: (value: string) => void;
   pastedImages: PastedImage[];
   removeImage: (id: string) => void;
+  reset: () => void;
   isDragging: boolean;
   handleDragOver: (event: DragEvent<HTMLElement>) => void;
   handleDragLeave: (event: DragEvent<HTMLElement>) => void;
@@ -88,6 +89,17 @@ export function useCaptureInput(): UseCaptureInputResult {
     });
   }, []);
 
+  const reset = useCallback(() => {
+    setText('');
+    setPastedImages((previous) => {
+      previous.forEach((image) => {
+        URL.revokeObjectURL(image.previewUrl);
+      });
+      return [];
+    });
+    setIsDragging(false);
+  }, []);
+
   useEffect(() => {
     return () => {
       pastedImagesRef.current.forEach((image) => {
@@ -145,6 +157,7 @@ export function useCaptureInput(): UseCaptureInputResult {
     setText,
     pastedImages,
     removeImage,
+    reset,
     isDragging,
     handleDragOver,
     handleDragLeave,
