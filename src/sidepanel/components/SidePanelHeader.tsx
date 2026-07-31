@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import type { SidePanelMode } from '../types/capture.types';
 import { Logo } from '../../components/Logo';
 import { HomeIcon, SettingsIcon } from './icons';
-import { openDashboard } from '../utils/dashboardNavigation';
+import { openDashboard, openDashboardSettings } from '../../utils/dashboardNavigation';
 
 interface SidePanelHeaderProps {
   mode: SidePanelMode;
@@ -33,9 +33,11 @@ export function SidePanelHeader({ mode }: SidePanelHeaderProps): ReactElement {
 
       <div className="flex shrink-0 items-center gap-3">
         <button
-          aria-label="Open dashboard settings"
+          aria-label="Open settings in dashboard"
           className={HEADER_ICON_BUTTON_CLASS}
-          onClick={openDashboard}
+          onClick={() => {
+            void openDashboardSettings();
+          }}
           type="button"
         >
           <SettingsIcon />

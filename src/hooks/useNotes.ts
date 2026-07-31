@@ -1,20 +1,27 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getNotes } from '../storage/notesStorage';
+import { getNotes, getTrashNotes } from '../storage/notesStorage';
 import { NOTES_CHANGED_EVENT, NOTES_STORAGE_KEY, type Note } from '../types/note';
 
 interface UseNotesResult {
   notes: Note[];
+  trashNotes: Note[];
   isLoading: boolean;
   refresh: () => Promise<void>;
 }
 
 export function useNotes(): UseNotesResult {
   const [notes, setNotes] = useState<Note[]>([]);
+  const [trashNotes, setTrashNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const storedNotes = await getNotes();
-    setNotes(storedNotes);
+    const [activeNotes, deletedNotes] = await Promise.all([
+      getNotes(),
+      getTrashNotes(),
+    ]);
+
+    setNotes(activeNotes);
+    setTrashNotes(deletedNotes);
     setIsLoading(false);
   }, []);
 
@@ -53,5 +60,5 @@ export function useNotes(): UseNotesResult {
     };
   }, [refresh]);
 
-  return { notes, isLoading, refresh };
+  return { notes, trashNotes, isLoading, refresh };
 }

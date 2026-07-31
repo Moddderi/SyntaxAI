@@ -12,9 +12,12 @@ export interface PastedImage {
 }
 
 export interface DetectedNote {
-  technologyLabel: string;
   title: string;
-  tags: string[];
+  primaryTech: string;
+  language: string;
+  topics: string[];
+  summary?: string;
+  code: string;
 }
 
 export type LanguageFilterId = 'all' | 'ts' | 'py' | 'go' | 'sql' | 'rs';
@@ -27,10 +30,12 @@ export interface LanguageFilterOption {
 
 export interface SearchResultItem {
   id: string;
-  tech: string;
+  primaryTech: string;
+  language: string;
   title: string;
   capturedAt: string;
+  code: string;
   codePreview: string;
-  tags: string[];
-  language: LanguageFilterId;
+  topics: string[];
+  languageFilter: LanguageFilterId;
 }

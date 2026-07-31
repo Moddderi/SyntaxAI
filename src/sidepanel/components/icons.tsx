@@ -109,3 +109,21 @@ export function ClockIcon({ className = 'h-3.5 w-3.5' }: IconProps): ReactElemen
     </svg>
   );
 }
+
+export function SendIcon({ className = 'h-4 w-4' }: IconProps): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <path d="M5 12h14" />
+      <path d="m13 6 6 6-6 6" />
+    </svg>
+  );
+}

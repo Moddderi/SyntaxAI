@@ -2,13 +2,17 @@ import type { ReactElement } from 'react';
 import { useNotes } from '../../hooks/useNotes';
 import { formatRelativeTime } from '../../utils/noteHelpers';
 import { resolveDeviconSlug } from '../../utils/techIcon';
-import { openDashboard } from '../utils/dashboardNavigation';
+import { openDashboard } from '../../utils/dashboardNavigation';
 import { ClockIcon } from './icons';
 import { TechIcon } from '../../components/TechIcon';
 
 const LAST_CAPTURES_LIMIT = 2;
 
-export function RecentNotesSection(): ReactElement {
+export function RecentNotesSection({
+  onOpenNoteDetail,
+}: {
+  onOpenNoteDetail: (noteId: string) => void;
+}): ReactElement {
   const { notes } = useNotes();
   const recentNotes = notes.slice(0, LAST_CAPTURES_LIMIT);
 
@@ -36,9 +40,18 @@ export function RecentNotesSection(): ReactElement {
           recentNotes.map((note) => (
             <article
               key={note.id}
-              className="flex items-center gap-3 rounded-2xl border border-syntax-border bg-syntax-card px-3 py-2.5 transition hover:border-syntax-accent/30"
+              className="flex cursor-pointer items-center gap-3 rounded-2xl border border-syntax-border bg-syntax-card px-3 py-2.5 transition hover:border-syntax-accent/30"
+              onClick={() => onOpenNoteDetail(note.id)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onOpenNoteDetail(note.id);
+                }
+              }}
+              role="button"
+              tabIndex={0}
             >
-              <TechIcon size="md" tech={resolveDeviconSlug(note.language)} />
+              <TechIcon size="md" tech={resolveDeviconSlug(note.primaryTech)} />
 
               <div className="min-w-0 flex-1">
                 <h3 className="truncate text-sm font-medium text-white">{note.title}</h3>

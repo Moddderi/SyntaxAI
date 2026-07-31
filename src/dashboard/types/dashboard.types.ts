@@ -5,12 +5,15 @@ export interface LibraryNavItem {
   isActive?: boolean;
 }
 
-export interface LanguageNavItem {
+export interface TechnologyNavItem {
   id: string;
   label: string;
   tech: string;
   count: number;
 }
+
+/** @deprecated Use TechnologyNavItem */
+export type LanguageNavItem = TechnologyNavItem;
 
 export interface StatCardItem {
   id: string;
@@ -22,10 +25,12 @@ export interface StatCardItem {
 export interface SnippetItem {
   id: string;
   title: string;
-  tech: string;
+  primaryTech: string;
+  language: string;
+  code: string;
   updatedAt: string;
   codePreview: string;
-  tags: string[];
+  topics: string[];
   isStarred: boolean;
 }
 
@@ -36,5 +41,4 @@ export type LibraryTabId =
   | 'starred'
   | 'recent'
   | 'analytics'
-  | 'tags'
   | 'trash';

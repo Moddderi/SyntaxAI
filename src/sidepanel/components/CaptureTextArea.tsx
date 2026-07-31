@@ -1,11 +1,12 @@
-import type { ClipboardEvent, DragEvent, ReactElement } from 'react';
+import type { ClipboardEvent, DragEvent, KeyboardEvent, ReactElement } from 'react';
 import {
   CAPTURE_IMAGE_THUMB_GAP_PX,
   CAPTURE_IMAGE_THUMB_SIZE_PX,
   MAX_CAPTURE_IMAGES,
   type PastedImage,
 } from '../types/capture.types';
-import { ImageDropIcon } from './icons';
+import { isDetectShortcut } from './DetectNoteButton';
+import { ImageDropIcon, SendIcon } from './icons';
 
 const VISIBLE_THUMBS_WIDTH_PX =
   CAPTURE_IMAGE_THUMB_SIZE_PX * MAX_CAPTURE_IMAGES +
@@ -21,6 +22,9 @@ interface CaptureTextAreaProps {
   onDragLeave: (event: DragEvent<HTMLElement>) => void;
   onDrop: (event: DragEvent<HTMLElement>) => void;
   onPaste: (event: ClipboardEvent<HTMLTextAreaElement>) => void;
+  onDetect?: () => void;
+  canDetect?: boolean;
+  isAnalyzing?: boolean;
 }
 
 function RemoveImageIcon(): ReactElement {
@@ -40,6 +44,15 @@ function RemoveImageIcon(): ReactElement {
   );
 }
 
+function DetectSpinner(): ReactElement {
+  return (
+    <div
+      aria-hidden="true"
+      className="h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black"
+    />
+  );
+}
+
 export function CaptureTextArea({
   text,
   pastedImages,
@@ -50,9 +63,21 @@ export function CaptureTextArea({
   onDragLeave,
   onDrop,
   onPaste,
+  onDetect,
+  canDetect = false,
+  isAnalyzing = false,
 }: CaptureTextAreaProps): ReactElement {
   const hasImages = pastedImages.length > 0;
   const showDropHint = text.length === 0 && !hasImages;
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
+    if (!onDetect || !isDetectShortcut(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    onDetect();
+  };
 
   return (
     <section
@@ -71,6 +96,7 @@ export function CaptureTextArea({
           hasImages ? 'pb-24' : 'pb-12'
         }`}
         onChange={(event) => onTextChange(event.target.value)}
+        onKeyDown={handleKeyDown}
         onPaste={onPaste}
         placeholder="// Paste code, text, or drop an image..."
         spellCheck={false}
@@ -119,9 +145,20 @@ export function CaptureTextArea({
         </div>
       ) : null}
 
-      <span className="pointer-events-none absolute bottom-3 right-4 text-[10px] font-medium uppercase tracking-[0.14em] text-syntax-accent/80">
-        AI ready
-      </span>
+      <button
+        aria-label="Detect note"
+        className={`absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full transition ${
+          canDetect && !isAnalyzing
+            ? 'bg-syntax-accent text-black shadow-[0_0_16px_rgba(0,234,255,0.35)] hover:bg-syntax-accent/90'
+            : 'cursor-not-allowed border border-syntax-border bg-syntax-card text-gray-500'
+        }`}
+        disabled={!canDetect || isAnalyzing}
+        onClick={onDetect}
+        title="Detect note (⌘/Ctrl + Enter)"
+        type="button"
+      >
+        {isAnalyzing ? <DetectSpinner /> : <SendIcon className="h-4 w-4" />}
+      </button>
     </section>
   );
 }

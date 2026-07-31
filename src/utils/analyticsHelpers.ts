@@ -90,7 +90,7 @@ function formatLanguageLabel(slug: string): string {
 
 export function filterNotesByLibraryTab(
   notes: Note[],
-  tab: 'all' | 'starred' | 'recent' | 'tags' | 'trash',
+  tab: 'all' | 'starred' | 'recent' | 'trash',
 ): Note[] {
   if (tab === 'starred') {
     return notes.filter((note) => note.isStarred);
@@ -102,7 +102,7 @@ export function filterNotesByLibraryTab(
     return notes.filter((note) => new Date(note.createdAt) >= weekAgo);
   }
 
-  if (tab === 'tags' || tab === 'trash') {
+  if (tab === 'trash') {
     return [];
   }
 
@@ -117,7 +117,7 @@ export function computeLanguageBreakdown(notes: Note[]): LanguageBreakdownItem[]
   const counts = new Map<string, number>();
 
   notes.forEach((note) => {
-    const slug = resolveDeviconSlug(note.language);
+    const slug = resolveDeviconSlug(note.primaryTech);
     counts.set(slug, (counts.get(slug) ?? 0) + 1);
   });
 
@@ -252,11 +252,22 @@ export function computeEstimatedTimeSavedHours(notes: Note[]): number {
 }
 
 export function computeInputMethodBreakdown(notes: Note[]): InputMethodBreakdown {
-  return {
-    code: notes.length,
-    image: 0,
-    tab: 0,
-  };
+  return notes.reduce<InputMethodBreakdown>(
+    (breakdown, note) => {
+      const sourceType = note.sourceType ?? 'code';
+
+      if (sourceType === 'image') {
+        breakdown.image += 1;
+      } else if (sourceType === 'tab') {
+        breakdown.tab += 1;
+      } else {
+        breakdown.code += 1;
+      }
+
+      return breakdown;
+    },
+    { code: 0, image: 0, tab: 0 },
+  );
 }
 
 export function getLibraryTabTitle(tab: string): string {
@@ -265,8 +276,6 @@ export function getLibraryTabTitle(tab: string): string {
       return 'Starred notes';
     case 'recent':
       return 'Recent notes';
-    case 'tags':
-      return 'Tags';
     case 'trash':
       return 'Trash';
     default:

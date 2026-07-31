@@ -1,8 +1,8 @@
 import type { LanguageFilterId } from '../sidepanel/types/capture.types';
-import type { LanguageNavItem, SnippetItem, StatCardItem } from '../dashboard/types/dashboard.types';
+import type { TechnologyNavItem, SnippetItem, StatCardItem } from '../dashboard/types/dashboard.types';
 import type { DetectedNote } from '../sidepanel/types/capture.types';
-import type { Note } from '../types/note';
-import { resolveDeviconSlug } from './techIcon';
+import type { Note, NoteSourceType } from '../types/note';
+import { formatTechnologyLabel, resolveDeviconSlug } from './techIcon';
 
 const LANGUAGE_FILTER_MAP: Record<string, LanguageFilterId> = {
   typescript: 'ts',
@@ -63,14 +63,31 @@ export function getCodePreview(code: string): string {
   return firstLine.trim();
 }
 
+export function formatNoteDate(isoDate: string): string {
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(isoDate));
+}
+
+export function formatTopicLabel(topic: string): string {
+  const normalized = topic.replace(/^#+/, '').trim();
+  return normalized ? `#${normalized}` : '';
+}
+
 export function noteToSnippetItem(note: Note): SnippetItem {
   return {
     id: note.id,
     title: note.title,
-    tech: resolveDeviconSlug(note.language),
+    primaryTech: resolveDeviconSlug(note.primaryTech),
+    language: resolveDeviconSlug(note.language),
+    code: note.code,
     updatedAt: formatRelativeTime(note.createdAt),
     codePreview: getCodePreview(note.code),
-    tags: note.tags,
+    topics: note.topics,
     isStarred: note.isStarred,
   };
 }
@@ -80,15 +97,23 @@ export function noteLanguageToFilterId(language: string): LanguageFilterId {
   return LANGUAGE_FILTER_MAP[slug] ?? 'all';
 }
 
-export function buildNoteFromCapture(code: string, detected: DetectedNote): Note {
+export function buildNoteFromCapture(
+  code: string,
+  detected: DetectedNote,
+  sourceType: NoteSourceType = 'code',
+): Note {
   return {
     id: crypto.randomUUID(),
     title: detected.title,
-    code,
-    language: resolveDeviconSlug(detected.technologyLabel),
-    tags: detected.tags,
+    code: detected.code || code,
+    primaryTech: resolveDeviconSlug(detected.primaryTech),
+    language: resolveDeviconSlug(detected.language),
+    topics: detected.topics,
+    summary: detected.summary?.trim() || undefined,
     createdAt: new Date().toISOString(),
     isStarred: false,
+    isDeleted: false,
+    sourceType,
   };
 }
 
@@ -105,8 +130,8 @@ export function computeStatCards(notes: Note[]): StatCardItem[] {
     isSameDay(new Date(note.createdAt), now),
   ).length;
 
-  const uniqueLanguages = new Set(
-    notes.map((note) => resolveDeviconSlug(note.language)),
+  const uniqueTechnologies = new Set(
+    notes.map((note) => resolveDeviconSlug(note.primaryTech)),
   ).size;
 
   return [
@@ -117,9 +142,9 @@ export function computeStatCards(notes: Note[]): StatCardItem[] {
       hint: notesThisWeek > 0 ? `+${notesThisWeek} this week` : 'start adding notes',
     },
     {
-      id: 'languages',
-      label: 'Languages',
-      value: String(uniqueLanguages),
+      id: 'technologies',
+      label: 'Technologies',
+      value: String(uniqueTechnologies),
       hint: 'across your stack',
     },
     {
@@ -137,32 +162,63 @@ export function computeStatCards(notes: Note[]): StatCardItem[] {
   ];
 }
 
-export function computeLibraryNavCounts(notes: Note[]): {
+export function computeLibraryNavCounts(
+  notes: Note[],
+  trashCount = 0,
+): {
   all: number;
   starred: number;
   recent: number;
-  tags: number;
+  trash: number;
 } {
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - RECENT_DAYS);
-
-  const uniqueTags = new Set(
-    notes.flatMap((note) => note.tags.map((tag) => tag.toLowerCase())),
-  );
 
   return {
     all: notes.length,
     starred: notes.filter((note) => note.isStarred).length,
     recent: notes.filter((note) => new Date(note.createdAt) >= weekAgo).length,
-    tags: uniqueTags.size,
+    trash: trashCount,
   };
 }
 
-export function computeLanguageNavItems(notes: Note[]): LanguageNavItem[] {
+export function searchNotes(notes: Note[], query: string): Note[] {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (!normalizedQuery) {
+    return notes;
+  }
+
+  return notes.filter((note) => {
+    const searchable = [
+      note.title,
+      note.code,
+      note.primaryTech,
+      note.language,
+      ...note.topics,
+    ]
+      .join(' ')
+      .toLowerCase();
+
+    return searchable.includes(normalizedQuery);
+  });
+}
+
+export function filterNotesByTechnology(notes: Note[], techSlug: string | null): Note[] {
+  if (!techSlug) {
+    return notes;
+  }
+
+  return notes.filter(
+    (note) => resolveDeviconSlug(note.primaryTech) === techSlug,
+  );
+}
+
+export function computeTechnologyNavItems(notes: Note[]): TechnologyNavItem[] {
   const counts = new Map<string, number>();
 
   notes.forEach((note) => {
-    const slug = resolveDeviconSlug(note.language);
+    const slug = resolveDeviconSlug(note.primaryTech);
     counts.set(slug, (counts.get(slug) ?? 0) + 1);
   });
 
@@ -170,8 +226,13 @@ export function computeLanguageNavItems(notes: Note[]): LanguageNavItem[] {
     .sort((left, right) => right[1] - left[1])
     .map(([slug, count]) => ({
       id: slug,
-      label: slug.charAt(0).toUpperCase() + slug.slice(1),
+      label: formatTechnologyLabel(slug),
       tech: slug,
       count,
     }));
+}
+
+/** @deprecated Use computeTechnologyNavItems */
+export function computeLanguageNavItems(notes: Note[]): TechnologyNavItem[] {
+  return computeTechnologyNavItems(notes);
 }

@@ -3,8 +3,8 @@ import { Logo } from '../../components/Logo';
 import { TechIcon } from '../../components/TechIcon';
 import type { Note } from '../../types/note';
 import {
-  computeLanguageNavItems,
   computeLibraryNavCounts,
+  computeTechnologyNavItems,
 } from '../../utils/noteHelpers';
 import type { LibraryNavItem, LibraryTabId } from '../types/dashboard.types';
 import {
@@ -13,7 +13,6 @@ import {
   NotesIcon,
   SettingsIcon,
   StarIcon,
-  TagIcon,
   TrashIcon,
 } from './icons';
 
@@ -21,7 +20,11 @@ interface SidebarProps {
   notes: Note[];
   isLoading: boolean;
   activeTab: LibraryTabId;
+  selectedTechnology: string | null;
   onTabChange: (tab: LibraryTabId) => void;
+  onTechnologySelect: (techSlug: string) => void;
+  onOpenSettings: () => void;
+  trashCount: number;
 }
 
 function LibraryNavIcon({
@@ -40,8 +43,6 @@ function LibraryNavIcon({
       return <ClockIcon className={className} />;
     case 'analytics':
       return <ChartBarIcon className={className} />;
-    case 'tags':
-      return <TagIcon className={className} />;
     case 'trash':
       return <TrashIcon className={className} />;
     default:
@@ -53,11 +54,18 @@ export function Sidebar({
   notes,
   isLoading,
   activeTab,
+  selectedTechnology,
   onTabChange,
+  onTechnologySelect,
+  onOpenSettings,
+  trashCount,
 }: SidebarProps): ReactElement {
-  const libraryCounts = useMemo(() => computeLibraryNavCounts(notes), [notes]);
-  const languageNavItems = useMemo(
-    () => computeLanguageNavItems(notes),
+  const libraryCounts = useMemo(
+    () => computeLibraryNavCounts(notes, trashCount),
+    [notes, trashCount],
+  );
+  const technologyNavItems = useMemo(
+    () => computeTechnologyNavItems(notes),
     [notes],
   );
 
@@ -67,7 +75,7 @@ export function Sidebar({
         id: 'all',
         label: 'All notes',
         count: libraryCounts.all,
-        isActive: activeTab === 'all',
+        isActive: activeTab === 'all' && selectedTechnology === null,
       },
       {
         id: 'starred',
@@ -87,19 +95,13 @@ export function Sidebar({
         isActive: activeTab === 'analytics',
       },
       {
-        id: 'tags',
-        label: 'Tags',
-        count: libraryCounts.tags,
-        isActive: activeTab === 'tags',
-      },
-      {
         id: 'trash',
         label: 'Trash',
-        count: 0,
+        count: libraryCounts.trash,
         isActive: activeTab === 'trash',
       },
     ],
-    [activeTab, libraryCounts],
+    [activeTab, libraryCounts, selectedTechnology],
   );
 
   return (
@@ -142,39 +144,40 @@ export function Sidebar({
         </nav>
       </section>
 
-      <section className="mb-6 flex-1">
-        <div className="mb-2 flex items-center justify-between px-2">
-          <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">
-            Languages
-          </h2>
-          <button
-            className="text-sm text-gray-400 transition hover:text-[#00eaff]"
-            type="button"
-          >
-            +
-          </button>
-        </div>
+      <section className="mb-6 flex-1 overflow-y-auto">
+        <h2 className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+          Technologies
+        </h2>
 
         <nav className="flex flex-col gap-1">
-          {languageNavItems.length > 0 ? (
-            languageNavItems.map((item) => (
-              <button
-                key={item.id}
-                className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-gray-400 transition hover:bg-[#141417]/60 hover:text-white"
-                type="button"
-              >
-                <span className="flex min-w-0 items-center gap-2.5">
-                  <TechIcon size="sm" tech={item.tech} />
-                  <span className="truncate">{item.label}</span>
-                </span>
-                <span className="text-xs text-gray-500">
-                  {isLoading ? '—' : item.count}
-                </span>
-              </button>
-            ))
+          {technologyNavItems.length > 0 ? (
+            technologyNavItems.map((item) => {
+              const isActive = selectedTechnology === item.tech;
+
+              return (
+                <button
+                  key={item.id}
+                  className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm transition ${
+                    isActive
+                      ? 'bg-[#141417] text-white'
+                      : 'text-gray-400 hover:bg-[#141417]/60 hover:text-white'
+                  }`}
+                  onClick={() => onTechnologySelect(item.tech)}
+                  type="button"
+                >
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <TechIcon size="sm" tech={item.tech} />
+                    <span className="truncate">{item.label}</span>
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {isLoading ? '—' : item.count}
+                  </span>
+                </button>
+              );
+            })
           ) : (
             <p className="px-3 py-2 text-xs text-gray-500">
-              Languages appear as you add notes.
+              Technologies appear as you add notes.
             </p>
           )}
         </nav>
@@ -186,6 +189,7 @@ export function Sidebar({
         </h2>
         <button
           className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-400 transition hover:bg-[#141417]/60 hover:text-white"
+          onClick={onOpenSettings}
           type="button"
         >
           <SettingsIcon />
