@@ -20,14 +20,6 @@ export interface DetectedNote {
   code: string;
 }
 
-export type LanguageFilterId = 'all' | 'ts' | 'py' | 'go' | 'sql' | 'rs';
-
-export interface LanguageFilterOption {
-  id: LanguageFilterId;
-  label: string;
-  tech?: string;
-}
-
 export interface SearchResultItem {
   id: string;
   primaryTech: string;
@@ -36,6 +28,7 @@ export interface SearchResultItem {
   capturedAt: string;
   code: string;
   codePreview: string;
+  summary?: string;
+  previewLine: string;
   topics: string[];
-  languageFilter: LanguageFilterId;
 }

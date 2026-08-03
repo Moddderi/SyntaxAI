@@ -20,6 +20,11 @@ export interface StatCardItem {
   label: string;
   value: string;
   hint: string;
+  progress?: {
+    current: number;
+    total: number;
+  };
+  topTechnologies?: string[];
 }
 
 export interface SnippetItem {
@@ -30,6 +35,8 @@ export interface SnippetItem {
   code: string;
   updatedAt: string;
   codePreview: string;
+  summary?: string;
+  previewLine: string;
   topics: string[];
   isStarred: boolean;
 }

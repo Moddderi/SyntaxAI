@@ -1,9 +1,11 @@
 import type { Note } from '../types/note';
-import { resolveDeviconSlug } from './techIcon';
+import { formatTechnologyLabel, getTechBrandColor, resolveDeviconSlug } from './techIcon';
 
 const RECENT_DAYS = 7;
 const HEATMAP_WEEKS = 16;
 const MINUTES_SAVED_PER_NOTE = 15;
+export const STACK_CHART_TOP_N = 6;
+export const STACK_CHART_OTHER_COLOR = '#6B7280';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
@@ -12,6 +14,7 @@ export interface LanguageBreakdownItem {
   slug: string;
   count: number;
   percentage: number;
+  color: string;
 }
 
 export interface HeatmapCell {
@@ -34,17 +37,6 @@ export interface InputMethodBreakdown {
   image: number;
   tab: number;
 }
-
-export const ANALYTICS_CHART_COLORS = [
-  '#00eaff',
-  '#00b8d4',
-  '#0099cc',
-  '#22d3ee',
-  '#34d399',
-  '#a78bfa',
-  '#f472b6',
-  '#fbbf24',
-] as const;
 
 function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -77,15 +69,36 @@ function buildDailyCounts(notes: Note[]): Map<string, number> {
 }
 
 function formatLanguageLabel(slug: string): string {
-  if (slug === 'typescript') {
-    return 'TypeScript';
-  }
-
   if (slug === 'postgresql') {
     return 'SQL';
   }
 
-  return slug.charAt(0).toUpperCase() + slug.slice(1);
+  return formatTechnologyLabel(slug);
+}
+
+export function groupBreakdownForChart(
+  items: LanguageBreakdownItem[],
+  topN: number = STACK_CHART_TOP_N,
+): LanguageBreakdownItem[] {
+  if (items.length <= topN) {
+    return items;
+  }
+
+  const topItems = items.slice(0, topN);
+  const restItems = items.slice(topN);
+  const otherCount = restItems.reduce((sum, item) => sum + item.count, 0);
+  const totalCount = items.reduce((sum, item) => sum + item.count, 0);
+
+  return [
+    ...topItems,
+    {
+      name: 'Other',
+      slug: '__other__',
+      count: otherCount,
+      percentage: Math.round((otherCount / totalCount) * 100),
+      color: STACK_CHART_OTHER_COLOR,
+    },
+  ];
 }
 
 export function filterNotesByLibraryTab(
@@ -128,6 +141,7 @@ export function computeLanguageBreakdown(notes: Note[]): LanguageBreakdownItem[]
       slug,
       count,
       percentage: Math.round((count / notes.length) * 100),
+      color: getTechBrandColor(slug),
     }));
 }
 

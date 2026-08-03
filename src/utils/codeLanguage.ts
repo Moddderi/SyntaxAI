@@ -85,3 +85,7 @@ export function getCodePreviewLines(code: string, maxLines = 4): string {
 
   return lines.slice(0, maxLines).join('\n');
 }
+
+export function getCodeBlockLanguageLabel(language?: string): string {
+  return resolvePrismLanguage(language);
+}

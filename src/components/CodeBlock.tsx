@@ -1,7 +1,7 @@
 import { useMemo, type CSSProperties, type ReactElement } from 'react';
 import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { getCodePreviewLines, resolvePrismLanguage } from '../utils/codeLanguage';
+import { getCodePreviewLines, getCodeBlockLanguageLabel, resolvePrismLanguage } from '../utils/codeLanguage';
 
 const CODE_BLOCK_THEME: Record<string, CSSProperties> = {
   ...vscDarkPlus,
@@ -27,6 +27,7 @@ interface CodeBlockProps {
   maxLines?: number;
   size?: 'sm' | 'md';
   className?: string;
+  showLanguageLabel?: boolean;
 }
 
 const FONT_SIZES: Record<'sm' | 'md', string> = {
@@ -40,9 +41,15 @@ export function CodeBlock({
   maxLines,
   size = 'sm',
   className = '',
+  showLanguageLabel = false,
 }: CodeBlockProps): ReactElement {
   const highlighterLanguage = useMemo(
     () => resolvePrismLanguage(language),
+    [language],
+  );
+
+  const languageLabel = useMemo(
+    () => getCodeBlockLanguageLabel(language),
     [language],
   );
 
@@ -56,16 +63,27 @@ export function CodeBlock({
 
   return (
     <div
-      className={`overflow-hidden rounded-xl border border-[#1c1c20] bg-[#1a1b1e] px-3 py-2 ${className}`.trim()}
+      className={`overflow-hidden rounded-xl border border-[#1c1c20] bg-[#1a1b1e] ${className}`.trim()}
       style={
         maxLines
           ? {
-              maxHeight: `${maxLines * lineHeight * parseFloat(fontSize) + 16}px`,
+              maxHeight: showLanguageLabel
+                ? `${maxLines * lineHeight * parseFloat(fontSize) + 40}px`
+                : `${maxLines * lineHeight * parseFloat(fontSize) + 16}px`,
             }
           : undefined
       }
     >
-      <SyntaxHighlighter
+      {showLanguageLabel ? (
+        <div className="flex items-center border-b border-[#1c1c20] bg-[#141417] px-3 py-1.5">
+          <span className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-gray-500">
+            {languageLabel}
+          </span>
+        </div>
+      ) : null}
+
+      <div className="px-3 py-2">
+        <SyntaxHighlighter
         codeTagProps={{
           style: {
             fontFamily:
@@ -87,6 +105,7 @@ export function CodeBlock({
       >
         {displayCode}
       </SyntaxHighlighter>
+      </div>
     </div>
   );
 }

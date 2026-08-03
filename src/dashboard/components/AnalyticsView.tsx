@@ -2,14 +2,15 @@ import { useMemo, type ReactElement } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import type { Note } from '../../types/note';
 import {
-  ANALYTICS_CHART_COLORS,
   computeActivityHeatmap,
   computeEstimatedTimeSavedHours,
   computeInputMethodBreakdown,
   computeLanguageBreakdown,
   formatHeatmapDate,
   getHeatmapCellClass,
+  groupBreakdownForChart,
 } from '../../utils/analyticsHelpers';
+import { TechIcon } from '../../components/TechIcon';
 import { FlameIcon } from './icons';
 
 interface AnalyticsViewProps {
@@ -23,6 +24,7 @@ interface ChartTooltipPayload {
   payload?: {
     count?: number;
     percentage?: number;
+    color?: string;
   };
 }
 
@@ -42,11 +44,12 @@ function AnalyticsTooltip({
   const item = payload[0];
   const count = item.payload?.count ?? item.value ?? 0;
   const percentage = item.payload?.percentage;
+  const accentColor = item.payload?.color ?? '#00eaff';
 
   return (
     <div className="rounded-xl border border-[#1c1c20] bg-[#141417] px-3 py-2 text-xs shadow-lg">
       <p className="font-medium text-white">{item.name}</p>
-      <p className="mt-0.5 text-[#00eaff]">
+      <p className="mt-0.5" style={{ color: accentColor }}>
         {count} notes{percentage !== undefined ? ` · ${percentage}%` : ''}
       </p>
     </div>
@@ -187,6 +190,10 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
     () => computeLanguageBreakdown(notes),
     [notes],
   );
+  const stackChartData = useMemo(
+    () => groupBreakdownForChart(languageBreakdown),
+    [languageBreakdown],
+  );
   const heatmap = useMemo(() => computeActivityHeatmap(notes), [notes]);
   const timeSavedHours = useMemo(
     () => computeEstimatedTimeSavedHours(notes),
@@ -199,11 +206,13 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
   const totalNotes = notes.length;
   const inputTotal = inputMethods.code + inputMethods.image + inputMethods.tab;
 
-  const pieData = languageBreakdown.map((item) => ({
+  const pieData = stackChartData.map((item) => ({
     name: item.name,
     value: item.count,
     count: item.count,
     percentage: item.percentage,
+    color: item.color,
+    slug: item.slug,
   }));
 
   return (
@@ -229,8 +238,10 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
         <>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <section className="rounded-2xl border border-[#1c1c20] bg-[#141417] p-5 lg:col-span-1">
-              <h2 className="mb-1 text-sm font-semibold text-white">Language Breakdown</h2>
-              <p className="mb-4 text-xs text-gray-400">Your stack at a glance</p>
+              <h2 className="mb-1 text-sm font-semibold text-white">Stack Breakdown</h2>
+              <p className="mb-4 text-xs text-gray-400">
+                Technologies in your library · brand colors
+              </p>
 
               <div className="relative mx-auto h-40 w-full max-w-[180px]">
                 <ResponsiveContainer height="100%" width="100%">
@@ -246,15 +257,8 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
                       stroke="#0d0d0f"
                       strokeWidth={2}
                     >
-                      {pieData.map((entry, index) => (
-                        <Cell
-                          key={entry.name}
-                          fill={
-                            ANALYTICS_CHART_COLORS[
-                              index % ANALYTICS_CHART_COLORS.length
-                            ]
-                          }
-                        />
+                      {pieData.map((entry) => (
+                        <Cell key={entry.slug} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip content={<AnalyticsTooltip />} />
@@ -270,21 +274,25 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
               </div>
 
               <ul className="mt-4 space-y-2">
-                {languageBreakdown.slice(0, 4).map((item, index) => (
+                {stackChartData.map((item) => (
                   <li
                     key={item.slug}
                     className="flex items-center justify-between gap-2 text-xs"
                   >
                     <span className="flex min-w-0 items-center gap-2">
-                      <span
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{
-                          backgroundColor:
-                            ANALYTICS_CHART_COLORS[
-                              index % ANALYTICS_CHART_COLORS.length
-                            ],
-                        }}
-                      />
+                      {item.slug === '__other__' ? (
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-full"
+                          style={{ backgroundColor: item.color }}
+                        />
+                      ) : (
+                        <span
+                          className="rounded-md ring-2 ring-offset-1 ring-offset-[#141417]"
+                          style={{ boxShadow: `0 0 0 2px ${item.color}` }}
+                        >
+                          <TechIcon size="xs" tech={item.slug} />
+                        </span>
+                      )}
                       <span className="truncate text-gray-300">{item.name}</span>
                     </span>
                     <span className="shrink-0 text-gray-500">{item.percentage}%</span>
@@ -337,8 +345,11 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
               <div className="mt-4 rounded-xl border border-[#1c1c20] bg-[#0d0d0f] px-4 py-3">
                 <p className="text-xs text-gray-400">
                   <span className="font-medium text-white">{languageBreakdown.length}</span>{' '}
-                  languages in your library ·{' '}
-                  <span className="font-medium text-[#00eaff]">
+                  technologies in your library ·{' '}
+                  <span
+                    className="font-medium"
+                    style={{ color: languageBreakdown[0]?.color ?? '#00eaff' }}
+                  >
                     {languageBreakdown[0]?.name ?? 'N/A'}
                   </span>{' '}
                   is your primary stack

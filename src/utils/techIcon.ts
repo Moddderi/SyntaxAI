@@ -247,3 +247,63 @@ const TECHNOLOGY_LABELS: Record<string, string> = {
 export function formatTechnologyLabel(slug: string): string {
   return TECHNOLOGY_LABELS[slug] ?? slug.charAt(0).toUpperCase() + slug.slice(1);
 }
+
+/** Official / recognizable brand colors for stack analytics (pie chart, bars). */
+const TECH_BRAND_COLORS: Record<string, string> = {
+  react: '#61DAFB',
+  redux: '#764ABC',
+  nextjs: '#0070F3',
+  vuejs: '#4FC08D',
+  nuxtjs: '#00DC82',
+  angular: '#DD0031',
+  svelte: '#FF3E00',
+  django: '#44B78B',
+  fastapi: '#009688',
+  flask: '#3CAA3D',
+  nestjs: '#E0234E',
+  prisma: '#71E8DF',
+  express: '#90A4AE',
+  tailwindcss: '#06B6D4',
+  docker: '#2496ED',
+  kubernetes: '#326CE5',
+  graphql: '#E10098',
+  nodejs: '#339933',
+  mongodb: '#47A248',
+  postgresql: '#4169E1',
+  mysql: '#4479A1',
+  typescript: '#3178C6',
+  javascript: '#F7DF1E',
+  python: '#3776AB',
+  go: '#00ADD8',
+  rust: '#F74C00',
+  bash: '#4EAA25',
+  csharp: '#512BD4',
+  java: '#ED8B00',
+  kotlin: '#7F52FF',
+  swift: '#F05138',
+  flutter: '#02569B',
+  dart: '#0175C2',
+  html5: '#E34F26',
+  css3: '#1572B6',
+  ruby: '#CC342D',
+  php: '#777BB4',
+  cplusplus: '#00599C',
+  cpp: '#00599C',
+  assembly: '#6B7280',
+};
+
+function hashSlugToColor(slug: string): string {
+  let hash = 0;
+
+  for (let index = 0; index < slug.length; index += 1) {
+    hash = slug.charCodeAt(index) + ((hash << 5) - hash);
+  }
+
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 62%, 52%)`;
+}
+
+export function getTechBrandColor(tech: string): string {
+  const slug = resolveDeviconSlug(tech);
+  return TECH_BRAND_COLORS[slug] ?? hashSlugToColor(slug);
+}

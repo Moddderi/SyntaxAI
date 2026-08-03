@@ -14,11 +14,11 @@ import type { LibraryTabId } from './types/dashboard.types';
 import type { Note } from '../types/note';
 import { AnalyticsView } from './components/AnalyticsView';
 import { DashboardTopBar } from './components/DashboardTopBar';
-import { FloatingBar } from './components/FloatingBar';
 import { QuickSearchModal } from './components/QuickSearchModal';
 import { Sidebar } from './components/Sidebar';
 import { SnippetGrid } from './components/SnippetGrid';
 import { StatsGrid } from './components/StatsGrid';
+import { TechHeroBanner } from './components/TechHeroBanner';
 import { TrashGrid } from './components/TrashGrid';
 import { filterNotesByTechnology } from '../utils/noteHelpers';
 import { formatTechnologyLabel } from '../utils/techIcon';
@@ -140,6 +140,10 @@ export function Dashboard(): ReactElement {
 
   const isAnalyticsView = activeTab === 'analytics';
   const isTrashView = activeTab === 'trash';
+  const isTechnologyView = selectedTechnology !== null;
+  const showStatsGrid =
+    !isTechnologyView &&
+    (activeTab === 'all' || activeTab === 'recent' || activeTab === 'starred');
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0d0d0f] text-white">
@@ -155,7 +159,7 @@ export function Dashboard(): ReactElement {
       />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <main className="min-h-0 flex-1 overflow-y-auto px-6 py-6 pb-28">
+        <main className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
           <DashboardTopBar onOpenQuickSearch={() => setIsQuickSearchOpen(true)} />
 
           {isAnalyticsView ? (
@@ -164,7 +168,19 @@ export function Dashboard(): ReactElement {
             <TrashGrid isLoading={isLoading} notes={trashNotes} />
           ) : (
             <>
-              <StatsGrid isLoading={isLoading} notes={notes} />
+              {isTechnologyView && selectedTechnology ? (
+                <TechHeroBanner
+                  key={selectedTechnology}
+                  snippetsCount={filteredNotes.length}
+                  techName={formatTechnologyLabel(selectedTechnology)}
+                  techSlug={selectedTechnology}
+                />
+              ) : null}
+
+              {showStatsGrid ? (
+                <StatsGrid isLoading={isLoading} notes={notes} />
+              ) : null}
+
               <SnippetGrid
                 emptyMessage={
                   selectedTechnology
@@ -174,14 +190,12 @@ export function Dashboard(): ReactElement {
                 isLoading={isLoading}
                 notes={filteredNotes}
                 onOpenDetail={handleOpenNoteDetail}
-                title={gridTitle}
+                title={isTechnologyView ? 'Snippets' : gridTitle}
               />
             </>
           )}
         </main>
       </div>
-
-      <FloatingBar />
 
       <SettingsModal
         isOpen={isSettingsOpen}
@@ -202,4 +216,5 @@ export function Dashboard(): ReactElement {
     </div>
   );
 }
+
 

@@ -1,13 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
-import { EditNoteModal } from '../../components/EditNoteModal';
-import { deleteNote, saveNote, toggleStar } from '../../storage/notesStorage';
+import { deleteNote, toggleStar } from '../../storage/notesStorage';
 import type { Note } from '../../types/note';
 import { noteToSnippetItem } from '../../utils/noteHelpers';
 import type { SnippetViewMode } from '../types/dashboard.types';
 import { GridIcon, ListIcon } from './icons';
 import { SnippetCard } from './SnippetCard';
+import { SnippetListRow } from './SnippetListRow';
 
 interface SnippetGridProps {
   notes: Note[];
@@ -27,7 +27,6 @@ export function SnippetGrid({
   onOpenDetail,
 }: SnippetGridProps): ReactElement {
   const [viewMode, setViewMode] = useState<SnippetViewMode>('grid');
-  const [editNoteId, setEditNoteId] = useState<string | null>(null);
   const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
 
   const totalCount = notes.length;
@@ -35,11 +34,6 @@ export function SnippetGrid({
   const snippets = useMemo(
     () => notes.map((note) => noteToSnippetItem(note)),
     [notes],
-  );
-
-  const noteToEdit = useMemo(
-    () => notes.find((note) => note.id === editNoteId) ?? null,
-    [editNoteId, notes],
   );
 
   const noteToDelete = useMemo(
@@ -59,11 +53,6 @@ export function SnippetGrid({
     void deleteNote(deleteNoteId);
     setDeleteNoteId(null);
   }, [deleteNoteId]);
-
-  const handleSaveEdit = useCallback((updatedNote: Note): void => {
-    void saveNote(updatedNote);
-    setEditNoteId(null);
-  }, []);
 
   return (
     <section>
@@ -117,20 +106,30 @@ export function SnippetGrid({
           className={
             viewMode === 'grid'
               ? 'grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-2'
-              : 'flex flex-col gap-4'
+              : 'flex flex-col gap-2'
           }
         >
-          {snippets.map((snippet) => (
-            <SnippetCard
-              key={snippet.id}
-              isHighlighted={highlightedNoteId === snippet.id}
-              onOpenDetail={onOpenDetail}
-              onRequestDelete={setDeleteNoteId}
-              onRequestEdit={setEditNoteId}
-              onToggleStar={handleToggleStar}
-              snippet={snippet}
-            />
-          ))}
+          {snippets.map((snippet) =>
+            viewMode === 'grid' ? (
+              <SnippetCard
+                key={snippet.id}
+                isHighlighted={highlightedNoteId === snippet.id}
+                onOpenDetail={onOpenDetail}
+                onRequestDelete={setDeleteNoteId}
+                onToggleStar={handleToggleStar}
+                snippet={snippet}
+              />
+            ) : (
+              <SnippetListRow
+                key={snippet.id}
+                isHighlighted={highlightedNoteId === snippet.id}
+                onOpenDetail={onOpenDetail}
+                onRequestDelete={setDeleteNoteId}
+                onToggleStar={handleToggleStar}
+                snippet={snippet}
+              />
+            ),
+          )}
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-[#1c1c20] bg-[#141417] p-10 text-center">
@@ -142,13 +141,6 @@ export function SnippetGrid({
           </p>
         </div>
       )}
-
-      <EditNoteModal
-        isOpen={editNoteId !== null}
-        note={noteToEdit}
-        onClose={() => setEditNoteId(null)}
-        onSave={handleSaveEdit}
-      />
 
       <ConfirmDeleteModal
         isOpen={deleteNoteId !== null}

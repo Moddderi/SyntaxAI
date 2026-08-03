@@ -1,18 +1,11 @@
-import type { LanguageFilterId } from '../sidepanel/types/capture.types';
 import type { TechnologyNavItem, SnippetItem, StatCardItem } from '../dashboard/types/dashboard.types';
 import type { DetectedNote } from '../sidepanel/types/capture.types';
 import type { Note, NoteSourceType } from '../types/note';
 import { formatTechnologyLabel, resolveDeviconSlug } from './techIcon';
 
-const LANGUAGE_FILTER_MAP: Record<string, LanguageFilterId> = {
-  typescript: 'ts',
-  python: 'py',
-  go: 'go',
-  postgresql: 'sql',
-  rust: 'rs',
-};
-
 const RECENT_DAYS = 7;
+const AI_CREDITS_TOTAL = 1000;
+const AI_CREDITS_REMAINING = 847;
 
 function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -63,6 +56,16 @@ export function getCodePreview(code: string): string {
   return firstLine.trim();
 }
 
+export function getNotePreviewLine(summary: string | undefined, code: string): string {
+  const trimmedSummary = summary?.trim();
+
+  if (trimmedSummary) {
+    return trimmedSummary;
+  }
+
+  return getCodePreview(code);
+}
+
 export function formatNoteDate(isoDate: string): string {
   return new Intl.DateTimeFormat('ru-RU', {
     day: 'numeric',
@@ -87,14 +90,11 @@ export function noteToSnippetItem(note: Note): SnippetItem {
     code: note.code,
     updatedAt: formatRelativeTime(note.createdAt),
     codePreview: getCodePreview(note.code),
+    summary: note.summary,
+    previewLine: getNotePreviewLine(note.summary, note.code),
     topics: note.topics,
     isStarred: note.isStarred,
   };
-}
-
-export function noteLanguageToFilterId(language: string): LanguageFilterId {
-  const slug = resolveDeviconSlug(language);
-  return LANGUAGE_FILTER_MAP[slug] ?? 'all';
 }
 
 export function buildNoteFromCapture(
@@ -134,6 +134,10 @@ export function computeStatCards(notes: Note[]): StatCardItem[] {
     notes.map((note) => resolveDeviconSlug(note.primaryTech)),
   ).size;
 
+  const topTechnologies = computeTechnologyNavItems(notes)
+    .slice(0, 3)
+    .map((item) => item.tech);
+
   return [
     {
       id: 'total-notes',
@@ -146,6 +150,7 @@ export function computeStatCards(notes: Note[]): StatCardItem[] {
       label: 'Technologies',
       value: String(uniqueTechnologies),
       hint: 'across your stack',
+      topTechnologies,
     },
     {
       id: 'notes-today',
@@ -156,8 +161,12 @@ export function computeStatCards(notes: Note[]): StatCardItem[] {
     {
       id: 'ai-credits',
       label: 'AI Credits',
-      value: '847',
-      hint: 'credits remaining',
+      value: String(AI_CREDITS_REMAINING),
+      hint: `${AI_CREDITS_REMAINING} of ${AI_CREDITS_TOTAL} credits remaining`,
+      progress: {
+        current: AI_CREDITS_REMAINING,
+        total: AI_CREDITS_TOTAL,
+      },
     },
   ];
 }
