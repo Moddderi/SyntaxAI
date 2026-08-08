@@ -26,3 +26,87 @@ html,
 .animate-fade-in {
   animation: fade-in 0.35s ease-out;
 }
+
+@keyframes tech-scan {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes tech-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.92);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes tech-reveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+
+  60% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes tech-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes detect-skeleton {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-tech-scan {
+  animation: tech-scan 1.6s ease-in-out infinite;
+}
+
+.animate-tech-pulse {
+  animation: tech-pulse 1.2s ease-in-out infinite;
+}
+
+.animate-tech-reveal {
+  animation: tech-reveal 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.animate-tech-shimmer {
+  animation: tech-shimmer 1.8s ease-in-out infinite;
+}
+
+.animate-detect-skeleton {
+  animation: detect-skeleton 1.4s ease-in-out infinite;
+}

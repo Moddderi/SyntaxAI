@@ -8,6 +8,7 @@ export interface Note {
   language: string;
   topics: string[];
   summary?: string;
+  body?: string;
   sourceUrl?: string;
   createdAt: string;
   isStarred: boolean;

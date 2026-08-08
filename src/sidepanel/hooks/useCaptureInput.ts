@@ -8,6 +8,7 @@ interface UseCaptureInputResult {
   pastedImages: PastedImage[];
   removeImage: (id: string) => void;
   reset: () => void;
+  clearImages: () => void;
   isDragging: boolean;
   handleDragOver: (event: DragEvent<HTMLElement>) => void;
   handleDragLeave: (event: DragEvent<HTMLElement>) => void;
@@ -100,6 +101,16 @@ export function useCaptureInput(): UseCaptureInputResult {
     setIsDragging(false);
   }, []);
 
+  const clearImages = useCallback(() => {
+    setPastedImages((previous) => {
+      previous.forEach((image) => {
+        URL.revokeObjectURL(image.previewUrl);
+      });
+      return [];
+    });
+    setIsDragging(false);
+  }, []);
+
   useEffect(() => {
     return () => {
       pastedImagesRef.current.forEach((image) => {
@@ -158,6 +169,7 @@ export function useCaptureInput(): UseCaptureInputResult {
     pastedImages,
     removeImage,
     reset,
+    clearImages,
     isDragging,
     handleDragOver,
     handleDragLeave,

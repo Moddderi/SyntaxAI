@@ -56,11 +56,25 @@ export function getCodePreview(code: string): string {
   return firstLine.trim();
 }
 
-export function getNotePreviewLine(summary: string | undefined, code: string): string {
+export function getNotePreviewLine(
+  summary: string | undefined,
+  code: string,
+  body?: string,
+): string {
   const trimmedSummary = summary?.trim();
 
   if (trimmedSummary) {
     return trimmedSummary;
+  }
+
+  const trimmedBody = body?.trim();
+
+  if (trimmedBody) {
+    const firstParagraph =
+      trimmedBody.split('\n\n').find((paragraph) => paragraph.trim().length > 0) ??
+      trimmedBody;
+
+    return firstParagraph.replace(/^#+\s*/, '').trim();
   }
 
   return getCodePreview(code);
@@ -91,7 +105,7 @@ export function noteToSnippetItem(note: Note): SnippetItem {
     updatedAt: formatRelativeTime(note.createdAt),
     codePreview: getCodePreview(note.code),
     summary: note.summary,
-    previewLine: getNotePreviewLine(note.summary, note.code),
+    previewLine: getNotePreviewLine(note.summary, note.code, note.body),
     topics: note.topics,
     isStarred: note.isStarred,
   };
@@ -101,7 +115,11 @@ export function buildNoteFromCapture(
   code: string,
   detected: DetectedNote,
   sourceType: NoteSourceType = 'code',
+  sourceUrl?: string,
+  body?: string,
 ): Note {
+  const resolvedBody = body?.trim() || undefined;
+
   return {
     id: crypto.randomUUID(),
     title: detected.title,
@@ -110,6 +128,8 @@ export function buildNoteFromCapture(
     language: resolveDeviconSlug(detected.language),
     topics: detected.topics,
     summary: detected.summary?.trim() || undefined,
+    body: resolvedBody,
+    sourceUrl: sourceUrl?.trim() || undefined,
     createdAt: new Date().toISOString(),
     isStarred: false,
     isDeleted: false,

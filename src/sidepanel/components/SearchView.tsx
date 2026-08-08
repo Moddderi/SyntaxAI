@@ -174,7 +174,7 @@ export function SearchView({
         code: note.code,
         codePreview: getCodePreview(note.code),
         summary: note.summary,
-        previewLine: getNotePreviewLine(note.summary, note.code),
+        previewLine: getNotePreviewLine(note.summary, note.code, note.body),
         topics: note.topics,
       })),
     [notes],

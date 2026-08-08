@@ -1,7 +1,6 @@
 import type { ReactElement } from 'react';
-import { TechIcon } from '../../components/TechIcon';
+import { DetectionStatus, TechDetectionIndicator } from '../../components/TechDetectionIndicator';
 import { formatTopicLabel } from '../../utils/noteHelpers';
-import { getTechAbbreviation, resolveDeviconSlug } from '../../utils/techIcon';
 import type { DetectedNote } from '../types/capture.types';
 
 interface DetectedNoteBlockProps {
@@ -10,15 +9,7 @@ interface DetectedNoteBlockProps {
   isAnalyzing: boolean;
   error: string | null;
   onTitleChange: (title: string) => void;
-}
-
-function AnalysisSpinner(): ReactElement {
-  return (
-    <div
-      aria-hidden="true"
-      className="h-5 w-5 animate-spin rounded-full border-2 border-syntax-border border-t-syntax-accent"
-    />
-  );
+  sourceUrl?: string;
 }
 
 export function DetectedNoteBlock({
@@ -27,11 +18,10 @@ export function DetectedNoteBlock({
   isAnalyzing,
   error,
   onTitleChange,
+  sourceUrl,
 }: DetectedNoteBlockProps): ReactElement {
-  const primaryTechSlug = note ? resolveDeviconSlug(note.primaryTech) : 'typescript';
-  const languageBadge = note
-    ? getTechAbbreviation(note.language)
-    : getTechAbbreviation('typescript');
+  const hasTech = Boolean(note?.primaryTech && note?.language);
+  const detectedNote = note;
 
   return (
     <section className="rounded-2xl border border-syntax-border bg-syntax-card p-4">
@@ -40,12 +30,11 @@ export function DetectedNoteBlock({
           DETECTED NOTE
         </h2>
 
-        {isAnalyzing ? (
-          <div className="flex items-center gap-2 text-[10px] text-gray-400">
-            <AnalysisSpinner />
-            Analyzing…
-          </div>
-        ) : null}
+        <DetectionStatus
+          isAnalyzing={isAnalyzing}
+          isConfirmed={Boolean(note)}
+          label="Detecting…"
+        />
       </div>
 
       {error ? (
@@ -60,36 +49,41 @@ export function DetectedNoteBlock({
         </p>
       ) : (
         <div className="flex items-start gap-3">
-          <div className="flex flex-col items-center gap-1.5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-syntax-border bg-syntax-bg">
-              {note ? (
-                <TechIcon size="md" tech={primaryTechSlug} />
-              ) : (
-                <span className="text-[11px] font-bold text-syntax-accent">
-                  {languageBadge}
-                </span>
-              )}
-            </div>
-            {note ? (
-              <span className="rounded-md border border-syntax-border bg-syntax-bg px-1.5 py-0.5 text-[9px] font-semibold text-gray-400">
-                {languageBadge}
-              </span>
-            ) : null}
-          </div>
+          <TechDetectionIndicator
+            cardBackgroundClass="border-syntax-card bg-syntax-card"
+            isAnalyzing={isAnalyzing}
+            isConfirmed={Boolean(note)}
+            language={hasTech && detectedNote ? detectedNote.language : null}
+            primaryTech={hasTech && detectedNote ? detectedNote.primaryTech : null}
+            size="md"
+          />
 
           <div className="min-w-0 flex-1">
-            <input
-              aria-label="Detected note title"
-              className="w-full truncate rounded-lg border border-transparent bg-transparent px-0 py-0.5 text-sm font-medium text-white outline-none transition placeholder:text-gray-500 focus:border-syntax-accent/30 focus:bg-syntax-bg focus:px-2"
-              disabled={!note && isAnalyzing}
-              onChange={(event) => onTitleChange(event.target.value)}
-              placeholder={isAnalyzing ? 'Detecting title…' : 'Note title'}
-              type="text"
-              value={title}
-            />
+            {isAnalyzing && !note ? (
+              <div className="space-y-2 py-1">
+                <div className="h-4 w-3/4 animate-detect-skeleton rounded-md bg-[#1c1c20]" />
+                <div className="h-3 w-1/2 animate-detect-skeleton rounded-md bg-[#1c1c20]" />
+              </div>
+            ) : (
+              <input
+                aria-label="Detected note title"
+                className="w-full truncate rounded-lg border border-transparent bg-transparent px-0 py-0.5 text-sm font-medium text-white outline-none transition placeholder:text-gray-500 focus:border-syntax-accent/30 focus:bg-syntax-bg focus:px-2"
+                onChange={(event) => onTitleChange(event.target.value)}
+                placeholder={isAnalyzing ? 'Detecting title…' : 'Note title'}
+                type="text"
+                value={title}
+              />
+            )}
+
+            {isAnalyzing && !note ? (
+              <div className="mt-3 flex gap-2">
+                <span className="h-6 w-16 animate-detect-skeleton rounded-full bg-[#1c1c20]" />
+                <span className="h-6 w-20 animate-detect-skeleton rounded-full bg-[#1c1c20]" />
+              </div>
+            ) : null}
 
             {note && note.topics.length > 0 ? (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
+              <div className="mt-3 flex flex-wrap items-center gap-2 animate-fade-in">
                 {note.topics.map((topic) => (
                   <span
                     key={topic}
@@ -99,6 +93,21 @@ export function DetectedNoteBlock({
                   </span>
                 ))}
               </div>
+            ) : null}
+
+            {sourceUrl ? (
+              <p className="mt-3 truncate text-[11px] text-gray-500">
+                Source:{' '}
+                <a
+                  className="text-syntax-accent hover:underline"
+                  href={sourceUrl}
+                  onClick={(event) => event.stopPropagation()}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  {sourceUrl}
+                </a>
+              </p>
             ) : null}
           </div>
         </div>

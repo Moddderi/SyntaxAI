@@ -24,8 +24,24 @@
     "service_worker": "background.js",
     "type": "module"
   },
-  "permissions": ["sidePanel", "storage", "tabs"],
-  "host_permissions": ["https://api.openai.com/*"],
+  "permissions": ["sidePanel", "storage", "tabs", "scripting", "activeTab", "contextMenus"],
+  "host_permissions": ["https://api.openai.com/*", "<all_urls>"],
+  "commands": {
+    "capture-context": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Capture selected text and page context into SyntaxAI"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/contentScript.js"],
+      "run_at": "document_idle"
+    }
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' data: https://cdn.jsdelivr.net;"
   }

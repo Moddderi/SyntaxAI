@@ -26,11 +26,16 @@ export default defineConfig({
         sidepanel: resolve(__dirname, 'src/sidepanel/index.html'),
         dashboard: resolve(__dirname, 'src/dashboard/index.html'),
         background: resolve(__dirname, 'src/background/background.ts'),
+        contentScript: resolve(__dirname, 'src/content/contentScript.ts'),
       },
       output: {
         entryFileNames: (chunkInfo) => {
           if (chunkInfo.name === 'background') {
             return 'background.js';
+          }
+
+          if (chunkInfo.name === 'contentScript') {
+            return 'content/contentScript.js';
           }
 
           return 'assets/[name]-[hash].js';

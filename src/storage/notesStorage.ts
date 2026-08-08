@@ -84,6 +84,7 @@ function normalizeNote(raw: Record<string, unknown>): Note | null {
     language,
     topics,
     summary: typeof raw.summary === 'string' ? raw.summary.trim() : undefined,
+    body: typeof raw.body === 'string' ? raw.body.trim() : undefined,
     sourceUrl: typeof raw.sourceUrl === 'string' ? raw.sourceUrl.trim() : undefined,
     createdAt: raw.createdAt,
     isStarred: raw.isStarred,
