@@ -1,10 +1,6 @@
 import type { MixedContentAnalysisResult, PageContext } from '../types/context';
-import {
-  resolveBaseLanguage,
-  resolvePrimaryTechnology,
-} from '../utils/techDetection';
-import { resolveDeviconSlug } from '../utils/techIcon';
-import { getOpenAiApiKey } from './apiKeyStorage';
+import { resolveNoteTechnology } from '../utils/pageContextTechDetection';
+import { getOpenAiApiKey, OPENAI_API_KEY_ENV_HINT } from './apiKeyStorage';
 import { AiServiceError, normalizeTopics } from './aiService';
 
 const OPENAI_CHAT_COMPLETIONS_URL = 'https://api.openai.com/v1/chat/completions';
@@ -123,30 +119,31 @@ function normalizeMixedContentResult(
 ): MixedContentAnalysisResult {
   const primaryCode = raw.primaryCode.trim();
   const formattedNote = raw.formattedNote.trim();
-  const detectionSource = primaryCode || pageContext.rawContent;
-  const aiLanguage = resolveDeviconSlug(raw.language.trim().toLowerCase());
-  const primaryTech = resolvePrimaryTechnology(detectionSource, aiLanguage);
-  const language = resolveBaseLanguage(detectionSource, primaryTech, aiLanguage);
+  const resolvedTech = resolveNoteTechnology({
+    title: raw.suggestedTitle,
+    code: primaryCode,
+    body: formattedNote,
+    sourceUrl: pageContext.url,
+    language: raw.language.trim().toLowerCase(),
+  });
 
   return {
     suggestedTitle: raw.suggestedTitle.trim(),
     formattedNote,
     primaryCode,
-    language,
+    language: resolvedTech.language,
     tags: normalizeTopics(raw.tags),
-    primaryTech,
+    primaryTech: resolvedTech.primaryTech,
   };
 }
 
 export async function analyzeMixedPageContextWithAI(
   pageContext: PageContext,
 ): Promise<MixedContentAnalysisResult> {
-  const apiKey = await getOpenAiApiKey();
+  const apiKey = getOpenAiApiKey();
 
   if (!apiKey) {
-    throw new AiServiceError(
-      'OpenAI API key is missing. Add it in SyntaxAI Settings.',
-    );
+    throw new AiServiceError(`OpenAI API key is missing. ${OPENAI_API_KEY_ENV_HINT}`);
   }
 
   const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {

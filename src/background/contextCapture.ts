@@ -22,6 +22,12 @@ function isRestrictedUrl(url: string | undefined): boolean {
   );
 }
 
+function openSidePanelForTab(tabId: number): void {
+  void chrome.sidePanel.open({ tabId }).catch((error: unknown) => {
+    console.error('[SyntaxAI] Failed to open side panel:', error);
+  });
+}
+
 async function requestPageContext(tabId: number): Promise<GetPageContextResponse> {
   try {
     return await chrome.tabs.sendMessage(tabId, {
@@ -104,52 +110,50 @@ async function resolvePageContextFromTab(
   return null;
 }
 
-async function captureAndOpenSidePanel(
-  pageContext: PageContext,
-  tabId: number,
+async function finishContextCapture(
+  tab: chrome.tabs.Tab,
+  fallbackSelection?: string,
 ): Promise<void> {
-  await setPendingContextCapture(pageContext);
-
-  try {
-    await chrome.sidePanel.open({ tabId });
-  } catch (error: unknown) {
-    console.error('[SyntaxAI] Failed to open side panel:', error);
-  }
-}
-
-export async function handleContextCaptureCommand(): Promise<void> {
-  const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-  if (!activeTab?.id) {
-    return;
-  }
-
-  const pageContext = await resolvePageContextFromTab(activeTab);
-
-  if (!pageContext) {
-    console.warn('[SyntaxAI] Select code or text on the page before capturing context.');
-    return;
-  }
-
-  await captureAndOpenSidePanel(pageContext, activeTab.id);
-}
-
-async function handleContextMenuCapture(
-  info: chrome.contextMenus.OnClickData,
-  tab: chrome.tabs.Tab | undefined,
-): Promise<void> {
-  if (!tab?.id) {
-    return;
-  }
-
-  const pageContext = await resolvePageContextFromTab(tab, info.selectionText?.trim());
+  const pageContext = await resolvePageContextFromTab(tab, fallbackSelection);
 
   if (!pageContext) {
     console.warn('[SyntaxAI] Context capture is unavailable on this page.');
     return;
   }
 
-  await captureAndOpenSidePanel(pageContext, tab.id);
+  await setPendingContextCapture(pageContext);
+}
+
+function startContextCapture(tab: chrome.tabs.Tab, fallbackSelection?: string): void {
+  if (!tab.id) {
+    return;
+  }
+
+  openSidePanelForTab(tab.id);
+  void finishContextCapture(tab, fallbackSelection);
+}
+
+export function handleContextCaptureCommand(): void {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const activeTab = tabs[0];
+
+    if (!activeTab) {
+      return;
+    }
+
+    startContextCapture(activeTab);
+  });
+}
+
+function handleContextMenuCapture(
+  info: chrome.contextMenus.OnClickData,
+  tab: chrome.tabs.Tab | undefined,
+): void {
+  if (!tab?.id) {
+    return;
+  }
+
+  startContextCapture(tab, info.selectionText?.trim());
 }
 
 export async function ensureContextCaptureMenu(): Promise<void> {
@@ -168,7 +172,7 @@ export function registerContextCaptureListeners(): void {
       return;
     }
 
-    void handleContextCaptureCommand();
+    handleContextCaptureCommand();
   });
 
   chrome.contextMenus.onClicked.addListener((info, tab) => {
@@ -176,6 +180,6 @@ export function registerContextCaptureListeners(): void {
       return;
     }
 
-    void handleContextMenuCapture(info, tab);
+    handleContextMenuCapture(info, tab);
   });
 }

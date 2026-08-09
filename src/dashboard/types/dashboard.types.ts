@@ -15,18 +15,6 @@ export interface TechnologyNavItem {
 /** @deprecated Use TechnologyNavItem */
 export type LanguageNavItem = TechnologyNavItem;
 
-export interface StatCardItem {
-  id: string;
-  label: string;
-  value: string;
-  hint: string;
-  progress?: {
-    current: number;
-    total: number;
-  };
-  topTechnologies?: string[];
-}
-
 export interface SnippetItem {
   id: string;
   title: string;

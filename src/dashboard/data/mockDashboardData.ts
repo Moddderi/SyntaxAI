@@ -2,7 +2,6 @@ import type {
   LanguageNavItem,
   LibraryNavItem,
   SnippetItem,
-  StatCardItem,
 } from '../types/dashboard.types';
 
 export const LIBRARY_NAV_ITEMS: LibraryNavItem[] = [
@@ -21,33 +20,6 @@ export const LANGUAGE_NAV_ITEMS: LanguageNavItem[] = [
   { id: 'docker', label: 'Docker', tech: 'docker', count: 1 },
   { id: 'react', label: 'React', tech: 'react', count: 2 },
   { id: 'tailwind', label: 'Tailwind', tech: 'tailwindcss', count: 1 },
-];
-
-export const STAT_CARDS: StatCardItem[] = [
-  {
-    id: 'total-notes',
-    label: 'Total Notes',
-    value: '9',
-    hint: '+2 this week',
-  },
-  {
-    id: 'technologies',
-    label: 'Technologies',
-    value: '8',
-    hint: 'across your stack',
-  },
-  {
-    id: 'notes-today',
-    label: 'Notes Today',
-    value: '3',
-    hint: 'active note day',
-  },
-  {
-    id: 'ai-credits',
-    label: 'AI Credits',
-    value: '847',
-    hint: 'credits remaining',
-  },
 ];
 
 export const SNIPPET_ITEMS: SnippetItem[] = [

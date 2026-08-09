@@ -46,7 +46,11 @@ export function SnippetListRow({
 
       <div className="min-w-0 flex-1">
         <h3 className="truncate text-sm font-semibold text-white">{snippet.title}</h3>
-        <p className="mt-0.5 truncate text-xs text-zinc-400">{snippet.previewLine}</p>
+        {snippet.previewLine.trim() ? (
+          <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-zinc-400">
+            {snippet.previewLine}
+          </p>
+        ) : null}
       </div>
 
       {snippet.topics.length > 0 ? (

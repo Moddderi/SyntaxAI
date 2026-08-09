@@ -1,6 +1,8 @@
-import type { ReactElement } from 'react';
-import { CodeBlock } from './CodeBlock';
-import { DetectionStatus, TechDetectionIndicator } from './TechDetectionIndicator';
+import { useEffect, useState, type ReactElement } from 'react';
+import { AnalyzingBadge, CaptureSectionHeader, SectionEditButton } from './CaptureSectionHeader';
+import { CodeCapturePanel } from './CodeCapturePanel';
+import { ContextCapturePanel } from './ContextCapturePanel';
+import { DetectionConfirmedBadge, TechDetectionIndicator } from './TechDetectionIndicator';
 import { formatTopicLabel } from '../utils/noteHelpers';
 
 export interface NoteFormValues {
@@ -16,6 +18,7 @@ interface NoteFormProps {
   values: NoteFormValues;
   isAnalyzing: boolean;
   isTechConfirmed?: boolean;
+  showContextBody?: boolean;
   error: string | null;
   sourceUrl?: string;
   onTitleChange: (value: string) => void;
@@ -28,6 +31,7 @@ export function NoteForm({
   values,
   isAnalyzing,
   isTechConfirmed = false,
+  showContextBody = true,
   error,
   sourceUrl,
   onTitleChange,
@@ -36,25 +40,40 @@ export function NoteForm({
   onCancel,
 }: NoteFormProps): ReactElement {
   const hasTech = Boolean(values.primaryTech && values.language);
+  const [isContextEditing, setIsContextEditing] = useState(false);
+  const [isCodeEditing, setIsCodeEditing] = useState(false);
+
+  useEffect(() => {
+    if (isAnalyzing) {
+      setIsContextEditing(false);
+      setIsCodeEditing(false);
+    }
+  }, [isAnalyzing]);
+
+  const showContextPreview =
+    showContextBody && !isAnalyzing && Boolean(values.noteBody.trim()) && !isContextEditing;
+  const showCodePreview = !isAnalyzing && Boolean(values.code.trim()) && !isCodeEditing;
 
   return (
     <section className="animate-fade-in rounded-2xl border border-[#1c1c20] bg-[#141417] p-4">
       <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#00eaff]">
             Context Capture
           </h2>
           <p className="mt-1 text-xs text-gray-500">
-            Captured selection with rules and code. Edit before saving.
+            {showContextBody
+              ? 'Captured selection with rules and code. Edit before saving.'
+              : 'Code-only capture mode. Title and code will be saved without page description.'}
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <DetectionStatus
-            isAnalyzing={isAnalyzing}
-            isConfirmed={isTechConfirmed}
-            label="AI analyzing…"
-          />
+        <div className="flex shrink-0 items-center gap-2">
+          {isAnalyzing ? (
+            <AnalyzingBadge />
+          ) : isTechConfirmed ? (
+            <DetectionConfirmedBadge />
+          ) : null}
 
           {onCancel ? (
             <button
@@ -89,17 +108,10 @@ export function NoteForm({
             aria-label="Note title"
             className="w-full rounded-xl border border-[#1c1c20] bg-[#0d0d0f] px-3 py-2 text-sm font-medium text-white outline-none transition placeholder:text-gray-500 focus:border-[#00eaff]/40"
             onChange={(event) => onTitleChange(event.target.value)}
-            placeholder={isAnalyzing ? 'Detecting title…' : 'Note title'}
+            placeholder="Note title"
             type="text"
             value={values.title}
           />
-
-          {isAnalyzing && values.tags.length === 0 ? (
-            <div className="mt-3 flex gap-2">
-              <span className="h-6 w-16 animate-detect-skeleton rounded-full bg-[#1c1c20]" />
-              <span className="h-6 w-20 animate-detect-skeleton rounded-full bg-[#1c1c20]" />
-            </div>
-          ) : null}
 
           {values.tags.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-2 animate-fade-in">
@@ -131,44 +143,54 @@ export function NoteForm({
       </div>
 
       <div className="space-y-4">
-        <label className="block">
-          <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">
-            Note Body / Context
-          </span>
-          <textarea
-            aria-label="Note body"
-            className="min-h-[160px] w-full resize-y rounded-xl border border-[#1c1c20] bg-[#0d0d0f] px-3 py-3 font-mono text-xs leading-relaxed text-gray-300 outline-none transition placeholder:text-gray-500 focus:border-[#00eaff]/40"
-            onChange={(event) => onNoteBodyChange(event.target.value)}
-            placeholder="Rules, documentation, bullet points, and descriptions…"
-            value={values.noteBody}
-          />
-        </label>
+        {showContextBody ? (
+          <section>
+            <CaptureSectionHeader
+              action={
+                showContextPreview ? (
+                  <SectionEditButton
+                    label="Edit context"
+                    onClick={() => setIsContextEditing(true)}
+                  />
+                ) : isContextEditing ? (
+                  <SectionEditButton
+                    label="Show preview"
+                    onClick={() => setIsContextEditing(false)}
+                  />
+                ) : null
+              }
+              title="Note Body / Context"
+            />
 
-        <label className="block">
-          <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">
-            Code Block
-          </span>
-          <textarea
-            aria-label="Code block"
-            className="min-h-[140px] w-full resize-y rounded-xl border border-[#1c1c20] bg-[#1a1b1e] px-3 py-3 font-mono text-xs leading-relaxed text-gray-200 outline-none transition placeholder:text-gray-500 focus:border-[#00eaff]/40"
-            onChange={(event) => onCodeChange(event.target.value)}
-            placeholder="Primary code snippet…"
-            spellCheck={false}
-            value={values.code}
+            <ContextCapturePanel
+              content={values.noteBody}
+              isAnalyzing={isAnalyzing}
+              isEditing={isContextEditing}
+              onContentChange={onNoteBodyChange}
+            />
+          </section>
+        ) : null}
+
+        <section>
+          <CaptureSectionHeader
+            action={
+              showCodePreview ? (
+                <SectionEditButton label="Edit code" onClick={() => setIsCodeEditing(true)} />
+              ) : isCodeEditing ? (
+                <SectionEditButton label="Show preview" onClick={() => setIsCodeEditing(false)} />
+              ) : null
+            }
+            title="Code Block"
           />
 
-          {values.code.trim() ? (
-            <div className="mt-3 animate-fade-in">
-              <CodeBlock
-                code={values.code}
-                language={values.language}
-                maxLines={6}
-                showLanguageLabel
-                size="sm"
-              />
-            </div>
-          ) : null}
-        </label>
+          <CodeCapturePanel
+            code={values.code}
+            isAnalyzing={isAnalyzing}
+            isEditing={isCodeEditing}
+            language={values.language}
+            onCodeChange={onCodeChange}
+          />
+        </section>
       </div>
     </section>
   );

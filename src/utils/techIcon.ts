@@ -35,6 +35,8 @@ const TECH_ALIASES: Record<string, string> = {
   nestjs: 'nestjs',
   nest: 'nestjs',
   prisma: 'prisma',
+  zod: 'zod',
+  zustand: 'zustand',
   express: 'express',
   node: 'nodejs',
   nodejs: 'nodejs',
@@ -87,11 +89,24 @@ const TECH_ABBREVIATIONS: Record<string, string> = {
   flask: 'FLK',
   nestjs: 'NST',
   prisma: 'PRM',
+  zod: 'ZOD',
+  zustand: 'ZST',
   graphql: 'GQL',
   kubernetes: 'K8S',
   mongodb: 'MDB',
   angular: 'ANG',
   svelte: 'SVL',
+};
+
+const CUSTOM_TECH_ICON_URLS: Record<string, string[]> = {
+  zod: [
+    'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/zod.svg',
+    'https://cdn.jsdelivr.net/npm/simple-icons@11.14.0/icons/zod.svg',
+  ],
+  zustand: [
+    'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/zustand.svg',
+    'https://cdn.jsdelivr.net/npm/simple-icons@11.14.0/icons/zustand.svg',
+  ],
 };
 
 const DEVICON_ICON_VARIANTS: Record<string, 'original' | 'plain'> = {
@@ -127,10 +142,12 @@ export function getDeviconUrlCandidates(
 ): string[] {
   const slug =
     variant === 'language' ? resolveLanguageDeviconSlug(tech) : resolveDeviconSlug(tech);
+  const customUrls = CUSTOM_TECH_ICON_URLS[slug] ?? [];
   const preferred = DEVICON_ICON_VARIANTS[slug] ?? 'original';
   const alternate: 'original' | 'plain' = preferred === 'original' ? 'plain' : 'original';
 
   return [
+    ...customUrls,
     buildDeviconUrlForSlug(slug, preferred),
     buildDeviconUrlForSlug(slug, alternate),
   ];
@@ -224,6 +241,8 @@ const TECHNOLOGY_LABELS: Record<string, string> = {
   flask: 'Flask',
   nestjs: 'NestJS',
   prisma: 'Prisma',
+  zod: 'Zod',
+  zustand: 'Zustand',
   express: 'Express',
   docker: 'Docker',
   kubernetes: 'Kubernetes',
@@ -262,6 +281,8 @@ const TECH_BRAND_COLORS: Record<string, string> = {
   flask: '#3CAA3D',
   nestjs: '#E0234E',
   prisma: '#71E8DF',
+  zod: '#3E67B1',
+  zustand: '#443F38',
   express: '#90A4AE',
   tailwindcss: '#06B6D4',
   docker: '#2496ED',

@@ -18,7 +18,10 @@ export function NestedTechIcons({
   const showNestedLanguage = shouldNestLanguageIcon(primaryTech, language);
   const primarySize = size === 'lg' ? 'xl' : 'lg';
   const nestedSize = size === 'lg' ? 'sm' : 'xs';
-  const nestedOffset = size === 'lg' ? 'bottom-[-8px] right-[-8px]' : 'bottom-[-6px] right-[-6px]';
+  const nestedClass =
+    size === 'lg'
+      ? 'absolute -bottom-1.5 -right-1.5 flex h-6 w-6 items-center justify-center'
+      : 'absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center';
 
   if (!showNestedLanguage) {
     return (
@@ -32,7 +35,7 @@ export function NestedTechIcons({
     <div className="relative flex-shrink-0">
       <TechIcon className="rounded-lg" size={primarySize} tech={primaryTech} />
       <div
-        className={`absolute ${nestedOffset} overflow-hidden rounded-full border-2 ${cardBackgroundClass}`}
+        className={`${nestedClass} overflow-hidden rounded-full border-2 ${cardBackgroundClass}`}
       >
         <TechIcon size={nestedSize} tech={language} variant="language" />
       </div>

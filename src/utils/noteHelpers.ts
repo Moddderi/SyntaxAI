@@ -1,19 +1,11 @@
-import type { TechnologyNavItem, SnippetItem, StatCardItem } from '../dashboard/types/dashboard.types';
+import type { TechnologyNavItem, SnippetItem } from '../dashboard/types/dashboard.types';
 import type { DetectedNote } from '../sidepanel/types/capture.types';
 import type { Note, NoteSourceType } from '../types/note';
+import { buildPlainTextPreview } from './markdownPreview';
+import { resolveNoteTechnology } from './pageContextTechDetection';
 import { formatTechnologyLabel, resolveDeviconSlug } from './techIcon';
 
 const RECENT_DAYS = 7;
-const AI_CREDITS_TOTAL = 1000;
-const AI_CREDITS_REMAINING = 847;
-
-function startOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function isSameDay(left: Date, right: Date): boolean {
-  return startOfDay(left).getTime() === startOfDay(right).getTime();
-}
 
 export function formatRelativeTime(isoDate: string): string {
   const date = new Date(isoDate);
@@ -61,20 +53,10 @@ export function getNotePreviewLine(
   code: string,
   body?: string,
 ): string {
-  const trimmedSummary = summary?.trim();
+  const preview = buildPlainTextPreview(summary, body);
 
-  if (trimmedSummary) {
-    return trimmedSummary;
-  }
-
-  const trimmedBody = body?.trim();
-
-  if (trimmedBody) {
-    const firstParagraph =
-      trimmedBody.split('\n\n').find((paragraph) => paragraph.trim().length > 0) ??
-      trimmedBody;
-
-    return firstParagraph.replace(/^#+\s*/, '').trim();
+  if (preview) {
+    return preview;
   }
 
   return getCodePreview(code);
@@ -96,11 +78,19 @@ export function formatTopicLabel(topic: string): string {
 }
 
 export function noteToSnippetItem(note: Note): SnippetItem {
+  const resolvedTech = resolveNoteTechnology({
+    title: note.title,
+    code: note.code,
+    body: note.body,
+    sourceUrl: note.sourceUrl,
+    language: note.language,
+  });
+
   return {
     id: note.id,
     title: note.title,
-    primaryTech: resolveDeviconSlug(note.primaryTech),
-    language: resolveDeviconSlug(note.language),
+    primaryTech: resolvedTech.primaryTech,
+    language: resolvedTech.language,
     code: note.code,
     updatedAt: formatRelativeTime(note.createdAt),
     codePreview: getCodePreview(note.code),
@@ -119,13 +109,20 @@ export function buildNoteFromCapture(
   body?: string,
 ): Note {
   const resolvedBody = body?.trim() || undefined;
+  const resolvedTech = resolveNoteTechnology({
+    title: detected.title,
+    code: detected.code || code,
+    body: resolvedBody,
+    sourceUrl,
+    language: detected.language,
+  });
 
   return {
     id: crypto.randomUUID(),
     title: detected.title,
     code: detected.code || code,
-    primaryTech: resolveDeviconSlug(detected.primaryTech),
-    language: resolveDeviconSlug(detected.language),
+    primaryTech: resolvedTech.primaryTech,
+    language: resolvedTech.language,
     topics: detected.topics,
     summary: detected.summary?.trim() || undefined,
     body: resolvedBody,
@@ -135,60 +132,6 @@ export function buildNoteFromCapture(
     isDeleted: false,
     sourceType,
   };
-}
-
-export function computeStatCards(notes: Note[]): StatCardItem[] {
-  const now = new Date();
-  const weekAgo = new Date(now);
-  weekAgo.setDate(weekAgo.getDate() - RECENT_DAYS);
-
-  const notesThisWeek = notes.filter(
-    (note) => new Date(note.createdAt) >= weekAgo,
-  ).length;
-
-  const notesToday = notes.filter((note) =>
-    isSameDay(new Date(note.createdAt), now),
-  ).length;
-
-  const uniqueTechnologies = new Set(
-    notes.map((note) => resolveDeviconSlug(note.primaryTech)),
-  ).size;
-
-  const topTechnologies = computeTechnologyNavItems(notes)
-    .slice(0, 3)
-    .map((item) => item.tech);
-
-  return [
-    {
-      id: 'total-notes',
-      label: 'Total Notes',
-      value: String(notes.length),
-      hint: notesThisWeek > 0 ? `+${notesThisWeek} this week` : 'start adding notes',
-    },
-    {
-      id: 'technologies',
-      label: 'Technologies',
-      value: String(uniqueTechnologies),
-      hint: 'across your stack',
-      topTechnologies,
-    },
-    {
-      id: 'notes-today',
-      label: 'Notes Today',
-      value: String(notesToday),
-      hint: notesToday > 0 ? 'active note day' : 'no notes yet today',
-    },
-    {
-      id: 'ai-credits',
-      label: 'AI Credits',
-      value: String(AI_CREDITS_REMAINING),
-      hint: `${AI_CREDITS_REMAINING} of ${AI_CREDITS_TOTAL} credits remaining`,
-      progress: {
-        current: AI_CREDITS_REMAINING,
-        total: AI_CREDITS_TOTAL,
-      },
-    },
-  ];
 }
 
 export function computeLibraryNavCounts(

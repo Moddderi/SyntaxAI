@@ -25,6 +25,16 @@ const TECH_SIGNAL_RULES: TechSignalRule[] = [
     ],
   },
   {
+    slug: 'zustand',
+    weight: 14,
+    patterns: [
+      /from ['"]zustand['"]/,
+      /from ['"]zustand\//,
+      /\bcreate\s*\(\s*\(?\s*set\s*[,)]/,
+      /\buseStore\s*\(/,
+    ],
+  },
+  {
     slug: 'nextjs',
     weight: 13,
     patterns: [
@@ -117,6 +127,16 @@ const TECH_SIGNAL_RULES: TechSignalRule[] = [
     patterns: [/from ['"]@prisma\/client['"]/, /\bprisma\.\w+\(/, /PrismaClient/],
   },
   {
+    slug: 'zod',
+    weight: 12,
+    patterns: [
+      /from ['"]zod['"]/,
+      /import \* as z from ['"]zod['"]/,
+      /\bz\.(?:string|number|boolean|object|array|enum|union|discriminatedUnion|literal|tuple|record|map|set|date|function|promise|void|null|undefined|any|unknown|never|bigint|nan|symbol|int|float|custom|preprocess|pipe|readonly|coerce|catch|default|describe|brand|transform)\s*\(/,
+      /\bZod(?:Schema|Type|Object|Error|Issue|Effects)\b/,
+    ],
+  },
+  {
     slug: 'tailwindcss',
     weight: 11,
     patterns: [
@@ -187,6 +207,7 @@ const TECH_SIGNAL_RULES: TechSignalRule[] = [
 export const PRIMARY_TECH_SLUGS = [
   'react',
   'redux',
+  'zustand',
   'nextjs',
   'vuejs',
   'angular',
@@ -196,6 +217,7 @@ export const PRIMARY_TECH_SLUGS = [
   'flask',
   'nestjs',
   'prisma',
+  'zod',
   'tailwindcss',
   'docker',
   'kubernetes',
@@ -240,6 +262,7 @@ const BASE_LANGUAGE_SLUGS = new Set([
 const PRIMARY_TO_BASE_LANGUAGE: Record<string, string> = {
   react: 'javascript',
   redux: 'javascript',
+  zustand: 'typescript',
   vuejs: 'javascript',
   svelte: 'javascript',
   angular: 'typescript',
@@ -249,6 +272,7 @@ const PRIMARY_TO_BASE_LANGUAGE: Record<string, string> = {
   express: 'javascript',
   nodejs: 'javascript',
   prisma: 'typescript',
+  zod: 'typescript',
   django: 'python',
   fastapi: 'python',
   flask: 'python',
@@ -324,21 +348,36 @@ function getTopScoredSlug(scores: Map<string, number>): string | null {
   return topScore >= 8 ? topSlug : null;
 }
 
+/** Returns framework/library slug from code/title/body signals — never a base language. */
+export function inferLibraryFromSignals(source: string): string | null {
+  const slug = getTopScoredSlug(scoreTechSignals(source));
+
+  if (!slug || isBaseLanguageSlug(slug)) {
+    return null;
+  }
+
+  return slug;
+}
+
 /**
  * Picks the best primary technology slug for icon display.
  *
- * AI-first: gpt-4o-mini detects ANY stack dynamically — users never configure this.
- * Local heuristics only fix common AI mistakes (e.g. "javascript" for React hooks).
+ * Priority: library/framework signals → non-base AI slug → base language fallback.
  */
 export function resolvePrimaryTechnology(code: string, aiLanguage: string): string {
+  const fromSignals = inferLibraryFromSignals(code);
+
+  if (fromSignals) {
+    return fromSignals;
+  }
+
   const normalizedAi = resolveDeviconSlug(aiLanguage);
 
-  if (!BASE_LANGUAGE_SLUGS.has(normalizedAi)) {
+  if (!isBaseLanguageSlug(normalizedAi)) {
     return normalizedAi;
   }
 
-  const inferredSlug = getTopScoredSlug(scoreTechSignals(code));
-  return inferredSlug ?? normalizedAi;
+  return normalizedAi;
 }
 
 export function buildTechSlugPromptList(): string {

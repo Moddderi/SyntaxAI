@@ -10,6 +10,7 @@ import {
   resolveBaseLanguage,
   resolvePrimaryTechnology,
 } from '../utils/techDetection';
+import { resolveNoteTechnology } from '../utils/pageContextTechDetection';
 import { resolveDeviconSlug } from '../utils/techIcon';
 
 const NOTE_SOURCE_TYPES: NoteSourceType[] = ['code', 'image', 'tab'];
@@ -62,16 +63,31 @@ function normalizeNote(raw: Record<string, unknown>): Note | null {
   }
 
   const code = raw.code;
+  const title = raw.title;
+  const body = typeof raw.body === 'string' ? raw.body.trim() : undefined;
+  const sourceUrl = typeof raw.sourceUrl === 'string' ? raw.sourceUrl.trim() : undefined;
   const storedLanguage =
-    typeof raw.language === 'string' ? resolveDeviconSlug(raw.language) : 'typescript';
+    typeof raw.language === 'string' ? resolveDeviconSlug(raw.language) : 'javascript';
 
-  const primaryTech =
+  const storedPrimaryTech =
     typeof raw.primaryTech === 'string'
       ? resolveDeviconSlug(raw.primaryTech)
       : resolvePrimaryTechnology(code, storedLanguage);
 
+  const resolvedTech = resolveNoteTechnology({
+    title,
+    code,
+    body,
+    sourceUrl,
+    language: storedLanguage,
+  });
+
+  const shouldUseStoredFramework =
+    storedPrimaryTech !== 'javascript' && storedPrimaryTech !== 'typescript';
+
+  const primaryTech = shouldUseStoredFramework ? storedPrimaryTech : resolvedTech.primaryTech;
   const language = isBaseLanguageSlug(storedLanguage)
-    ? storedLanguage
+    ? resolvedTech.language
     : resolveBaseLanguage(code, primaryTech, storedLanguage);
 
   const topics = migrateLegacyTopics(raw, primaryTech, language);
@@ -84,8 +100,8 @@ function normalizeNote(raw: Record<string, unknown>): Note | null {
     language,
     topics,
     summary: typeof raw.summary === 'string' ? raw.summary.trim() : undefined,
-    body: typeof raw.body === 'string' ? raw.body.trim() : undefined,
-    sourceUrl: typeof raw.sourceUrl === 'string' ? raw.sourceUrl.trim() : undefined,
+    body,
+    sourceUrl,
     createdAt: raw.createdAt,
     isStarred: raw.isStarred,
     isDeleted: raw.isDeleted === true,

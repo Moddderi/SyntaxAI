@@ -1,11 +1,56 @@
-import { useCallback, useEffect, useState, type FormEvent, type ReactElement } from 'react';
+import { useCallback, useEffect, useState, type ReactElement } from 'react';
 import {
-  clearOpenAiApiKey,
   getApiKeyStatus,
   getOpenAiApiKey,
   maskApiKey,
-  saveOpenAiApiKey,
+  OPENAI_API_KEY_ENV_HINT,
 } from '../services/apiKeyStorage';
+import {
+  getCaptureSettings,
+  setIncludeContextDescription,
+} from '../storage/captureSettingsStorage';
+
+interface SettingsToggleProps {
+  checked: boolean;
+  disabled?: boolean;
+  label: string;
+  description: string;
+  onChange: (checked: boolean) => void;
+}
+
+function SettingsToggle({
+  checked,
+  disabled = false,
+  label,
+  description,
+  onChange,
+}: SettingsToggleProps): ReactElement {
+  return (
+    <label className="flex cursor-pointer items-start justify-between gap-4">
+      <span className="min-w-0">
+        <span className="block text-sm font-medium text-white">{label}</span>
+        <span className="mt-1 block text-xs leading-relaxed text-gray-500">{description}</span>
+      </span>
+
+      <button
+        aria-checked={checked}
+        className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition ${
+          checked ? 'bg-[#00eaff]' : 'bg-[#1c1c20]'
+        } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+        disabled={disabled}
+        onClick={() => onChange(!checked)}
+        role="switch"
+        type="button"
+      >
+        <span
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${
+            checked ? 'left-[22px]' : 'left-0.5'
+          }`}
+        />
+      </button>
+    </label>
+  );
+}
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -13,29 +58,27 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps): ReactElement | null {
-  const [apiKeyInput, setApiKeyInput] = useState('');
-  const [savedKeyPreview, setSavedKeyPreview] = useState<string | null>(null);
+  const [keyPreview, setKeyPreview] = useState<string | null>(null);
   const [status, setStatus] = useState<'active' | 'missing'>('missing');
-  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [includeContextDescription, setIncludeContextDescriptionState] = useState(true);
+  const [isCaptureSettingSaving, setIsCaptureSettingSaving] = useState(false);
 
-  const loadSettings = useCallback(async (): Promise<void> => {
-    const [savedKey, keyStatus] = await Promise.all([
-      getOpenAiApiKey(),
-      getApiKeyStatus(),
-    ]);
+  const loadSettings = useCallback((): void => {
+    const apiKey = getOpenAiApiKey();
 
-    setStatus(keyStatus);
-    setSavedKeyPreview(savedKey ? maskApiKey(savedKey) : null);
-    setApiKeyInput('');
+    setStatus(getApiKeyStatus());
+    setKeyPreview(apiKey ? maskApiKey(apiKey) : null);
     setError(null);
-    setSuccessMessage(null);
+
+    void getCaptureSettings().then((captureSettings) => {
+      setIncludeContextDescriptionState(captureSettings.includeContextDescription);
+    });
   }, []);
 
   useEffect(() => {
     if (isOpen) {
-      void loadSettings();
+      loadSettings();
     }
   }, [isOpen, loadSettings]);
 
@@ -58,44 +101,21 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps): ReactEle
     return null;
   }
 
-  const handleSave = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
-    event.preventDefault();
-
-    const trimmedKey = apiKeyInput.trim();
-
-    if (!trimmedKey) {
-      setError('Enter a valid OpenAI API key.');
-      return;
-    }
-
-    setIsSaving(true);
+  const handleToggleContextDescription = async (enabled: boolean): Promise<void> => {
+    setIsCaptureSettingSaving(true);
     setError(null);
-    setSuccessMessage(null);
 
     try {
-      await saveOpenAiApiKey(trimmedKey);
-      await loadSettings();
-      setSuccessMessage('API key saved.');
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Failed to save API key.');
+      await setIncludeContextDescription(enabled);
+      setIncludeContextDescriptionState(enabled);
+    } catch (toggleError) {
+      setError(
+        toggleError instanceof Error
+          ? toggleError.message
+          : 'Failed to update capture settings.',
+      );
     } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleClear = async (): Promise<void> => {
-    setIsSaving(true);
-    setError(null);
-    setSuccessMessage(null);
-
-    try {
-      await clearOpenAiApiKey();
-      await loadSettings();
-      setSuccessMessage('API key removed.');
-    } catch (clearError) {
-      setError(clearError instanceof Error ? clearError.message : 'Failed to remove API key.');
-    } finally {
-      setIsSaving(false);
+      setIsCaptureSettingSaving(false);
     }
   };
 
@@ -118,7 +138,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps): ReactEle
               Settings
             </h2>
             <p className="mt-1 text-sm text-gray-400">
-              Dev-mode configuration for OpenAI integration.
+              OpenAI integration and context capture preferences.
             </p>
           </div>
           <button
@@ -145,52 +165,34 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps): ReactEle
             </span>
           </div>
 
-          {savedKeyPreview ? (
+          {keyPreview ? (
             <p className="mb-3 font-mono text-xs text-gray-400">
-              Saved: <span className="text-gray-300">{savedKeyPreview}</span>
+              From <code className="text-gray-300">.env</code>:{' '}
+              <span className="text-gray-300">{keyPreview}</span>
             </p>
           ) : null}
 
-          <form onSubmit={(event) => void handleSave(event)}>
-            <label className="mb-2 block text-xs text-gray-400" htmlFor="openai-api-key">
-              Paste new key to update
-            </label>
-            <input
-              autoComplete="off"
-              className="mb-4 h-11 w-full rounded-xl border border-[#1c1c20] bg-[#141417] px-3 font-mono text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-[#00eaff]/40"
-              id="openai-api-key"
-              onChange={(event) => setApiKeyInput(event.target.value)}
-              placeholder="sk-proj-••••••••"
-              spellCheck={false}
-              type="password"
-              value={apiKeyInput}
-            />
+          <p className="text-xs leading-relaxed text-gray-500">
+            {status === 'active'
+              ? 'Key is loaded from VITE_OPENAI_API_KEY in .env at build time. Update .env and rebuild to change it.'
+              : OPENAI_API_KEY_ENV_HINT}
+          </p>
+        </section>
 
-            {error ? (
-              <p className="mb-3 text-xs text-red-300">{error}</p>
-            ) : null}
-            {successMessage ? (
-              <p className="mb-3 text-xs text-[#00eaff]">{successMessage}</p>
-            ) : null}
+        <section className="mt-4 rounded-xl border border-[#1c1c20] bg-[#0d0d0f] p-4">
+          <h3 className="mb-4 text-sm font-medium text-white">Context Capture</h3>
 
-            <div className="flex items-center gap-2">
-              <button
-                className="h-10 flex-1 rounded-full bg-[#00eaff] text-sm font-semibold text-black transition hover:bg-[#00eaff]/90 disabled:opacity-50"
-                disabled={isSaving}
-                type="submit"
-              >
-                {isSaving ? 'Saving…' : 'Save key'}
-              </button>
-              <button
-                className="h-10 rounded-full border border-[#1c1c20] px-4 text-sm text-gray-400 transition hover:border-red-400/40 hover:text-red-300 disabled:opacity-50"
-                disabled={isSaving || status === 'missing'}
-                onClick={() => void handleClear()}
-                type="button"
-              >
-                Clear
-              </button>
-            </div>
-          </form>
+          {error ? <p className="mb-3 text-xs text-red-300">{error}</p> : null}
+
+          <SettingsToggle
+            checked={includeContextDescription}
+            description="When enabled, SyntaxAI saves surrounding docs text in the Context field. Turn off to capture only title and code."
+            disabled={isCaptureSettingSaving}
+            label="Save page description"
+            onChange={(enabled) => {
+              void handleToggleContextDescription(enabled);
+            }}
+          />
         </section>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { DetectionStatus, TechDetectionIndicator } from '../../components/TechDetectionIndicator';
+import { DetectionConfirmedBadge, TechDetectionIndicator } from '../../components/TechDetectionIndicator';
 import { formatTopicLabel } from '../../utils/noteHelpers';
 import type { DetectedNote } from '../types/capture.types';
 
@@ -30,11 +30,7 @@ export function DetectedNoteBlock({
           DETECTED NOTE
         </h2>
 
-        <DetectionStatus
-          isAnalyzing={isAnalyzing}
-          isConfirmed={Boolean(note)}
-          label="Detecting…"
-        />
+        {!isAnalyzing && note ? <DetectionConfirmedBadge /> : null}
       </div>
 
       {error ? (
@@ -59,28 +55,14 @@ export function DetectedNoteBlock({
           />
 
           <div className="min-w-0 flex-1">
-            {isAnalyzing && !note ? (
-              <div className="space-y-2 py-1">
-                <div className="h-4 w-3/4 animate-detect-skeleton rounded-md bg-[#1c1c20]" />
-                <div className="h-3 w-1/2 animate-detect-skeleton rounded-md bg-[#1c1c20]" />
-              </div>
-            ) : (
-              <input
-                aria-label="Detected note title"
-                className="w-full truncate rounded-lg border border-transparent bg-transparent px-0 py-0.5 text-sm font-medium text-white outline-none transition placeholder:text-gray-500 focus:border-syntax-accent/30 focus:bg-syntax-bg focus:px-2"
-                onChange={(event) => onTitleChange(event.target.value)}
-                placeholder={isAnalyzing ? 'Detecting title…' : 'Note title'}
-                type="text"
-                value={title}
-              />
-            )}
-
-            {isAnalyzing && !note ? (
-              <div className="mt-3 flex gap-2">
-                <span className="h-6 w-16 animate-detect-skeleton rounded-full bg-[#1c1c20]" />
-                <span className="h-6 w-20 animate-detect-skeleton rounded-full bg-[#1c1c20]" />
-              </div>
-            ) : null}
+            <input
+              aria-label="Detected note title"
+              className="w-full truncate rounded-lg border border-transparent bg-transparent px-0 py-0.5 text-sm font-medium text-white outline-none transition placeholder:text-gray-500 focus:border-syntax-accent/30 focus:bg-syntax-bg focus:px-2"
+              onChange={(event) => onTitleChange(event.target.value)}
+              placeholder="Note title"
+              type="text"
+              value={title}
+            />
 
             {note && note.topics.length > 0 ? (
               <div className="mt-3 flex flex-wrap items-center gap-2 animate-fade-in">

@@ -66,8 +66,10 @@ export function SnippetCard({
         </div>
       </div>
 
-      {snippet.summary?.trim() ? (
-        <p className="mb-3 truncate text-xs text-zinc-400">{snippet.previewLine}</p>
+      {snippet.previewLine.trim() ? (
+        <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-zinc-400">
+          {snippet.previewLine}
+        </p>
       ) : null}
 
       <CodeBlock

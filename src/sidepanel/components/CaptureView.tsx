@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState, type ReactElement } from 'react';
 import { NoteForm } from '../../components/NoteForm';
+import { useCaptureSettings } from '../../hooks/useCaptureSettings';
 import { saveNote } from '../../storage/notesStorage';
 import type { PageContext } from '../../types/context';
+import { resolveCaptureContent } from '../../utils/captureContent';
 import { buildNoteFromCapture } from '../../utils/noteHelpers';
+import { buildPlainTextPreview } from '../../utils/markdownPreview';
 import { resolveContextCaptureTech } from '../../utils/pageContextTechDetection';
-import { extractPrimaryCodeFromMarkdown } from '../../utils/selectionFormatter';
+import { sanitizeCapturedCode } from '../../utils/selectionFormatter';
 import {
   resolveBaseLanguage,
   resolvePrimaryTechnology,
@@ -40,6 +43,8 @@ export function CaptureView({
   onContextCaptureStart,
 }: CaptureViewProps): ReactElement {
   const capture = useCaptureInput();
+  const { settings: captureSettings } = useCaptureSettings();
+  const includeContextDescription = captureSettings.includeContextDescription;
   const [isSaving, setIsSaving] = useState(false);
   const [pageContextSource, setPageContextSource] = useState<PageContext | null>(null);
   const [noteBody, setNoteBody] = useState('');
@@ -59,14 +64,23 @@ export function CaptureView({
   } = useSnippetAnalysis(text, pastedImages);
 
   useEffect(() => {
+    if (!includeContextDescription) {
+      setNoteBody('');
+    }
+  }, [includeContextDescription]);
+
+  useEffect(() => {
     if (!contextAnalysis) {
       return;
     }
 
-    setNoteBody(contextAnalysis.formattedNote);
-    setNoteCode(contextAnalysis.primaryCode);
+    if (includeContextDescription) {
+      setNoteBody(contextAnalysis.formattedNote);
+    }
+
+    setNoteCode(sanitizeCapturedCode(contextAnalysis.primaryCode));
     setEditedTitle(contextAnalysis.suggestedTitle);
-  }, [contextAnalysis, setEditedTitle]);
+  }, [contextAnalysis, includeContextDescription, setEditedTitle]);
 
   const handleContextCapture = useCallback(
     (pageContext: PageContext): void => {
@@ -74,8 +88,10 @@ export function CaptureView({
       clearImages();
       resetAnalysis();
 
-      const initialBody = pageContext.rawContent.trim() || pageContext.selectedText.trim();
-      const initialCode = extractPrimaryCodeFromMarkdown(initialBody);
+      const { noteBody: initialBody, noteCode: initialCode } = resolveCaptureContent(
+        pageContext,
+        includeContextDescription,
+      );
 
       setPageContextSource(pageContext);
       setNoteBody(initialBody);
@@ -83,7 +99,13 @@ export function CaptureView({
       setEditedTitle(buildFallbackTitle(pageContext));
       void runPageContextAnalysis(pageContext);
     },
-    [clearImages, onContextCaptureStart, resetAnalysis, runPageContextAnalysis],
+    [
+      clearImages,
+      includeContextDescription,
+      onContextCaptureStart,
+      resetAnalysis,
+      runPageContextAnalysis,
+    ],
   );
 
   useContextCaptureDraft({ onCapture: handleContextCapture });
@@ -105,7 +127,13 @@ export function CaptureView({
       : null;
 
   const resolvedContextTech = pageContextSource
-    ? resolveContextCaptureTech(pageContextSource, noteCode, noteBody, contextAnalysis)
+    ? resolveContextCaptureTech(
+        pageContextSource,
+        noteCode,
+        noteBody,
+        contextAnalysis,
+        editedTitle,
+      )
     : null;
 
   const contextLanguage =
@@ -131,7 +159,7 @@ export function CaptureView({
 
   const canSaveContext =
     isContextCaptureMode &&
-    Boolean(noteBody.trim() || noteCode.trim()) &&
+    Boolean(noteCode.trim() || (includeContextDescription && noteBody.trim())) &&
     !isAnalyzing &&
     !isSaving;
 
@@ -176,6 +204,11 @@ export function CaptureView({
           contextAnalysis?.suggestedTitle ||
           buildFallbackTitle(pageContextSource);
 
+        const savedBody = includeContextDescription ? noteBody.trim() : '';
+        const summarySource = includeContextDescription
+          ? buildPlainTextPreview(noteBody, contextAnalysis?.formattedNote)
+          : editedTitle.trim() || contextAnalysis?.suggestedTitle;
+
         const note = buildNoteFromCapture(
           noteCode.trim(),
           {
@@ -184,11 +217,11 @@ export function CaptureView({
             language: contextLanguage,
             topics: contextAnalysis?.tags ?? [],
             code: noteCode.trim(),
-            summary: noteBody.trim().slice(0, 280),
+            summary: summarySource || undefined,
           },
           'tab',
           pageContextSource.url,
-          noteBody.trim(),
+          savedBody || undefined,
         );
 
         await saveNote(note);
@@ -221,6 +254,7 @@ export function CaptureView({
     contextPrimaryTech,
     detectedNote,
     editedTitle,
+    includeContextDescription,
     isContextCaptureMode,
     noteBody,
     noteCode,
@@ -259,6 +293,7 @@ export function CaptureView({
           onCodeChange={setNoteCode}
           onNoteBodyChange={setNoteBody}
           onTitleChange={setEditedTitle}
+          showContextBody={includeContextDescription}
           sourceUrl={pageContextSource?.url}
           values={contextFormValues}
         />

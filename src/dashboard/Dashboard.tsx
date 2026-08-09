@@ -17,7 +17,6 @@ import { DashboardTopBar } from './components/DashboardTopBar';
 import { QuickSearchModal } from './components/QuickSearchModal';
 import { Sidebar } from './components/Sidebar';
 import { SnippetGrid } from './components/SnippetGrid';
-import { StatsGrid } from './components/StatsGrid';
 import { TechHeroBanner } from './components/TechHeroBanner';
 import { TrashGrid } from './components/TrashGrid';
 import { filterNotesByTechnology } from '../utils/noteHelpers';
@@ -141,9 +140,6 @@ export function Dashboard(): ReactElement {
   const isAnalyticsView = activeTab === 'analytics';
   const isTrashView = activeTab === 'trash';
   const isTechnologyView = selectedTechnology !== null;
-  const showStatsGrid =
-    !isTechnologyView &&
-    (activeTab === 'all' || activeTab === 'recent' || activeTab === 'starred');
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0d0d0f] text-white">
@@ -175,10 +171,6 @@ export function Dashboard(): ReactElement {
                   techName={formatTechnologyLabel(selectedTechnology)}
                   techSlug={selectedTechnology}
                 />
-              ) : null}
-
-              {showStatsGrid ? (
-                <StatsGrid isLoading={isLoading} notes={notes} />
               ) : null}
 
               <SnippetGrid

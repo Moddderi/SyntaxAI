@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactElement, SyntheticEvent } from 'react';
-import { getDeviconUrlCandidates, getTechAbbreviation } from '../utils/techIcon';
+import { getDeviconUrlCandidates, getTechAbbreviation, getTechBrandColor } from '../utils/techIcon';
 
 type TechIconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -60,10 +60,17 @@ export function TechIcon({
   };
 
   if (hasFailedAll || !iconUrl) {
+    const brandColor = getTechBrandColor(tech);
+
     return (
       <span
         aria-label={`${tech} icon fallback`}
-        className={`inline-flex shrink-0 items-center justify-center font-bold text-syntax-accent ${SIZE_CLASSES[size]} ${FALLBACK_TEXT_CLASSES[size]} ${className}`}
+        className={`inline-flex shrink-0 items-center justify-center rounded-lg border font-bold ${SIZE_CLASSES[size]} ${FALLBACK_TEXT_CLASSES[size]} ${className}`}
+        style={{
+          borderColor: `${brandColor}44`,
+          backgroundColor: `${brandColor}18`,
+          color: brandColor,
+        }}
       >
         {abbreviation}
       </span>

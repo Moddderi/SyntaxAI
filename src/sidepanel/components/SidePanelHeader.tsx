@@ -2,10 +2,11 @@ import type { ReactElement } from 'react';
 import type { SidePanelMode } from '../types/capture.types';
 import { Logo } from '../../components/Logo';
 import { HomeIcon, SettingsIcon } from './icons';
-import { openDashboard, openDashboardSettings } from '../../utils/dashboardNavigation';
+import { openDashboard } from '../../utils/dashboardNavigation';
 
 interface SidePanelHeaderProps {
   mode: SidePanelMode;
+  onOpenSettings: () => void;
 }
 
 const HEADER_ICON_BUTTON_CLASS =
@@ -15,7 +16,7 @@ function getSubtitle(mode: SidePanelMode): string {
   return mode === 'search' ? 'quick search' : 'quick note';
 }
 
-export function SidePanelHeader({ mode }: SidePanelHeaderProps): ReactElement {
+export function SidePanelHeader({ mode, onOpenSettings }: SidePanelHeaderProps): ReactElement {
   return (
     <header className="flex items-center justify-between gap-3 border-b border-syntax-border px-4 py-3.5">
       <div className="flex min-w-0 items-center gap-3">
@@ -33,11 +34,9 @@ export function SidePanelHeader({ mode }: SidePanelHeaderProps): ReactElement {
 
       <div className="flex shrink-0 items-center gap-3">
         <button
-          aria-label="Open settings in dashboard"
+          aria-label="Open settings"
           className={HEADER_ICON_BUTTON_CLASS}
-          onClick={() => {
-            void openDashboardSettings();
-          }}
+          onClick={onOpenSettings}
           type="button"
         >
           <SettingsIcon />

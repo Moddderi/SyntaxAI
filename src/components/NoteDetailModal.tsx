@@ -8,11 +8,7 @@ import {
 import { saveNote } from '../storage/notesStorage';
 import type { Note } from '../types/note';
 import { formatNoteDate, formatTopicLabel } from '../utils/noteHelpers';
-import {
-  resolveBaseLanguage,
-  resolvePrimaryTechnology,
-} from '../utils/techDetection';
-import { resolveDeviconSlug } from '../utils/techIcon';
+import { resolveNoteTechnology } from '../utils/pageContextTechDetection';
 import { CodeBlock } from './CodeBlock';
 import { MarkdownContent } from './MarkdownContent';
 import { NestedTechIcons } from './NestedTechIcons';
@@ -167,8 +163,13 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
     setSaveError(null);
 
     try {
-      const language = resolveBaseLanguage(trimmedCode, note.primaryTech, note.language);
-      const primaryTech = resolvePrimaryTechnology(trimmedCode, language);
+      const resolvedTech = resolveNoteTechnology({
+        title: trimmedTitle,
+        code: trimmedCode,
+        body: editForm.body.trim() || undefined,
+        sourceUrl: note.sourceUrl,
+        language: note.language,
+      });
       const topics = parseTopicsInput(editForm.topicsInput);
 
       const updatedNote: Note = {
@@ -178,8 +179,8 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
         body: editForm.body.trim() || undefined,
         code: trimmedCode,
         topics,
-        language: resolveDeviconSlug(language),
-        primaryTech: resolveDeviconSlug(primaryTech),
+        language: resolvedTech.language,
+        primaryTech: resolvedTech.primaryTech,
       };
 
       await saveNote(updatedNote);
@@ -200,9 +201,13 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
     note.summary?.trim() ||
     'AI-описание появится для новых заметок после анализа кода.';
 
-  const previewLanguage = resolveDeviconSlug(
-    resolveBaseLanguage(editForm.code, note.primaryTech, note.language),
-  );
+  const editPreviewTech = resolveNoteTechnology({
+    title: editForm.title,
+    code: editForm.code,
+    body: editForm.body,
+    sourceUrl: note.sourceUrl,
+    language: note.language,
+  });
 
   return (
     <div
@@ -366,7 +371,7 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
 
             {isEditing && editForm.code.trim() ? (
               <div className="mt-3 animate-fade-in">
-                <CodeBlock code={editForm.code} language={previewLanguage} size="sm" />
+                <CodeBlock code={editForm.code} language={editPreviewTech.language} size="sm" />
               </div>
             ) : null}
           </section>

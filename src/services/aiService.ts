@@ -1,4 +1,4 @@
-import { getOpenAiApiKey } from './apiKeyStorage';
+import { getOpenAiApiKey, OPENAI_API_KEY_ENV_HINT } from './apiKeyStorage';
 import {
   buildTechSlugPromptList,
   resolveBaseLanguage,
@@ -255,12 +255,10 @@ function buildUserContent(
 export async function analyzeSnippetWithAI(
   input: AnalyzeSnippetInput,
 ): Promise<AnalyzeSnippetResult> {
-  const apiKey = await getOpenAiApiKey();
+  const apiKey = getOpenAiApiKey();
 
   if (!apiKey) {
-    throw new AiServiceError(
-      'OpenAI API key is missing. Add it to chrome.storage.local under syntaxai_openai_api_key.',
-    );
+    throw new AiServiceError(`OpenAI API key is missing. ${OPENAI_API_KEY_ENV_HINT}`);
   }
 
   const userContent = buildUserContent(input.promptOrCode, input.imagesBase64);

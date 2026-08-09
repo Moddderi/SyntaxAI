@@ -110,3 +110,17 @@ html,
 .animate-detect-skeleton {
   animation: detect-skeleton 1.4s ease-in-out infinite;
 }
+
+@keyframes tech-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-tech-orbit {
+  animation: tech-orbit 1.1s linear infinite;
+}

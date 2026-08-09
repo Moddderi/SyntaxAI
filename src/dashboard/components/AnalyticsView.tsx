@@ -11,6 +11,7 @@ import {
   groupBreakdownForChart,
 } from '../../utils/analyticsHelpers';
 import { TechIcon } from '../../components/TechIcon';
+import { UsageSection } from './UsageSection';
 import { FlameIcon } from './icons';
 
 interface AnalyticsViewProps {
@@ -231,9 +232,12 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
           Loading analytics…
         </div>
       ) : totalNotes === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[#1c1c20] bg-[#141417] p-10 text-center text-sm text-gray-400">
-          Add your first note to unlock analytics insights.
-        </div>
+        <>
+          <div className="rounded-2xl border border-dashed border-[#1c1c20] bg-[#141417] p-10 text-center text-sm text-gray-400">
+            Add your first note to unlock capture insights and activity charts.
+          </div>
+          <UsageSection isLoading={isLoading} notes={notes} />
+        </>
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -357,6 +361,8 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
               </div>
             </section>
           </div>
+
+          <UsageSection isLoading={isLoading} notes={notes} />
 
           <ActivityHeatmap notes={notes} />
 

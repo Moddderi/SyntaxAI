@@ -224,14 +224,56 @@ export function getFormattedSelection(): string {
   return selection.toString().trim();
 }
 
+export function sanitizeCapturedCode(code: string): string {
+  return code
+    .replace(/^```[\w-]*\n?/gm, '')
+    .replace(/\n?```$/gm, '')
+    .replace(/`+$/g, '')
+    .replace(/^`+/g, '')
+    .trim();
+}
+
+function scoreCodeBlock(code: string): number {
+  let score = Math.min(code.length, 400);
+
+  if (/^import\s+/m.test(code)) {
+    score += 500;
+  }
+
+  if (/from ['"][^'"]+['"]/.test(code)) {
+    score += 200;
+  }
+
+  if (/\bcreate\s*\(/.test(code)) {
+    score += 150;
+  }
+
+  if (/export\s+(?:default\s+)?(?:function|const|class)/.test(code)) {
+    score += 120;
+  }
+
+  if (/^[\s\S]*<\/?[a-zA-Z][^>]*>[\s\S]*$/.test(code) && !/^import\s+/m.test(code)) {
+    score -= 180;
+  }
+
+  if (/^\s*return\s*\(/m.test(code) && !/^import\s+/m.test(code)) {
+    score -= 120;
+  }
+
+  return score;
+}
+
 export function extractPrimaryCodeFromMarkdown(markdown: string): string {
   const fencedBlocks = [...markdown.matchAll(/```[\w-]*\n([\s\S]*?)```/g)];
 
   if (fencedBlocks.length === 0) {
-    return '';
+    return sanitizeCapturedCode(markdown);
   }
 
-  return fencedBlocks
-    .map((match) => match[1]?.trim() ?? '')
-    .sort((left, right) => right.length - left.length)[0] ?? '';
+  const rankedBlocks = fencedBlocks
+    .map((match) => sanitizeCapturedCode(match[1] ?? ''))
+    .filter((block) => block.length > 0)
+    .sort((left, right) => scoreCodeBlock(right) - scoreCodeBlock(left));
+
+  return rankedBlocks[0] ?? '';
 }
