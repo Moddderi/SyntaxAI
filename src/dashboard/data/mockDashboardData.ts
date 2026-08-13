@@ -7,7 +7,7 @@ import type {
 export const LIBRARY_NAV_ITEMS: LibraryNavItem[] = [
   { id: 'all', label: 'All notes', count: 9, isActive: true },
   { id: 'starred', label: 'Starred', count: 3 },
-  { id: 'recent', label: 'Recent', count: 5 },
+  { id: 'stack', label: 'Stack', count: 3 },
   { id: 'trash', label: 'Trash', count: 1 },
 ];
 

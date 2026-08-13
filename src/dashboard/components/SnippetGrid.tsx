@@ -58,20 +58,20 @@ export function SnippetGrid({
     <section>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
-          <p className="text-sm text-gray-400">
+          <h2 className="text-lg font-semibold text-syntax-text">{title}</h2>
+          <p className="text-sm text-syntax-muted">
             {isLoading ? 'Loading…' : `${totalCount} snippet${totalCount === 1 ? '' : 's'}`}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-xl border border-[#1c1c20] bg-[#141417] p-1">
+          <div className="flex items-center rounded-xl border border-syntax-border bg-syntax-card p-1">
             <button
               aria-label="Grid view"
               className={`rounded-lg p-2 transition ${
                 viewMode === 'grid'
-                  ? 'bg-[#0d0d0f] text-[#00eaff]'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'bg-syntax-inset text-syntax-accent'
+                  : 'text-syntax-muted hover:text-syntax-text'
               }`}
               onClick={() => setViewMode('grid')}
               type="button"
@@ -82,8 +82,8 @@ export function SnippetGrid({
               aria-label="List view"
               className={`rounded-lg p-2 transition ${
                 viewMode === 'list'
-                  ? 'bg-[#0d0d0f] text-[#00eaff]'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'bg-syntax-inset text-syntax-accent'
+                  : 'text-syntax-muted hover:text-syntax-text'
               }`}
               onClick={() => setViewMode('list')}
               type="button"
@@ -93,7 +93,7 @@ export function SnippetGrid({
           </div>
 
           <button
-            className="rounded-xl border border-[#1c1c20] bg-[#141417] px-3 py-2 text-xs text-gray-400 transition hover:text-white"
+            className="rounded-xl border border-syntax-border bg-syntax-card px-3 py-2 text-xs text-syntax-muted transition hover:text-syntax-text"
             type="button"
           >
             Recently updated
@@ -132,8 +132,8 @@ export function SnippetGrid({
           )}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-[#1c1c20] bg-[#141417] p-10 text-center">
-          <p className="text-sm text-gray-400">
+        <div className="rounded-2xl border border-dashed border-syntax-border bg-syntax-card p-10 text-center">
+          <p className="text-sm text-syntax-muted">
             {isLoading
               ? 'Loading your library…'
               : (emptyMessage ??

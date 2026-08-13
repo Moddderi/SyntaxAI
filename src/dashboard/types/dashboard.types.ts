@@ -2,6 +2,7 @@ export interface LibraryNavItem {
   id: string;
   label: string;
   count?: number;
+  badge?: string;
   isActive?: boolean;
 }
 
@@ -34,6 +35,6 @@ export type SnippetViewMode = 'grid' | 'list';
 export type LibraryTabId =
   | 'all'
   | 'starred'
-  | 'recent'
+  | 'stack'
   | 'analytics'
   | 'trash';

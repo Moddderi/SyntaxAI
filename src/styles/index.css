@@ -2,13 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+  --syntax-bg: #0d0d0f;
+  --syntax-card: #141417;
+  --syntax-border: #1c1c20;
+  --syntax-accent: #00eaff;
+  --syntax-text: #ffffff;
+  --syntax-muted: #9ca3af;
+  --syntax-hover: #1a1a1e;
+  --syntax-overlay: rgba(0, 0, 0, 0.7);
+  --syntax-nav-active: #18181c;
+  --syntax-inset: #0d0d0f;
+  --syntax-code: #1a1b1e;
+  --syntax-code-header: #141417;
+  --syntax-heatmap-empty: #18181c;
+  --syntax-heatmap-empty-border: #222226;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  --syntax-bg: #f5f5f7;
+  --syntax-card: #ffffff;
+  --syntax-border: #e4e4e7;
+  --syntax-accent: #0099b8;
+  --syntax-text: #18181b;
+  --syntax-muted: #71717a;
+  --syntax-hover: #f4f4f5;
+  --syntax-overlay: rgba(24, 24, 27, 0.45);
+  --syntax-nav-active: #ececee;
+  --syntax-inset: #f4f4f5;
+  --syntax-code: #1e293b;
+  --syntax-code-header: #f4f4f5;
+  --syntax-heatmap-empty: #e4e4e7;
+  --syntax-heatmap-empty-border: #d4d4d8;
+}
+
 body {
-  @apply m-0 h-full bg-syntax-bg text-white antialiased;
+  @apply m-0 h-full bg-syntax-bg font-sans text-syntax-text antialiased;
 }
 
 html,
 #root {
   @apply h-full;
+}
+
+[data-theme='light'] .shadow-2xl {
+  box-shadow:
+    0 24px 48px rgba(24, 24, 27, 0.08),
+    0 0 0 1px rgba(24, 24, 27, 0.04);
+}
+
+.syntax-urgency-banner {
+  color: #78350f;
+}
+
+[data-theme='dark'] .syntax-urgency-banner {
+  color: #fde68a;
 }
 
 @keyframes fade-in {

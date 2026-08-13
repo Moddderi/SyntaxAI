@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 import { NoteDetailModal } from '../components/NoteDetailModal';
 import { SettingsModal } from '../components/SettingsModal';
+import { useTheme } from '../hooks/useTheme';
 import { CONTEXT_CAPTURE_STORAGE_KEY } from '../types/context';
 import { CaptureView } from './components/CaptureView';
 import { GlobalModeTabs } from './components/GlobalModeTabs';
@@ -12,6 +13,7 @@ import type { Note } from '../types/note';
 import { useNotes } from '../hooks/useNotes';
 
 export function SidePanel(): ReactElement {
+  useTheme();
   const [activeMode, setActiveMode] = useState<SidePanelMode>('capture');
   const [selectedNoteForDetail, setSelectedNoteForDetail] = useState<Note | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);

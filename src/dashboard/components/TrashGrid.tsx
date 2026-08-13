@@ -28,8 +28,8 @@ export function TrashGrid({ notes, isLoading }: TrashGridProps): ReactElement {
   return (
     <section>
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-white">Trash</h2>
-        <p className="text-sm text-gray-400">
+        <h2 className="text-lg font-semibold text-syntax-text">Trash</h2>
+        <p className="text-sm text-syntax-muted">
           {isLoading
             ? 'Loading…'
             : `${snippets.length} deleted note${snippets.length === 1 ? '' : 's'}`}
@@ -41,19 +41,19 @@ export function TrashGrid({ notes, isLoading }: TrashGridProps): ReactElement {
           {snippets.map((snippet) => (
             <article
               key={snippet.id}
-              className="flex flex-col rounded-2xl border border-[#1c1c20] bg-[#141417] p-4 opacity-80"
+              className="flex flex-col rounded-2xl border border-syntax-border bg-syntax-card p-4 opacity-80"
             >
               <div className="mb-3 flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <TechIcon size="md" tech={snippet.primaryTech} />
-                  <span className="rounded-md border border-[#1c1c20] bg-[#0d0d0f] px-1.5 py-0.5 text-[10px] font-semibold text-gray-400">
+                  <span className="rounded-md border border-syntax-border bg-syntax-inset px-1.5 py-0.5 text-[10px] font-semibold text-syntax-muted">
                     {getTechAbbreviation(snippet.language)}
                   </span>
                 </div>
-                <span className="text-[11px] text-gray-500">{snippet.updatedAt}</span>
+                <span className="text-[11px] text-syntax-muted">{snippet.updatedAt}</span>
               </div>
 
-              <h3 className="mb-3 truncate text-sm font-semibold text-white">
+              <h3 className="mb-3 truncate text-sm font-semibold text-syntax-text">
                 {snippet.title}
               </h3>
 
@@ -66,7 +66,7 @@ export function TrashGrid({ notes, isLoading }: TrashGridProps): ReactElement {
 
               <div className="mt-auto flex items-center gap-2">
                 <button
-                  className="h-9 flex-1 rounded-full border border-[#1c1c20] text-xs text-gray-300 transition hover:border-[#00eaff]/40 hover:text-[#00eaff]"
+                  className="h-9 flex-1 rounded-full border border-syntax-border text-xs text-syntax-muted transition hover:border-syntax-accent/40 hover:text-syntax-accent"
                   onClick={() => handleRestore(snippet.id)}
                   type="button"
                 >
@@ -84,8 +84,8 @@ export function TrashGrid({ notes, isLoading }: TrashGridProps): ReactElement {
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-[#1c1c20] bg-[#141417] p-10 text-center">
-          <p className="text-sm text-gray-400">Trash is empty.</p>
+        <div className="rounded-2xl border border-dashed border-syntax-border bg-syntax-card p-10 text-center">
+          <p className="text-sm text-syntax-muted">Trash is empty.</p>
         </div>
       )}
     </section>

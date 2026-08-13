@@ -93,37 +93,37 @@ export function EditNoteModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-syntax-overlay p-4"
       onClick={onClose}
       role="presentation"
     >
       <div
         aria-labelledby="edit-note-title"
         aria-modal="true"
-        className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-[#1c1c20] bg-[#141417] shadow-2xl"
+        className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-syntax-border bg-syntax-card shadow-2xl"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
       >
-        <div className="border-b border-[#1c1c20] px-6 py-4">
-          <h2 className="text-lg font-semibold text-white" id="edit-note-title">
+        <div className="border-b border-syntax-border px-6 py-4">
+          <h2 className="text-lg font-semibold text-syntax-text" id="edit-note-title">
             Edit note
           </h2>
-          <p className="mt-1 text-sm text-gray-400">Update title, code, or topics.</p>
+          <p className="mt-1 text-sm text-syntax-muted">Update title, code, or topics.</p>
         </div>
 
         <form className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-4" onSubmit={handleSubmit}>
-          <label className="mb-2 block text-xs text-gray-400" htmlFor="edit-note-title-input">
+          <label className="mb-2 block text-xs text-syntax-muted" htmlFor="edit-note-title-input">
             Title
           </label>
           <input
-            className="mb-4 h-11 w-full rounded-xl border border-[#1c1c20] bg-[#0d0d0f] px-3 text-sm text-white outline-none transition focus:border-[#00eaff]/40"
+            className="mb-4 h-11 w-full rounded-xl border border-syntax-border bg-syntax-inset px-3 text-sm text-syntax-text outline-none transition focus:border-syntax-accent/40"
             id="edit-note-title-input"
             onChange={(event) => setTitle(event.target.value)}
             type="text"
             value={title}
           />
 
-          <label className="mb-2 block text-xs text-gray-400" htmlFor="edit-note-code">
+          <label className="mb-2 block text-xs text-syntax-muted" htmlFor="edit-note-code">
             Code
           </label>
           {code.trim() ? (
@@ -134,18 +134,18 @@ export function EditNoteModal({
             />
           ) : null}
           <textarea
-            className="mb-4 min-h-[160px] w-full resize-y rounded-xl border border-[#1c1c20] bg-[#0d0d0f] px-3 py-2 font-mono text-sm text-gray-300 outline-none transition focus:border-[#00eaff]/40"
+            className="mb-4 min-h-[160px] w-full resize-y rounded-xl border border-syntax-border bg-syntax-inset px-3 py-2 font-mono text-sm text-syntax-muted outline-none transition focus:border-syntax-accent/40"
             id="edit-note-code"
             onChange={(event) => setCode(event.target.value)}
             spellCheck={false}
             value={code}
           />
 
-          <label className="mb-2 block text-xs text-gray-400" htmlFor="edit-note-topics">
+          <label className="mb-2 block text-xs text-syntax-muted" htmlFor="edit-note-topics">
             Topics (comma-separated)
           </label>
           <input
-            className="mb-6 h-11 w-full rounded-xl border border-[#1c1c20] bg-[#0d0d0f] px-3 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-[#00eaff]/40"
+            className="mb-6 h-11 w-full rounded-xl border border-syntax-border bg-syntax-inset px-3 text-sm text-syntax-text outline-none transition placeholder:text-syntax-muted focus:border-syntax-accent/40"
             id="edit-note-topics"
             onChange={(event) => setTopicsInput(event.target.value)}
             placeholder="auth, state-management, hooks"
@@ -155,14 +155,14 @@ export function EditNoteModal({
 
           <div className="mt-auto flex items-center gap-2">
             <button
-              className="h-10 flex-1 rounded-full border border-[#1c1c20] text-sm text-gray-300 transition hover:bg-[#0d0d0f] hover:text-white"
+              className="h-10 flex-1 rounded-full border border-syntax-border text-sm text-syntax-muted transition hover:bg-syntax-inset hover:text-syntax-text"
               onClick={onClose}
               type="button"
             >
               Cancel
             </button>
             <button
-              className="h-10 flex-1 rounded-full bg-[#00eaff] text-sm font-semibold text-black transition hover:bg-[#00eaff]/90 disabled:opacity-50"
+              className="h-10 flex-1 rounded-full bg-syntax-accent text-sm font-semibold text-black transition hover:bg-syntax-accent/90 disabled:opacity-50"
               disabled={isSaving || !title.trim() || !code.trim()}
               type="submit"
             >

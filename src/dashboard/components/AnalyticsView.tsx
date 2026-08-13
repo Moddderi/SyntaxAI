@@ -48,8 +48,8 @@ function AnalyticsTooltip({
   const accentColor = item.payload?.color ?? '#00eaff';
 
   return (
-    <div className="rounded-xl border border-[#1c1c20] bg-[#141417] px-3 py-2 text-xs shadow-lg">
-      <p className="font-medium text-white">{item.name}</p>
+    <div className="rounded-xl border border-syntax-border bg-syntax-card px-3 py-2 text-xs shadow-lg">
+      <p className="font-medium text-syntax-text">{item.name}</p>
       <p className="mt-0.5" style={{ color: accentColor }}>
         {count} notes{percentage !== undefined ? ` · ${percentage}%` : ''}
       </p>
@@ -61,18 +61,18 @@ function ActivityHeatmap({ notes }: { notes: Note[] }): ReactElement {
   const heatmap = useMemo(() => computeActivityHeatmap(notes), [notes]);
 
   return (
-    <section className="rounded-2xl border border-[#1c1c20] bg-[#141417] p-5">
+    <section className="rounded-2xl border border-syntax-border bg-syntax-card p-5">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-white">Capture Activity</h2>
-          <p className="mt-1 text-xs text-gray-400">
+          <h2 className="text-sm font-semibold text-syntax-text">Capture Activity</h2>
+          <p className="mt-1 text-xs text-syntax-muted">
             GitHub-style matrix of notes saved over the last {heatmap.weeks} weeks
           </p>
         </div>
 
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#00eaff]/30 bg-[#00eaff]/10 px-3 py-1 text-xs font-medium text-[#00eaff]">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-syntax-accent/30 bg-syntax-accent/10 px-3 py-1 text-xs font-medium text-syntax-accent">
           Current Streak: {heatmap.currentStreak} day{heatmap.currentStreak === 1 ? '' : 's'}
-          <FlameIcon className="h-3.5 w-3.5 text-[#00eaff] drop-shadow-[0_0_6px_#00eaff]" />
+          <FlameIcon className="h-3.5 w-3.5 text-syntax-accent drop-shadow-[0_0_6px_var(--syntax-accent)]" />
         </span>
       </div>
 
@@ -91,7 +91,7 @@ function ActivityHeatmap({ notes }: { notes: Note[] }): ReactElement {
               return (
                 <span
                   key={`week-label-${weekIndex}`}
-                  className="flex h-3 w-3.5 items-start justify-center text-[10px] text-gray-500"
+                  className="flex h-3 w-3.5 items-start justify-center text-[10px] text-syntax-muted"
                 >
                   {showLabel && firstCell
                     ? firstCell.date.toLocaleDateString('en-US', { month: 'short' })
@@ -106,7 +106,7 @@ function ActivityHeatmap({ notes }: { notes: Note[] }): ReactElement {
               {WEEKDAY_LABELS.map((label, index) => (
                 <span
                   key={label}
-                  className="flex h-3.5 w-6 items-center text-[10px] text-gray-500"
+                  className="flex h-3.5 w-6 items-center text-[10px] text-syntax-muted"
                 >
                   {index % 2 === 0 ? label : ''}
                 </span>
@@ -138,16 +138,16 @@ function ActivityHeatmap({ notes }: { notes: Note[] }): ReactElement {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-4 text-[10px] text-gray-400">
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-[10px] text-syntax-muted">
         <span>Less</span>
         <div className="flex items-center gap-1">
-          <span className="h-3.5 w-3.5 rounded-sm bg-[#18181c] border border-[#222226]" />
-          <span className="h-3.5 w-3.5 rounded-sm bg-[#00eaff]/25 border border-[#00eaff]/10" />
-          <span className="h-3.5 w-3.5 rounded-sm bg-[#00eaff]/60 border border-[#00eaff]/20" />
-          <span className="h-3.5 w-3.5 rounded-sm bg-[#00eaff] shadow-[0_0_10px_#00eaff]" />
+          <span className="h-3.5 w-3.5 rounded-sm bg-syntax-heatmap-empty border border-syntax-heatmap-empty-border" />
+          <span className="h-3.5 w-3.5 rounded-sm bg-syntax-accent/25 border border-syntax-accent/10" />
+          <span className="h-3.5 w-3.5 rounded-sm bg-syntax-accent/60 border border-syntax-accent/20" />
+          <span className="h-3.5 w-3.5 rounded-sm bg-syntax-accent shadow-[0_0_10px_var(--syntax-accent)]" />
         </div>
         <span>More</span>
-        <span className="ml-auto text-gray-500">
+        <span className="ml-auto text-syntax-muted">
           {heatmap.activeDays} active days · best streak {heatmap.longestStreak} days
         </span>
       </div>
@@ -171,12 +171,12 @@ function InputMethodBar({
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
-        <span className="text-gray-300">{label}</span>
-        <span className="text-gray-500">
+        <span className="text-syntax-muted">{label}</span>
+        <span className="text-syntax-muted">
           {value} · {percent}%
         </span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-[#0d0d0f]">
+      <div className="h-2 overflow-hidden rounded-full bg-syntax-inset">
         <div
           className={`h-full rounded-full transition-all ${colorClass}`}
           style={{ width: `${percent}%` }}
@@ -219,21 +219,19 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
-          Analytics &amp; Insights
-        </h1>
-        <p className="mt-1 max-w-2xl text-sm text-gray-400">
-          Overview of your code snippets, technology stack, and productivity.
+        <h1 className="text-2xl font-semibold tracking-tight text-syntax-text">Usage &amp; Insights</h1>
+        <p className="mt-1 max-w-2xl text-sm text-syntax-muted">
+          Track your free limits, then explore how you capture and organize code.
         </p>
       </header>
 
       {isLoading ? (
-        <div className="rounded-2xl border border-[#1c1c20] bg-[#141417] p-10 text-center text-sm text-gray-400">
+        <div className="rounded-2xl border border-syntax-border bg-syntax-card p-10 text-center text-sm text-syntax-muted">
           Loading analytics…
         </div>
       ) : totalNotes === 0 ? (
         <>
-          <div className="rounded-2xl border border-dashed border-[#1c1c20] bg-[#141417] p-10 text-center text-sm text-gray-400">
+          <div className="rounded-2xl border border-dashed border-syntax-border bg-syntax-card p-10 text-center text-sm text-syntax-muted">
             Add your first note to unlock capture insights and activity charts.
           </div>
           <UsageSection isLoading={isLoading} notes={notes} />
@@ -241,9 +239,9 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <section className="rounded-2xl border border-[#1c1c20] bg-[#141417] p-5 lg:col-span-1">
-              <h2 className="mb-1 text-sm font-semibold text-white">Stack Breakdown</h2>
-              <p className="mb-4 text-xs text-gray-400">
+            <section className="rounded-2xl border border-syntax-border bg-syntax-card p-5 lg:col-span-1">
+              <h2 className="mb-1 text-sm font-semibold text-syntax-text">Stack Breakdown</h2>
+              <p className="mb-4 text-xs text-syntax-muted">
                 Technologies in your library · brand colors
               </p>
 
@@ -258,7 +256,7 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
                       innerRadius={42}
                       outerRadius={68}
                       paddingAngle={2}
-                      stroke="#0d0d0f"
+                      stroke="var(--syntax-bg)"
                       strokeWidth={2}
                     >
                       {pieData.map((entry) => (
@@ -270,8 +268,8 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
                 </ResponsiveContainer>
 
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xl font-semibold text-white">{totalNotes}</span>
-                  <span className="text-[10px] uppercase tracking-[0.14em] text-gray-400">
+                  <span className="text-xl font-semibold text-syntax-text">{totalNotes}</span>
+                  <span className="text-[10px] uppercase tracking-[0.14em] text-syntax-muted">
                     notes
                   </span>
                 </div>
@@ -291,64 +289,64 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
                         />
                       ) : (
                         <span
-                          className="rounded-md ring-2 ring-offset-1 ring-offset-[#141417]"
+                          className="rounded-md ring-2 ring-offset-1 ring-offset-syntax-card"
                           style={{ boxShadow: `0 0 0 2px ${item.color}` }}
                         >
                           <TechIcon size="xs" tech={item.slug} />
                         </span>
                       )}
-                      <span className="truncate text-gray-300">{item.name}</span>
+                      <span className="truncate text-syntax-muted">{item.name}</span>
                     </span>
-                    <span className="shrink-0 text-gray-500">{item.percentage}%</span>
+                    <span className="shrink-0 text-syntax-muted">{item.percentage}%</span>
                   </li>
                 ))}
               </ul>
             </section>
 
-            <section className="rounded-2xl border border-[#1c1c20] bg-[#141417] p-5 lg:col-span-2">
-              <h2 className="mb-1 text-sm font-semibold text-white">Streak &amp; Momentum</h2>
-              <p className="mb-5 text-xs text-gray-400">
+            <section className="rounded-2xl border border-syntax-border bg-syntax-card p-5 lg:col-span-2">
+              <h2 className="mb-1 text-sm font-semibold text-syntax-text">Streak &amp; Momentum</h2>
+              <p className="mb-5 text-xs text-syntax-muted">
                 Consistency metrics from your capture history
               </p>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <article className="rounded-xl border border-[#1c1c20] bg-[#0d0d0f] p-4">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-gray-500">
+                <article className="rounded-xl border border-syntax-border bg-syntax-inset p-4">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-syntax-muted">
                     Current Streak
                   </p>
-                  <p className="mt-2 flex items-baseline gap-1.5 text-3xl font-semibold text-[#00eaff]">
+                  <p className="mt-2 flex items-baseline gap-1.5 text-3xl font-semibold text-syntax-accent">
                     {heatmap.currentStreak}
-                    <span className="inline-flex items-center gap-1 text-base text-gray-400">
+                    <span className="inline-flex items-center gap-1 text-base text-syntax-muted">
                       days
-                      <FlameIcon className="h-4 w-4 text-[#00eaff] drop-shadow-[0_0_6px_#00eaff]" />
+                      <FlameIcon className="h-4 w-4 text-syntax-accent drop-shadow-[0_0_6px_var(--syntax-accent)]" />
                     </span>
                   </p>
                 </article>
 
-                <article className="rounded-xl border border-[#1c1c20] bg-[#0d0d0f] p-4">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-gray-500">
+                <article className="rounded-xl border border-syntax-border bg-syntax-inset p-4">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-syntax-muted">
                     Best Streak
                   </p>
-                  <p className="mt-2 text-3xl font-semibold text-white">
+                  <p className="mt-2 text-3xl font-semibold text-syntax-text">
                     {heatmap.longestStreak}
-                    <span className="ml-1 text-base text-gray-400">days</span>
+                    <span className="ml-1 text-base text-syntax-muted">days</span>
                   </p>
                 </article>
 
-                <article className="rounded-xl border border-[#1c1c20] bg-[#0d0d0f] p-4">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-gray-500">
+                <article className="rounded-xl border border-syntax-border bg-syntax-inset p-4">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-syntax-muted">
                     Active Days
                   </p>
-                  <p className="mt-2 text-3xl font-semibold text-white">
+                  <p className="mt-2 text-3xl font-semibold text-syntax-text">
                     {heatmap.activeDays}
-                    <span className="ml-1 text-base text-gray-400">total</span>
+                    <span className="ml-1 text-base text-syntax-muted">total</span>
                   </p>
                 </article>
               </div>
 
-              <div className="mt-4 rounded-xl border border-[#1c1c20] bg-[#0d0d0f] px-4 py-3">
-                <p className="text-xs text-gray-400">
-                  <span className="font-medium text-white">{languageBreakdown.length}</span>{' '}
+              <div className="mt-4 rounded-xl border border-syntax-border bg-syntax-inset px-4 py-3">
+                <p className="text-xs text-syntax-muted">
+                  <span className="font-medium text-syntax-text">{languageBreakdown.length}</span>{' '}
                   technologies in your library ·{' '}
                   <span
                     className="font-medium"
@@ -367,44 +365,44 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
           <ActivityHeatmap notes={notes} />
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <section className="rounded-2xl border border-[#1c1c20] bg-[#141417] p-5">
-              <h2 className="mb-1 text-sm font-semibold text-white">
+            <section className="rounded-2xl border border-syntax-border bg-syntax-card p-5">
+              <h2 className="mb-1 text-sm font-semibold text-syntax-text">
                 Estimated Time Saved
               </h2>
-              <p className="mb-4 text-xs text-gray-400">
+              <p className="mb-4 text-xs text-syntax-muted">
                 based on average 15m context lookup per saved solution
               </p>
-              <p className="text-4xl font-semibold tracking-tight text-[#00eaff]">
+              <p className="text-4xl font-semibold tracking-tight text-syntax-accent">
                 {timeSavedHours} hrs
               </p>
-              <p className="mt-2 text-xs text-gray-500">
+              <p className="mt-2 text-xs text-syntax-muted">
                 From {totalNotes} saved note{totalNotes === 1 ? '' : 's'} in your library
               </p>
             </section>
 
-            <section className="rounded-2xl border border-[#1c1c20] bg-[#141417] p-5">
-              <h2 className="mb-1 text-sm font-semibold text-white">
+            <section className="rounded-2xl border border-syntax-border bg-syntax-card p-5">
+              <h2 className="mb-1 text-sm font-semibold text-syntax-text">
                 Input Methods Breakdown
               </h2>
-              <p className="mb-4 text-xs text-gray-400">
+              <p className="mb-4 text-xs text-syntax-muted">
                 How you capture knowledge into SyntaxAI
               </p>
 
               <div className="space-y-3">
                 <InputMethodBar
-                  colorClass="bg-[#00eaff]"
+                  colorClass="bg-syntax-accent"
                   label="Code snippets"
                   total={inputTotal}
                   value={inputMethods.code}
                 />
                 <InputMethodBar
-                  colorClass="bg-[#00eaff]/60"
+                  colorClass="bg-syntax-accent/60"
                   label="Image OCR"
                   total={inputTotal}
                   value={inputMethods.image}
                 />
                 <InputMethodBar
-                  colorClass="bg-[#00eaff]/30"
+                  colorClass="bg-syntax-accent/30"
                   label="Tab Context"
                   total={inputTotal}
                   value={inputMethods.tab}
@@ -412,7 +410,7 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
               </div>
 
               {inputMethods.image === 0 && inputMethods.tab === 0 ? (
-                <p className="mt-3 text-[11px] text-gray-500">
+                <p className="mt-3 text-[11px] text-syntax-muted">
                   OCR and tab context tracking will appear as those flows ship.
                 </p>
               ) : null}

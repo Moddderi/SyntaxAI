@@ -13,10 +13,12 @@ import {
 import type { LibraryTabId } from './types/dashboard.types';
 import type { Note } from '../types/note';
 import { AnalyticsView } from './components/AnalyticsView';
+import { BetaFeedbackModal } from './components/BetaFeedbackModal';
 import { DashboardTopBar } from './components/DashboardTopBar';
 import { QuickSearchModal } from './components/QuickSearchModal';
 import { Sidebar } from './components/Sidebar';
 import { SnippetGrid } from './components/SnippetGrid';
+import { StackView } from './components/StackView';
 import { TechHeroBanner } from './components/TechHeroBanner';
 import { TrashGrid } from './components/TrashGrid';
 import { filterNotesByTechnology } from '../utils/noteHelpers';
@@ -28,6 +30,7 @@ export function Dashboard(): ReactElement {
   const [selectedTechnology, setSelectedTechnology] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
+  const [isBetaFeedbackOpen, setIsBetaFeedbackOpen] = useState(false);
   const [selectedNoteForDetail, setSelectedNoteForDetail] = useState<Note | null>(null);
 
   const detailNote = useMemo(() => {
@@ -43,7 +46,15 @@ export function Dashboard(): ReactElement {
       return notes;
     }
 
-    const tabNotes = filterNotesByLibraryTab(notes, activeTab);
+    if (activeTab === 'stack' && !selectedTechnology) {
+      return notes;
+    }
+
+    const tabNotes =
+      activeTab === 'stack'
+        ? notes
+        : filterNotesByLibraryTab(notes, activeTab);
+
     return filterNotesByTechnology(tabNotes, selectedTechnology);
   }, [activeTab, notes, selectedTechnology]);
 
@@ -62,7 +73,11 @@ export function Dashboard(): ReactElement {
 
   const handleTechnologySelect = useCallback((techSlug: string): void => {
     setSelectedTechnology(techSlug);
-    setActiveTab('all');
+    setActiveTab('stack');
+  }, []);
+
+  const handleBackToStack = useCallback((): void => {
+    setSelectedTechnology(null);
   }, []);
 
   const handleOpenNoteDetail = useCallback(
@@ -139,34 +154,48 @@ export function Dashboard(): ReactElement {
 
   const isAnalyticsView = activeTab === 'analytics';
   const isTrashView = activeTab === 'trash';
-  const isTechnologyView = selectedTechnology !== null;
+  const isStackBrowseView = activeTab === 'stack' && selectedTechnology === null;
+  const isTechnologyDetailView = selectedTechnology !== null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0d0d0f] text-white">
+    <div className="flex h-screen overflow-hidden bg-syntax-bg text-syntax-text">
       <Sidebar
         activeTab={activeTab}
         isLoading={isLoading}
         notes={notes}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenBetaFeedback={() => setIsBetaFeedbackOpen(true)}
         onTabChange={handleTabChange}
-        onTechnologySelect={handleTechnologySelect}
-        selectedTechnology={selectedTechnology}
-        trashCount={trashNotes.length}
       />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <main className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
-          <DashboardTopBar onOpenQuickSearch={() => setIsQuickSearchOpen(true)} />
+          <DashboardTopBar
+            isTrashActive={isTrashView}
+            onLoginClick={() => {
+              /* Auth flow — coming soon */
+            }}
+            onOpenQuickSearch={() => setIsQuickSearchOpen(true)}
+            onOpenTrash={() => handleTabChange('trash')}
+            trashCount={trashNotes.length}
+          />
 
           {isAnalyticsView ? (
             <AnalyticsView isLoading={isLoading} notes={notes} />
           ) : isTrashView ? (
             <TrashGrid isLoading={isLoading} notes={trashNotes} />
+          ) : isStackBrowseView ? (
+            <StackView
+              isLoading={isLoading}
+              notes={notes}
+              onSelectTechnology={handleTechnologySelect}
+            />
           ) : (
             <>
-              {isTechnologyView && selectedTechnology ? (
+              {isTechnologyDetailView && selectedTechnology ? (
                 <TechHeroBanner
                   key={selectedTechnology}
+                  onBackToStack={handleBackToStack}
                   snippetsCount={filteredNotes.length}
                   techName={formatTechnologyLabel(selectedTechnology)}
                   techSlug={selectedTechnology}
@@ -182,7 +211,7 @@ export function Dashboard(): ReactElement {
                 isLoading={isLoading}
                 notes={filteredNotes}
                 onOpenDetail={handleOpenNoteDetail}
-                title={isTechnologyView ? 'Snippets' : gridTitle}
+                title={isTechnologyDetailView ? 'Snippets' : gridTitle}
               />
             </>
           )}
@@ -192,6 +221,7 @@ export function Dashboard(): ReactElement {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+        onOpenUsage={() => setActiveTab('analytics')}
       />
 
       <QuickSearchModal
@@ -205,8 +235,11 @@ export function Dashboard(): ReactElement {
         note={detailNote}
         onClose={() => setSelectedNoteForDetail(null)}
       />
+
+      <BetaFeedbackModal
+        isOpen={isBetaFeedbackOpen}
+        onClose={() => setIsBetaFeedbackOpen(false)}
+      />
     </div>
   );
 }
-
-

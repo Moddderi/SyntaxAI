@@ -1,7 +1,6 @@
 import type { Note } from '../types/note';
 import { formatTechnologyLabel, getTechBrandColor, resolveDeviconSlug } from './techIcon';
 
-const RECENT_DAYS = 7;
 const HEATMAP_WEEKS = 16;
 const MINUTES_SAVED_PER_NOTE = 15;
 export const STACK_CHART_TOP_N = 6;
@@ -103,20 +102,14 @@ export function groupBreakdownForChart(
 
 export function filterNotesByLibraryTab(
   notes: Note[],
-  tab: 'all' | 'starred' | 'recent' | 'trash',
+  tab: 'all' | 'starred' | 'stack' | 'trash',
 ): Note[] {
   if (tab === 'starred') {
     return notes.filter((note) => note.isStarred);
   }
 
-  if (tab === 'recent') {
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - RECENT_DAYS);
-    return notes.filter((note) => new Date(note.createdAt) >= weekAgo);
-  }
-
-  if (tab === 'trash') {
-    return [];
+  if (tab === 'stack' || tab === 'trash') {
+    return notes;
   }
 
   return notes;
@@ -238,18 +231,18 @@ export function getHeatmapCellClass(count: number, isFuture: boolean): string {
   }
 
   if (count === 0) {
-    return 'bg-[#18181c] border border-[#222226]';
+    return 'bg-syntax-heatmap-empty border border-syntax-heatmap-empty-border';
   }
 
   if (count <= 2) {
-    return 'bg-[#00eaff]/25 border border-[#00eaff]/10';
+    return 'bg-syntax-accent/25 border border-syntax-accent/10';
   }
 
   if (count <= 4) {
-    return 'bg-[#00eaff]/60 border border-[#00eaff]/20';
+    return 'bg-syntax-accent/60 border border-syntax-accent/20';
   }
 
-  return 'bg-[#00eaff] border border-[#00eaff] shadow-[0_0_10px_#00eaff]';
+  return 'bg-syntax-accent border border-syntax-accent shadow-[0_0_10px_var(--syntax-accent)]';
 }
 
 export function formatHeatmapDate(date: Date): string {
@@ -288,8 +281,8 @@ export function getLibraryTabTitle(tab: string): string {
   switch (tab) {
     case 'starred':
       return 'Starred notes';
-    case 'recent':
-      return 'Recent notes';
+    case 'stack':
+      return 'Your stack';
     case 'trash':
       return 'Trash';
     default:

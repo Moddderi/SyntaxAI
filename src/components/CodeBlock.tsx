@@ -63,7 +63,7 @@ export function CodeBlock({
 
   return (
     <div
-      className={`overflow-hidden rounded-xl border border-[#1c1c20] bg-[#1a1b1e] ${className}`.trim()}
+      className={`overflow-hidden rounded-xl border border-syntax-border bg-syntax-code ${className}`.trim()}
       style={
         maxLines
           ? {
@@ -75,8 +75,8 @@ export function CodeBlock({
       }
     >
       {showLanguageLabel ? (
-        <div className="flex items-center border-b border-[#1c1c20] bg-[#141417] px-3 py-1.5">
-          <span className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-gray-500">
+        <div className="flex items-center border-b border-syntax-border bg-syntax-card px-3 py-1.5">
+          <span className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-syntax-muted">
             {languageLabel}
           </span>
         </div>

@@ -12,7 +12,7 @@ interface NestedTechIconsProps {
 export function NestedTechIcons({
   primaryTech,
   language,
-  cardBackgroundClass = 'border-[#141417] bg-[#141417]',
+  cardBackgroundClass = 'border-syntax-border bg-syntax-card',
   size = 'md',
 }: NestedTechIconsProps): ReactElement {
   const showNestedLanguage = shouldNestLanguageIcon(primaryTech, language);

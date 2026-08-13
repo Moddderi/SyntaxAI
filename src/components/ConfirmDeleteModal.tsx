@@ -34,36 +34,36 @@ export function ConfirmDeleteModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-syntax-overlay p-4"
       onClick={onCancel}
       role="presentation"
     >
       <div
         aria-labelledby="confirm-delete-title"
         aria-modal="true"
-        className="w-full max-w-sm rounded-2xl border border-[#1c1c20] bg-[#141417] p-6 shadow-2xl"
+        className="w-full max-w-sm rounded-2xl border border-syntax-border bg-syntax-card p-6 shadow-2xl"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
       >
-        <h2 className="text-lg font-semibold text-white" id="confirm-delete-title">
+        <h2 className="text-lg font-semibold text-syntax-text" id="confirm-delete-title">
           Delete note?
         </h2>
-        <p className="mt-2 text-sm text-gray-400">
+        <p className="mt-2 text-sm text-syntax-muted">
           Are you sure you want to delete{' '}
-          <span className="font-medium text-gray-300">&ldquo;{noteTitle}&rdquo;</span>? It will
+          <span className="font-medium text-syntax-muted">&ldquo;{noteTitle}&rdquo;</span>? It will
           move to Trash.
         </p>
 
         <div className="mt-6 flex items-center gap-2">
           <button
-            className="h-10 flex-1 rounded-full border border-[#1c1c20] text-sm text-gray-300 transition hover:bg-[#0d0d0f] hover:text-white"
+            className="h-10 flex-1 rounded-full border border-syntax-border text-sm text-syntax-muted transition hover:bg-syntax-inset hover:text-syntax-text"
             onClick={onCancel}
             type="button"
           >
             Cancel
           </button>
           <button
-            className="h-10 flex-1 rounded-full bg-red-500/90 text-sm font-semibold text-white transition hover:bg-red-500"
+            className="h-10 flex-1 rounded-full bg-red-500/90 text-sm font-semibold text-syntax-text transition hover:bg-red-500"
             onClick={onConfirm}
             type="button"
           >

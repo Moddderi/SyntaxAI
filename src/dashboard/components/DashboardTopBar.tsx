@@ -1,34 +1,108 @@
 import type { ReactElement } from 'react';
-import { SearchIcon } from './icons';
+import { buildBugReportMailto } from '../../constants/support';
+import { BugIcon, LoginIcon, SearchIcon, TrashIcon } from './icons';
 
 interface DashboardTopBarProps {
   onOpenQuickSearch: () => void;
+  onOpenTrash: () => void;
+  onLoginClick?: () => void;
+  isTrashActive: boolean;
+  trashCount: number;
 }
 
-export function DashboardTopBar({ onOpenQuickSearch }: DashboardTopBarProps): ReactElement {
+function TopBarIconButton({
+  ariaLabel,
+  isActive,
+  onClick,
+  children,
+  badge,
+}: {
+  ariaLabel: string;
+  isActive: boolean;
+  onClick: () => void;
+  children: ReactElement;
+  badge?: number;
+}): ReactElement {
   return (
-    <div className="mb-6 flex items-center gap-4">
-      <div className="relative flex-1">
-        <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+    <button
+      aria-label={ariaLabel}
+      aria-pressed={isActive}
+      className={`relative flex h-10 w-10 items-center justify-center rounded-xl border transition ${
+        isActive
+          ? 'border-syntax-accent/30 bg-syntax-accent/10 text-syntax-accent'
+          : 'border-syntax-border bg-syntax-card text-syntax-muted hover:border-syntax-accent/20 hover:text-syntax-text'
+      }`}
+      onClick={onClick}
+      type="button"
+    >
+      {children}
+      {badge !== undefined && badge > 0 ? (
+        <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-syntax-accent px-1 text-[10px] font-semibold text-black">
+          {badge > 9 ? '9+' : badge}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+export function DashboardTopBar({
+  onOpenQuickSearch,
+  onOpenTrash,
+  onLoginClick,
+  isTrashActive,
+  trashCount,
+}: DashboardTopBarProps): ReactElement {
+  const handleReportBug = (): void => {
+    window.open(buildBugReportMailto(), '_blank', 'noopener,noreferrer');
+  };
+
+  return (
+    <div className="mb-6 flex items-center gap-3">
+      <div className="relative min-w-0 flex-1">
+        <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-syntax-muted" />
         <button
           aria-label="Open quick search"
-          className="h-12 w-full rounded-2xl border border-[#1c1c20] bg-[#141417] py-2 pl-11 pr-16 text-left text-sm text-gray-500 transition hover:border-[#00eaff]/30 hover:text-gray-400"
+          className="h-10 w-full rounded-xl border border-syntax-border bg-syntax-card py-2 pl-10 pr-14 text-left text-[13px] text-syntax-muted transition hover:border-syntax-accent/25 hover:text-syntax-text"
           onClick={onOpenQuickSearch}
           type="button"
         >
           Search notes, tags, languages...
         </button>
-        <kbd className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rounded-md border border-[#1c1c20] bg-[#0d0d0f] px-1.5 py-0.5 text-[10px] text-gray-400">
+        <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-syntax-border bg-syntax-bg px-1.5 py-0.5 text-[10px] text-syntax-muted">
           ⌘K
         </kbd>
       </div>
 
-      <button
-        className="h-12 shrink-0 rounded-full bg-[#00eaff] px-5 text-sm font-semibold text-black transition hover:bg-[#00eaff]/90"
-        type="button"
-      >
-        + New Note
-      </button>
+      <div className="flex shrink-0 items-center gap-3">
+        <button
+          className="flex items-center gap-2 whitespace-nowrap text-[13px] text-syntax-muted transition hover:text-syntax-text"
+          onClick={handleReportBug}
+          type="button"
+        >
+          <BugIcon className="h-4 w-4 shrink-0" />
+          <span className="hidden min-[420px]:inline">Report a bug</span>
+        </button>
+
+        <div className="flex items-center gap-2">
+          <TopBarIconButton
+            ariaLabel="Open trash"
+            badge={trashCount}
+            isActive={isTrashActive}
+            onClick={onOpenTrash}
+          >
+            <TrashIcon className="h-[17px] w-[17px]" />
+          </TopBarIconButton>
+
+          <button
+            className="flex h-10 items-center gap-2 rounded-xl bg-syntax-accent px-3.5 text-[13px] font-semibold text-black transition hover:opacity-90"
+            onClick={onLoginClick}
+            type="button"
+          >
+            <LoginIcon className="h-4 w-4" />
+            Login
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

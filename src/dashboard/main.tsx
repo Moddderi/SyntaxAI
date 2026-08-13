@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Dashboard } from './Dashboard';
+import { applyTheme, getTheme } from '../storage/themeStorage';
 import '../styles/index.css';
 
 const rootElement = document.getElementById('root');
@@ -8,6 +9,8 @@ const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error('Root element #root not found');
 }
+
+void getTheme().then(applyTheme);
 
 createRoot(rootElement).render(
   <StrictMode>

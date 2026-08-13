@@ -21,10 +21,10 @@ export function SnippetListRow({
 }: SnippetListRowProps): ReactElement {
   return (
     <article
-      className={`group relative flex cursor-pointer items-center gap-3 rounded-2xl border bg-[#141417] px-4 py-3 transition ${
+      className={`group relative flex cursor-pointer items-center gap-3 rounded-2xl border bg-syntax-card px-4 py-3 transition ${
         isHighlighted
-          ? 'border-[#00eaff] ring-2 ring-[#00eaff]/30'
-          : 'border-[#1c1c20] hover:border-[#00eaff]/30'
+          ? 'border-syntax-accent ring-2 ring-syntax-accent/30'
+          : 'border-syntax-border hover:border-syntax-accent/30'
       }`}
       data-note-id={snippet.id}
       onClick={() => onOpenDetail(snippet.id)}
@@ -38,16 +38,16 @@ export function SnippetListRow({
       tabIndex={0}
     >
       <NestedTechIcons
-        cardBackgroundClass="border-[#141417] bg-[#141417]"
+        cardBackgroundClass="border-syntax-border bg-syntax-card"
         language={snippet.language}
         primaryTech={snippet.primaryTech}
         size="md"
       />
 
       <div className="min-w-0 flex-1">
-        <h3 className="truncate text-sm font-semibold text-white">{snippet.title}</h3>
+        <h3 className="truncate text-sm font-semibold text-syntax-text">{snippet.title}</h3>
         {snippet.previewLine.trim() ? (
-          <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-zinc-400">
+          <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-syntax-muted">
             {snippet.previewLine}
           </p>
         ) : null}
@@ -58,7 +58,7 @@ export function SnippetListRow({
           {snippet.topics.slice(0, 2).map((topic) => (
             <span
               key={topic}
-              className="rounded-full border border-[#1c1c20] bg-[#0d0d0f] px-2 py-0.5 text-[10px] text-gray-400"
+              className="rounded-full border border-syntax-border bg-syntax-inset px-2 py-0.5 text-[10px] text-syntax-muted"
             >
               {formatTopicLabel(topic)}
             </span>
@@ -66,7 +66,7 @@ export function SnippetListRow({
         </div>
       ) : null}
 
-      <span className="hidden shrink-0 text-[10px] text-gray-500 lg:inline">
+      <span className="hidden shrink-0 text-[10px] text-syntax-muted lg:inline">
         {snippet.updatedAt}
       </span>
 

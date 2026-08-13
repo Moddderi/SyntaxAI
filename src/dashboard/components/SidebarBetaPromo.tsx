@@ -1,0 +1,31 @@
+import type { ReactElement } from 'react';
+import { SparklesIcon } from './icons';
+
+interface SidebarBetaPromoProps {
+  onClick: () => void;
+}
+
+export function SidebarBetaPromo({ onClick }: SidebarBetaPromoProps): ReactElement {
+  return (
+    <button
+      className="group mb-4 w-full rounded-xl border border-syntax-accent/20 bg-gradient-to-br from-syntax-accent/[0.07] to-transparent p-3.5 text-left transition hover:border-syntax-accent/35 hover:from-syntax-accent/10"
+      onClick={onClick}
+      type="button"
+    >
+      <div className="flex items-start gap-2.5">
+        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-syntax-accent/20 bg-syntax-accent/10 text-syntax-accent transition group-hover:border-syntax-accent/35">
+          <SparklesIcon className="h-3.5 w-3.5" />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-[13px] font-medium leading-snug text-syntax-text">
+            Beta feedback
+          </span>
+          <span className="mt-1 block text-[11px] leading-relaxed text-syntax-muted">
+            Testing early access? Share your experience —{' '}
+            <span className="text-syntax-accent">1 month Pro free</span> at launch.
+          </span>
+        </span>
+      </div>
+    </button>
+  );
+}

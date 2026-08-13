@@ -3,9 +3,7 @@ import type { DetectedNote } from '../sidepanel/types/capture.types';
 import type { Note, NoteSourceType } from '../types/note';
 import { buildPlainTextPreview } from './markdownPreview';
 import { resolveNoteTechnology } from './pageContextTechDetection';
-import { formatTechnologyLabel, resolveDeviconSlug } from './techIcon';
-
-const RECENT_DAYS = 7;
+import { formatTechnologyLabel, getTechBrandColor, resolveDeviconSlug } from './techIcon';
 
 export function formatRelativeTime(isoDate: string): string {
   const date = new Date(isoDate);
@@ -140,18 +138,63 @@ export function computeLibraryNavCounts(
 ): {
   all: number;
   starred: number;
-  recent: number;
+  stack: number;
   trash: number;
 } {
-  const weekAgo = new Date();
-  weekAgo.setDate(weekAgo.getDate() - RECENT_DAYS);
+  const techSlugs = new Set(
+    notes.map((note) => resolveDeviconSlug(note.primaryTech)),
+  );
 
   return {
     all: notes.length,
     starred: notes.filter((note) => note.isStarred).length,
-    recent: notes.filter((note) => new Date(note.createdAt) >= weekAgo).length,
+    stack: techSlugs.size,
     trash: trashCount,
   };
+}
+
+export interface StackTechItem {
+  slug: string;
+  label: string;
+  count: number;
+  lastActivityAt: string;
+  brandColor: string;
+}
+
+export function computeStackTechItems(notes: Note[]): StackTechItem[] {
+  const aggregates = new Map<string, { count: number; lastActivityAt: string }>();
+
+  notes.forEach((note) => {
+    const slug = resolveDeviconSlug(note.primaryTech);
+    const existing = aggregates.get(slug);
+
+    if (!existing) {
+      aggregates.set(slug, { count: 1, lastActivityAt: note.createdAt });
+      return;
+    }
+
+    existing.count += 1;
+
+    if (note.createdAt > existing.lastActivityAt) {
+      existing.lastActivityAt = note.createdAt;
+    }
+  });
+
+  return Array.from(aggregates.entries())
+    .sort((left, right) => {
+      if (right[1].count !== left[1].count) {
+        return right[1].count - left[1].count;
+      }
+
+      return right[1].lastActivityAt.localeCompare(left[1].lastActivityAt);
+    })
+    .map(([slug, data]) => ({
+      slug,
+      label: formatTechnologyLabel(slug),
+      count: data.count,
+      lastActivityAt: data.lastActivityAt,
+      brandColor: getTechBrandColor(slug),
+    }));
 }
 
 export function searchNotes(notes: Note[], query: string): Note[] {

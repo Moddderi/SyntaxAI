@@ -6,6 +6,26 @@ export const FREE_PLAN_LIMITS = {
   photoReads: 10,
 } as const;
 
+export const PRO_PLAN = {
+  priceLabel: '$4.99',
+  periodLabel: '/ month',
+  priceMonthly: 4.99,
+} as const;
+
+export const PRO_PLAN_FEATURES = [
+  'Unlimited notes in your library',
+  'Unlimited page context captures',
+  'Unlimited photo & screenshot reads',
+  'Priority AI — faster titles, tags, and stack detection',
+] as const;
+
+export const FREE_PLAN_FEATURES = [
+  `${FREE_PLAN_LIMITS.notes} saved notes`,
+  `${FREE_PLAN_LIMITS.contextSaves} page context captures`,
+  `${FREE_PLAN_LIMITS.photoReads} photo reads`,
+  'Smart titles, tags, and stack detection',
+] as const;
+
 export type UsageQuotaId = 'notes' | 'context' | 'photos';
 
 export type UsageQuotaTone = 'comfortable' | 'watch' | 'full';
@@ -13,6 +33,7 @@ export type UsageQuotaTone = 'comfortable' | 'watch' | 'full';
 export interface UsageQuota {
   id: UsageQuotaId;
   label: string;
+  shortLabel: string;
   hint: string;
   used: number;
   limit: number;
@@ -26,6 +47,19 @@ export interface UsageOverview {
   planTagline: string;
   quotas: UsageQuota[];
   isPro: boolean;
+  headlineRemaining: string;
+  urgencyMessage: string | null;
+  primaryQuota: UsageQuota;
+}
+
+export interface SidebarUsageSnapshot {
+  notesUsed: number;
+  notesLimit: number;
+  notesPercent: number;
+  headline: string;
+  subline: string;
+  urgency: UsageQuotaTone;
+  quotas: UsageQuota[];
 }
 
 function getUsageTone(used: number, limit: number): UsageQuotaTone {
@@ -35,7 +69,7 @@ function getUsageTone(used: number, limit: number): UsageQuotaTone {
     return 'full';
   }
 
-  if (ratio >= 0.8) {
+  if (ratio >= 0.75) {
     return 'watch';
   }
 
@@ -53,24 +87,79 @@ function isPhotoNote(note: Note): boolean {
 function buildQuota(
   id: UsageQuotaId,
   label: string,
+  shortLabel: string,
   hint: string,
   used: number,
   limit: number,
 ): UsageQuota {
-  const cappedUsed = Math.min(used, limit);
   const remaining = Math.max(limit - used, 0);
-  const percentUsed = limit > 0 ? Math.round((cappedUsed / limit) * 100) : 0;
+  const percentUsed = limit > 0 ? Math.min(Math.round((used / limit) * 100), 100) : 0;
 
   return {
     id,
     label,
+    shortLabel,
     hint,
-    used: cappedUsed,
+    used,
     limit,
     remaining,
     percentUsed,
     tone: getUsageTone(used, limit),
   };
+}
+
+function buildUrgencyMessage(quotas: UsageQuota[]): string | null {
+  const fullQuota = quotas.find((quota) => quota.tone === 'full');
+
+  if (fullQuota) {
+    if (fullQuota.id === 'notes') {
+      return 'Your notebook is full. Upgrade to Pro to keep capturing without deleting notes.';
+    }
+
+    if (fullQuota.id === 'context') {
+      return 'Page context limit reached. Pro unlocks unlimited docs and rules capture.';
+    }
+
+    return 'Photo read limit reached. Pro lets you scan unlimited screenshots.';
+  }
+
+  const watchQuota = quotas.find((quota) => quota.tone === 'watch');
+
+  if (watchQuota) {
+    return `Running low on ${watchQuota.shortLabel.toLowerCase()} — Pro removes all caps.`;
+  }
+
+  return null;
+}
+
+function buildHeadlineRemaining(primaryQuota: UsageQuota): string {
+  if (primaryQuota.remaining <= 0) {
+    return 'Limit reached';
+  }
+
+  if (primaryQuota.id === 'notes') {
+    return primaryQuota.remaining === 1 ? '1 note left' : `${primaryQuota.remaining} notes left`;
+  }
+
+  if (primaryQuota.id === 'context') {
+    return primaryQuota.remaining === 1
+      ? '1 context left'
+      : `${primaryQuota.remaining} contexts left`;
+  }
+
+  return primaryQuota.remaining === 1 ? '1 photo left' : `${primaryQuota.remaining} photos left`;
+}
+
+function getPrimaryQuota(quotas: UsageQuota[]): UsageQuota {
+  const sorted = [...quotas].sort((left, right) => {
+    if (left.percentUsed !== right.percentUsed) {
+      return right.percentUsed - left.percentUsed;
+    }
+
+    return right.used - left.used;
+  });
+
+  return sorted[0] ?? quotas[0];
 }
 
 export function computeUsageOverview(notes: Note[]): UsageOverview {
@@ -82,39 +171,73 @@ export function computeUsageOverview(notes: Note[]): UsageOverview {
       planTagline: 'Unlimited notes, context, and photo reads.',
       quotas: [],
       isPro: true,
+      headlineRemaining: 'Unlimited',
+      urgencyMessage: null,
+      primaryQuota: buildQuota('notes', 'Saved notes', 'Notes', '', 0, 1),
     };
   }
 
-  const contextUsed = notes.filter(hasContextBody).length;
-  const photoUsed = notes.filter(isPhotoNote).length;
+  const quotas = [
+    buildQuota(
+      'notes',
+      'Saved notes',
+      'Notes',
+      'Any capture saved to your library',
+      notes.length,
+      FREE_PLAN_LIMITS.notes,
+    ),
+    buildQuota(
+      'context',
+      'Page context',
+      'Context',
+      'Notes with docs, rules, or page text',
+      notes.filter(hasContextBody).length,
+      FREE_PLAN_LIMITS.contextSaves,
+    ),
+    buildQuota(
+      'photos',
+      'Photo reads',
+      'Photos',
+      'Screenshots and images read by AI',
+      notes.filter(isPhotoNote).length,
+      FREE_PLAN_LIMITS.photoReads,
+    ),
+  ];
+
+  const primaryQuota = getPrimaryQuota(quotas);
 
   return {
     planName: 'Free plan',
-    planTagline: '30 notes to start. Context and photo reads have their own caps.',
-    quotas: [
-      buildQuota(
-        'notes',
-        'Saved notes',
-        'Any capture saved to your library',
-        notes.length,
-        FREE_PLAN_LIMITS.notes,
-      ),
-      buildQuota(
-        'context',
-        'Page context',
-        'Notes with docs, rules, or page text',
-        contextUsed,
-        FREE_PLAN_LIMITS.contextSaves,
-      ),
-      buildQuota(
-        'photos',
-        'Photo reads',
-        'Screenshots and images read by AI',
-        photoUsed,
-        FREE_PLAN_LIMITS.photoReads,
-      ),
-    ],
+    planTagline: 'Start free — upgrade when your library grows.',
+    quotas,
     isPro: false,
+    headlineRemaining: buildHeadlineRemaining(primaryQuota),
+    urgencyMessage: buildUrgencyMessage(quotas),
+    primaryQuota,
+  };
+}
+
+export function computeSidebarUsageSnapshot(notes: Note[]): SidebarUsageSnapshot {
+  const overview = computeUsageOverview(notes);
+  const notesQuota =
+    overview.quotas.find((quota) => quota.id === 'notes') ?? overview.primaryQuota;
+
+  let subline = `${notesQuota.used} of ${notesQuota.limit} notes saved`;
+
+  if (overview.urgencyMessage) {
+    subline = overview.urgencyMessage;
+  } else if (notesQuota.remaining <= 5) {
+    subline = `Only ${notesQuota.remaining} spots left on Free`;
+  }
+
+  return {
+    notesUsed: notesQuota.used,
+    notesLimit: notesQuota.limit,
+    notesPercent: notesQuota.percentUsed,
+    headline: buildHeadlineRemaining(notesQuota),
+    subline,
+    urgency: notesQuota.tone,
+    quotas: overview.quotas,
   };
 }
 
@@ -154,4 +277,8 @@ export function formatQuotaRemaining(quota: UsageQuota): string {
   }
 
   return quota.remaining === 1 ? '1 photo left' : `${quota.remaining} photos left`;
+}
+
+export function formatNavUsageBadge(notesUsed: number, notesLimit: number): string {
+  return `${notesUsed}/${notesLimit}`;
 }

@@ -211,18 +211,18 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-syntax-overlay p-4"
       onClick={onClose}
       role="presentation"
     >
       <div
         aria-labelledby="note-detail-title"
         aria-modal="true"
-        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-[#1c1c20] bg-[#141417] shadow-2xl"
+        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-syntax-border bg-syntax-card shadow-2xl"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
       >
-        <header className="border-b border-[#1c1c20] px-6 py-5">
+        <header className="border-b border-syntax-border px-6 py-5">
           <div className="flex items-start gap-4">
             <NestedTechIcons
               language={note.language}
@@ -234,7 +234,7 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
               {isEditing ? (
                 <input
                   aria-label="Note title"
-                  className="w-full rounded-xl border border-[#1c1c20] bg-[#0d0d0f] px-3 py-2 text-xl font-semibold text-white outline-none transition focus:border-[#00eaff]/40"
+                  className="w-full rounded-xl border border-syntax-border bg-syntax-inset px-3 py-2 text-xl font-semibold text-syntax-text outline-none transition focus:border-syntax-accent/40"
                   id="note-detail-title"
                   onChange={(event) =>
                     setEditForm((current) =>
@@ -247,7 +247,7 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
               ) : (
                 <input
                   aria-label="Note title"
-                  className="w-full truncate bg-transparent text-xl font-semibold text-white outline-none transition placeholder:text-gray-500 focus:rounded-lg focus:bg-[#0d0d0f] focus:px-2 focus:py-1"
+                  className="w-full truncate bg-transparent text-xl font-semibold text-syntax-text outline-none transition placeholder:text-syntax-muted focus:rounded-lg focus:bg-syntax-inset focus:px-2 focus:py-1"
                   id="note-detail-title"
                   onBlur={handleTitleBlur}
                   onChange={(event) => setTitle(event.target.value)}
@@ -256,13 +256,13 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
                   value={title}
                 />
               )}
-              <p className="mt-1 text-sm text-gray-500">{formatNoteDate(note.createdAt)}</p>
+              <p className="mt-1 text-sm text-syntax-muted">{formatNoteDate(note.createdAt)}</p>
             </div>
 
             <div className="flex items-center gap-2">
               {!isEditing ? (
                 <button
-                  className="rounded-full border border-[#1c1c20] bg-[#0d0d0f] px-3 py-1.5 text-xs text-gray-300 transition hover:border-[#00eaff]/40 hover:text-[#00eaff]"
+                  className="rounded-full border border-syntax-border bg-syntax-inset px-3 py-1.5 text-xs text-syntax-muted transition hover:border-syntax-accent/40 hover:text-syntax-accent"
                   onClick={handleStartEditing}
                   type="button"
                 >
@@ -272,7 +272,7 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
 
               <button
                 aria-label="Close note detail"
-                className="rounded-lg px-2 py-1 text-gray-400 transition hover:bg-[#0d0d0f] hover:text-white"
+                className="rounded-lg px-2 py-1 text-syntax-muted transition hover:bg-syntax-inset hover:text-syntax-text"
                 onClick={onClose}
                 type="button"
               >
@@ -283,9 +283,9 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          <section className="mb-5 rounded-2xl border border-transparent bg-[#0d0d0f] p-[1px] [background:linear-gradient(135deg,rgba(0,234,255,0.45),rgba(167,139,250,0.35))]">
-            <div className="rounded-[15px] bg-[#0d0d0f] px-4 py-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-medium text-[#00eaff]">
+          <section className="mb-5 rounded-2xl border border-transparent bg-syntax-inset p-[1px] [background:linear-gradient(135deg,rgba(0,234,255,0.45),rgba(167,139,250,0.35))]">
+            <div className="rounded-[15px] bg-syntax-inset px-4 py-4">
+              <div className="mb-2 flex items-center gap-2 text-sm font-medium text-syntax-accent">
                 <span aria-hidden="true">✨</span>
                 <span>AI Insight</span>
               </div>
@@ -293,7 +293,7 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
               {isEditing ? (
                 <textarea
                   aria-label="AI insight summary"
-                  className="min-h-[100px] w-full resize-y rounded-xl border border-[#1c1c20] bg-[#141417] px-3 py-3 text-sm leading-relaxed text-gray-300 outline-none transition focus:border-[#00eaff]/40"
+                  className="min-h-[100px] w-full resize-y rounded-xl border border-syntax-border bg-syntax-card px-3 py-3 text-sm leading-relaxed text-syntax-muted outline-none transition focus:border-syntax-accent/40"
                   onChange={(event) =>
                     setEditForm((current) =>
                       current ? { ...current, summary: event.target.value } : current,
@@ -309,15 +309,15 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
           </section>
 
           {(note.body?.trim() || isEditing) ? (
-            <section className="mb-5 rounded-2xl border border-[#1c1c20] bg-[#0d0d0f] px-4 py-4">
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+            <section className="mb-5 rounded-2xl border border-syntax-border bg-syntax-inset px-4 py-4">
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-syntax-muted">
                 Context
               </h3>
 
               {isEditing ? (
                 <textarea
                   aria-label="Note context body"
-                  className="min-h-[180px] w-full resize-y rounded-xl border border-[#1c1c20] bg-[#141417] px-3 py-3 font-mono text-xs leading-relaxed text-gray-300 outline-none transition focus:border-[#00eaff]/40"
+                  className="min-h-[180px] w-full resize-y rounded-xl border border-syntax-border bg-syntax-card px-3 py-3 font-mono text-xs leading-relaxed text-syntax-muted outline-none transition focus:border-syntax-accent/40"
                   onChange={(event) =>
                     setEditForm((current) =>
                       current ? { ...current, body: event.target.value } : current,
@@ -334,19 +334,19 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
 
           <section className="relative">
             <div className="mb-2 flex items-center justify-between gap-3">
-              <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-syntax-muted">
                 Code
               </h3>
               <div className="relative">
                 <button
-                  className="rounded-full border border-[#1c1c20] bg-[#0d0d0f] px-3 py-1.5 text-xs text-gray-300 transition hover:border-[#00eaff]/40 hover:text-[#00eaff]"
+                  className="rounded-full border border-syntax-border bg-syntax-inset px-3 py-1.5 text-xs text-syntax-muted transition hover:border-syntax-accent/40 hover:text-syntax-accent"
                   onClick={() => void handleCopyCode()}
                   type="button"
                 >
                   Copy Code
                 </button>
                 {isCopied ? (
-                  <span className="absolute -top-8 right-0 rounded-md bg-[#00eaff] px-2 py-1 text-[10px] font-semibold text-black">
+                  <span className="absolute -top-8 right-0 rounded-md bg-syntax-accent px-2 py-1 text-[10px] font-semibold text-black">
                     Copied!
                   </span>
                 ) : null}
@@ -356,7 +356,7 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
             {isEditing ? (
               <textarea
                 aria-label="Code block"
-                className="min-h-[220px] w-full resize-y rounded-xl border border-[#1c1c20] bg-[#1a1b1e] px-3 py-3 font-mono text-xs leading-relaxed text-gray-200 outline-none transition focus:border-[#00eaff]/40"
+                className="min-h-[220px] w-full resize-y rounded-xl border border-syntax-border bg-syntax-code px-3 py-3 font-mono text-xs leading-relaxed text-syntax-muted outline-none transition focus:border-syntax-accent/40"
                 onChange={(event) =>
                   setEditForm((current) =>
                     current ? { ...current, code: event.target.value } : current,
@@ -379,12 +379,12 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
           {isEditing ? (
             <section className="mt-5">
               <label className="block">
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-syntax-muted">
                   Tags
                 </span>
                 <input
                   aria-label="Note tags"
-                  className="w-full rounded-xl border border-[#1c1c20] bg-[#0d0d0f] px-3 py-2 text-sm text-gray-300 outline-none transition focus:border-[#00eaff]/40"
+                  className="w-full rounded-xl border border-syntax-border bg-syntax-inset px-3 py-2 text-sm text-syntax-muted outline-none transition focus:border-syntax-accent/40"
                   onChange={(event) =>
                     setEditForm((current) =>
                       current ? { ...current, topicsInput: event.target.value } : current,
@@ -395,7 +395,7 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
                   value={editForm.topicsInput}
                 />
               </label>
-              <p className="mt-2 text-[11px] text-gray-500">Separate tags with commas.</p>
+              <p className="mt-2 text-[11px] text-syntax-muted">Separate tags with commas.</p>
             </section>
           ) : null}
 
@@ -406,13 +406,13 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
           ) : null}
         </div>
 
-        <footer className="border-t border-[#1c1c20] px-6 py-4">
+        <footer className="border-t border-syntax-border px-6 py-4">
           {!isEditing && note.topics.length > 0 ? (
             <div className="mb-3 flex flex-wrap gap-2">
               {note.topics.map((topic) => (
                 <span
                   key={topic}
-                  className="rounded-full border border-[#1c1c20] bg-[#0d0d0f] px-3 py-1 text-xs text-gray-400"
+                  className="rounded-full border border-syntax-border bg-syntax-inset px-3 py-1 text-xs text-syntax-muted"
                 >
                   {formatTopicLabel(topic)}
                 </span>
@@ -423,7 +423,7 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
           {isEditing ? (
             <div className="mb-3 flex flex-wrap gap-3">
               <button
-                className="h-10 rounded-full bg-[#00eaff] px-5 text-sm font-semibold text-black transition hover:bg-[#00eaff]/90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-10 rounded-full bg-syntax-accent px-5 text-sm font-semibold text-black transition hover:bg-syntax-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isSaving}
                 onClick={() => void handleSaveEdits()}
                 type="button"
@@ -431,7 +431,7 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
                 {isSaving ? 'Saving…' : 'Save changes'}
               </button>
               <button
-                className="h-10 rounded-full border border-[#1c1c20] px-5 text-sm text-gray-300 transition hover:border-[#00eaff]/40 hover:text-white"
+                className="h-10 rounded-full border border-syntax-border px-5 text-sm text-syntax-muted transition hover:border-syntax-accent/40 hover:text-syntax-text"
                 disabled={isSaving}
                 onClick={handleCancelEditing}
                 type="button"
@@ -442,11 +442,11 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
           ) : null}
 
           {note.sourceType === 'tab' ? (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-syntax-muted">
               Source:{' '}
               {note.sourceUrl ? (
                 <a
-                  className="text-[#00eaff] transition hover:underline"
+                  className="text-syntax-accent transition hover:underline"
                   href={note.sourceUrl}
                   rel="noreferrer"
                   target="_blank"

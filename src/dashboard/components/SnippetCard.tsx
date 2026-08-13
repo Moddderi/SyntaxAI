@@ -22,10 +22,10 @@ export function SnippetCard({
 }: SnippetCardProps): ReactElement {
   return (
     <article
-      className={`group relative flex cursor-pointer flex-col rounded-3xl border bg-[#141417] p-6 transition ${
+      className={`group relative flex cursor-pointer flex-col rounded-3xl border bg-syntax-card p-6 transition ${
         isHighlighted
-          ? 'border-[#00eaff] ring-2 ring-[#00eaff]/30'
-          : 'border-[#1c1c20] hover:border-[#00eaff]/30'
+          ? 'border-syntax-accent ring-2 ring-syntax-accent/30'
+          : 'border-syntax-border hover:border-syntax-accent/30'
       }`}
       data-note-id={snippet.id}
       onClick={() => onOpenDetail(snippet.id)}
@@ -57,17 +57,17 @@ export function SnippetCard({
 
           <div className="min-w-0 flex-1 pt-1">
             <div className="flex items-start justify-between gap-3">
-              <h3 className="line-clamp-2 text-base font-semibold leading-snug text-white">
+              <h3 className="line-clamp-2 text-base font-semibold leading-snug text-syntax-text">
                 {snippet.title}
               </h3>
-              <span className="shrink-0 text-xs text-gray-500">{snippet.updatedAt}</span>
+              <span className="shrink-0 text-xs text-syntax-muted">{snippet.updatedAt}</span>
             </div>
           </div>
         </div>
       </div>
 
       {snippet.previewLine.trim() ? (
-        <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-zinc-400">
+        <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-syntax-muted">
           {snippet.previewLine}
         </p>
       ) : null}
@@ -86,7 +86,7 @@ export function SnippetCard({
           {snippet.topics.map((topic) => (
             <span
               key={topic}
-              className="rounded-full border border-[#1c1c20] bg-[#0d0d0f] px-3 py-1.5 text-xs text-gray-400"
+              className="rounded-full border border-syntax-border bg-syntax-inset px-3 py-1.5 text-xs text-syntax-muted"
             >
               {formatTopicLabel(topic)}
             </span>

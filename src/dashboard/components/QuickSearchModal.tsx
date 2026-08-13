@@ -97,23 +97,23 @@ export function QuickSearchModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 p-4 pt-[12vh]"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-syntax-overlay p-4 pt-[12vh]"
       onClick={onClose}
       role="presentation"
     >
       <div
         aria-label="Quick search"
         aria-modal="true"
-        className="w-full max-w-xl overflow-hidden rounded-2xl border border-[#1c1c20] bg-[#141417] shadow-2xl"
+        className="w-full max-w-xl overflow-hidden rounded-2xl border border-syntax-border bg-syntax-card shadow-2xl"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
       >
-        <div className="relative border-b border-[#1c1c20]">
-          <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+        <div className="relative border-b border-syntax-border">
+          <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-syntax-muted" />
           <input
             ref={inputRef}
             aria-label="Search notes"
-            className="h-14 w-full bg-transparent py-2 pl-11 pr-4 text-sm text-white outline-none placeholder:text-gray-500"
+            className="h-14 w-full bg-transparent py-2 pl-11 pr-4 text-sm text-syntax-text outline-none placeholder:text-syntax-muted"
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={handleInputKeyDown}
             placeholder="Search by title, code, or topics…"
@@ -129,8 +129,8 @@ export function QuickSearchModal({
                 key={note.id}
                 className={`flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition ${
                   index === activeIndex
-                    ? 'bg-[#00eaff]/10 text-white'
-                    : 'text-gray-300 hover:bg-[#0d0d0f]'
+                    ? 'bg-syntax-accent/10 text-syntax-text'
+                    : 'text-syntax-muted hover:bg-syntax-inset'
                 }`}
                 onClick={() => handleSelect(note.id)}
                 onMouseEnter={() => setActiveIndex(index)}
@@ -139,11 +139,11 @@ export function QuickSearchModal({
                 <TechIcon size="sm" tech={note.primaryTech} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">{note.title}</span>
-                  <span className="mt-0.5 block truncate font-mono text-[11px] text-gray-500">
+                  <span className="mt-0.5 block truncate font-mono text-[11px] text-syntax-muted">
                     {note.code.slice(0, 80)}
                   </span>
                   {note.topics.length > 0 ? (
-                    <span className="mt-1 block truncate text-[10px] text-gray-500">
+                    <span className="mt-1 block truncate text-[10px] text-syntax-muted">
                       {note.topics.map((topic) => formatTopicLabel(topic)).join(' ')}
                     </span>
                   ) : null}
@@ -151,7 +151,7 @@ export function QuickSearchModal({
               </button>
             ))
           ) : (
-            <p className="px-3 py-6 text-center text-sm text-gray-500">
+            <p className="px-3 py-6 text-center text-sm text-syntax-muted">
               {query.trim() ? 'No matching notes.' : 'Start typing to search your library.'}
             </p>
           )}
