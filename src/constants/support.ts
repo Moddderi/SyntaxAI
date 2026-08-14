@@ -1,5 +1,14 @@
 export const SUPPORT_EMAIL = 'hello@syntaxai.app';
 
+export const BETA_FEEDBACK_EMAIL = 'olegk9813@gmail.com';
+
+export interface FeedbackFormPayload {
+  email: string;
+  workedWell: string;
+  confusing: string;
+  featureWish: string;
+}
+
 export function buildBugReportMailto(): string {
   const subject = encodeURIComponent('SyntaxAI — Bug report');
   const body = encodeURIComponent(
@@ -21,20 +30,22 @@ export function buildBugReportMailto(): string {
   return `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
 }
 
-export function buildBetaFeedbackMailto(): string {
+export function buildFeedbackMailto(payload: FeedbackFormPayload): string {
   const subject = encodeURIComponent('SyntaxAI — Beta feedback');
-  const body = encodeURIComponent(
-    [
-      'What I liked:',
-      '',
-      '',
-      'What felt confusing or broken:',
-      '',
-      '',
-      'One feature I wish SyntaxAI had:',
-      '',
-    ].join('\n'),
-  );
+  const lines = [
+    payload.email.trim() ? `From: ${payload.email.trim()}` : '',
+    '',
+    'What worked well:',
+    payload.workedWell.trim(),
+    '',
+    'What felt confusing or broken:',
+    payload.confusing.trim(),
+    '',
+    'One feature I wish SyntaxAI had:',
+    payload.featureWish.trim(),
+  ];
 
-  return `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
+  const body = encodeURIComponent(lines.join('\n'));
+
+  return `mailto:${BETA_FEEDBACK_EMAIL}?subject=${subject}&body=${body}`;
 }

@@ -234,19 +234,19 @@ export function getHeatmapCellClass(count: number, isFuture: boolean): string {
     return 'bg-syntax-heatmap-empty border border-syntax-heatmap-empty-border';
   }
 
-  if (count <= 2) {
-    return 'bg-syntax-accent/25 border border-syntax-accent/10';
+  if (count >= 5) {
+    return 'bg-syntax-heatmap-3 border border-syntax-heatmap-3-border shadow-[0_0_10px_var(--syntax-heatmap-3)]';
   }
 
-  if (count <= 4) {
-    return 'bg-syntax-accent/60 border border-syntax-accent/20';
+  if (count >= 3) {
+    return 'bg-syntax-heatmap-2 border border-syntax-heatmap-2-border';
   }
 
-  return 'bg-syntax-accent border border-syntax-accent shadow-[0_0_10px_var(--syntax-accent)]';
+  return 'bg-syntax-heatmap-1 border border-syntax-heatmap-1-border';
 }
 
-export function formatHeatmapDate(date: Date): string {
-  return date.toLocaleDateString('en-US', {
+export function formatHeatmapDate(date: Date, locale = 'en-US'): string {
+  return date.toLocaleDateString(locale, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',

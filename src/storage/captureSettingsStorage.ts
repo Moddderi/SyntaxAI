@@ -3,11 +3,17 @@ export const CAPTURE_SETTINGS_STORAGE_KEY = 'syntaxai_capture_settings';
 export const CAPTURE_SETTINGS_CHANGED_EVENT = 'syntaxai-capture-settings-changed';
 
 export interface CaptureSettings {
+  /** Paste code, text, or screenshots in the side panel. */
+  enablePasteCapture: boolean;
+  /** Capture page selection and docs via hotkey or context menu. */
+  enableContextCapture: boolean;
   /** When true, context capture saves markdown body (rules, docs text). */
   includeContextDescription: boolean;
 }
 
 const DEFAULT_CAPTURE_SETTINGS: CaptureSettings = {
+  enablePasteCapture: true,
+  enableContextCapture: true,
   includeContextDescription: true,
 };
 
@@ -23,6 +29,16 @@ function normalizeCaptureSettings(raw: unknown): CaptureSettings {
   const record = raw as Record<string, unknown>;
 
   return {
+    enablePasteCapture:
+      typeof record.enablePasteCapture === 'boolean'
+        ? record.enablePasteCapture
+        : DEFAULT_CAPTURE_SETTINGS.enablePasteCapture,
+    enableContextCapture:
+      typeof record.enableContextCapture === 'boolean'
+        ? record.enableContextCapture
+        : typeof record.includeContextDescription === 'boolean'
+          ? true
+          : DEFAULT_CAPTURE_SETTINGS.enableContextCapture,
     includeContextDescription:
       typeof record.includeContextDescription === 'boolean'
         ? record.includeContextDescription
@@ -31,13 +47,19 @@ function normalizeCaptureSettings(raw: unknown): CaptureSettings {
 }
 
 function notifyCaptureSettingsChanged(): void {
-  window.dispatchEvent(new CustomEvent(CAPTURE_SETTINGS_CHANGED_EVENT));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(CAPTURE_SETTINGS_CHANGED_EVENT));
+  }
 }
 
 export async function getCaptureSettings(): Promise<CaptureSettings> {
   if (isChromeStorageAvailable()) {
     const result = await chrome.storage.local.get(CAPTURE_SETTINGS_STORAGE_KEY);
     return normalizeCaptureSettings(result[CAPTURE_SETTINGS_STORAGE_KEY]);
+  }
+
+  if (typeof localStorage === 'undefined') {
+    return DEFAULT_CAPTURE_SETTINGS;
   }
 
   const raw = localStorage.getItem(CAPTURE_SETTINGS_STORAGE_KEY);
@@ -60,11 +82,27 @@ export async function saveCaptureSettings(settings: CaptureSettings): Promise<vo
     return;
   }
 
-  localStorage.setItem(CAPTURE_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(CAPTURE_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  }
+
   notifyCaptureSettingsChanged();
 }
 
-export async function setIncludeContextDescription(enabled: boolean): Promise<void> {
+export async function updateCaptureSettings(
+  patch: Partial<CaptureSettings>,
+): Promise<CaptureSettings> {
   const current = await getCaptureSettings();
-  await saveCaptureSettings({ ...current, includeContextDescription: enabled });
+  const next = { ...current, ...patch };
+  await saveCaptureSettings(next);
+  return next;
+}
+
+export async function setIncludeContextDescription(enabled: boolean): Promise<void> {
+  await updateCaptureSettings({ includeContextDescription: enabled });
+}
+
+export async function isContextCaptureEnabled(): Promise<boolean> {
+  const settings = await getCaptureSettings();
+  return settings.enableContextCapture;
 }

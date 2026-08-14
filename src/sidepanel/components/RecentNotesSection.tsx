@@ -3,6 +3,7 @@ import { useNotes } from '../../hooks/useNotes';
 import { formatRelativeTime } from '../../utils/noteHelpers';
 import { resolveDeviconSlug } from '../../utils/techIcon';
 import { openDashboard } from '../../utils/dashboardNavigation';
+import { useTranslation } from '../../hooks/useTranslation';
 import { ClockIcon } from './icons';
 import { TechIcon } from '../../components/TechIcon';
 
@@ -14,15 +15,16 @@ export function RecentNotesSection({
   onOpenNoteDetail: (noteId: string) => void;
 }): ReactElement {
   const { notes } = useNotes();
+  const { t } = useTranslation();
   const recentNotes = notes.slice(0, LAST_CAPTURES_LIMIT);
 
   return (
     <section aria-label="Recent notes">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          <ClockIcon className="h-3.5 w-3.5 text-gray-400" />
-          <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">
-            Recent Notes
+          <ClockIcon className="h-3.5 w-3.5 text-syntax-muted" />
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-syntax-muted">
+            {t('sidePanelRecent')}
           </h2>
         </div>
 
@@ -31,7 +33,7 @@ export function RecentNotesSection({
           onClick={openDashboard}
           type="button"
         >
-          Open all →
+          {t('sidePanelOpenAll')}
         </button>
       </div>
 
@@ -54,16 +56,16 @@ export function RecentNotesSection({
               <TechIcon size="md" tech={resolveDeviconSlug(note.primaryTech)} />
 
               <div className="min-w-0 flex-1">
-                <h3 className="truncate text-sm font-medium text-white">{note.title}</h3>
-                <p className="mt-0.5 text-[11px] text-gray-400">
+                <h3 className="truncate text-sm font-medium text-syntax-text">{note.title}</h3>
+                <p className="mt-0.5 text-[11px] text-syntax-muted">
                   {formatRelativeTime(note.createdAt)}
                 </p>
               </div>
             </article>
           ))
         ) : (
-          <div className="rounded-2xl border border-dashed border-syntax-border bg-syntax-card px-3 py-4 text-center text-[11px] text-gray-400">
-            No notes yet. Save your first note above.
+          <div className="rounded-2xl border border-dashed border-syntax-border bg-syntax-card px-3 py-4 text-center text-[11px] text-syntax-muted">
+            {t('sidePanelNoNotesYet')}
           </div>
         )}
       </div>

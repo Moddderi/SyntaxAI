@@ -1,6 +1,9 @@
 import { useMemo, type ReactElement } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import type { Note } from '../../types/note';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { TranslationKey } from '../../i18n/translations';
+import type { Locale } from '../../storage/localeStorage';
 import {
   computeActivityHeatmap,
   computeEstimatedTimeSavedHours,
@@ -29,14 +32,30 @@ interface ChartTooltipPayload {
   };
 }
 
-const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const WEEKDAY_LABELS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+const WEEKDAY_LABELS_UK = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'] as const;
+
+function getWeekdayLabels(locale: Locale): readonly string[] {
+  return locale === 'uk' ? WEEKDAY_LABELS_UK : WEEKDAY_LABELS_EN;
+}
+
+function getDateLocale(locale: Locale): string {
+  return locale === 'uk' ? 'uk-UA' : 'en-US';
+}
+
+type TranslateFn = (
+  key: TranslationKey,
+  params?: Record<string, string | number>,
+) => string;
 
 function AnalyticsTooltip({
   active,
   payload,
+  t,
 }: {
   active?: boolean;
   payload?: ChartTooltipPayload[];
+  t: TranslateFn;
 }): ReactElement | null {
   if (!active || !payload?.length) {
     return null;
@@ -48,30 +67,48 @@ function AnalyticsTooltip({
   const accentColor = item.payload?.color ?? '#00eaff';
 
   return (
-    <div className="rounded-xl border border-syntax-border bg-syntax-card px-3 py-2 text-xs shadow-lg">
+    <div className="relative z-50 rounded-xl border border-syntax-border bg-syntax-card px-3 py-2 text-xs shadow-lg">
       <p className="font-medium text-syntax-text">{item.name}</p>
       <p className="mt-0.5" style={{ color: accentColor }}>
-        {count} notes{percentage !== undefined ? ` · ${percentage}%` : ''}
+        {percentage !== undefined
+          ? t('analyticsNotesTooltip', { count, percentage })
+          : t('analyticsNotesTooltipCount', { count })}
       </p>
     </div>
   );
 }
 
-function ActivityHeatmap({ notes }: { notes: Note[] }): ReactElement {
+function ActivityHeatmap({
+  notes,
+  t,
+  locale,
+}: {
+  notes: Note[];
+  t: TranslateFn;
+  locale: Locale;
+}): ReactElement {
   const heatmap = useMemo(() => computeActivityHeatmap(notes), [notes]);
+  const weekdayLabels = getWeekdayLabels(locale);
+  const dateLocale = getDateLocale(locale);
+
+  const noteUnit = (count: number): string =>
+    count === 1 ? t('analyticsDay') : t('analyticsDays');
 
   return (
     <section className="rounded-2xl border border-syntax-border bg-syntax-card p-5">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-syntax-text">Capture Activity</h2>
+          <h2 className="text-sm font-semibold text-syntax-text">{t('analyticsCaptureActivity')}</h2>
           <p className="mt-1 text-xs text-syntax-muted">
-            GitHub-style matrix of notes saved over the last {heatmap.weeks} weeks
+            {t('analyticsCaptureActivityDesc', { weeks: heatmap.weeks })}
           </p>
         </div>
 
         <span className="inline-flex items-center gap-1.5 rounded-full border border-syntax-accent/30 bg-syntax-accent/10 px-3 py-1 text-xs font-medium text-syntax-accent">
-          Current Streak: {heatmap.currentStreak} day{heatmap.currentStreak === 1 ? '' : 's'}
+          {t('analyticsCurrentStreakBadge', {
+            count: heatmap.currentStreak,
+            unit: noteUnit(heatmap.currentStreak),
+          })}
           <FlameIcon className="h-3.5 w-3.5 text-syntax-accent drop-shadow-[0_0_6px_var(--syntax-accent)]" />
         </span>
       </div>
@@ -94,7 +131,7 @@ function ActivityHeatmap({ notes }: { notes: Note[] }): ReactElement {
                   className="flex h-3 w-3.5 items-start justify-center text-[10px] text-syntax-muted"
                 >
                   {showLabel && firstCell
-                    ? firstCell.date.toLocaleDateString('en-US', { month: 'short' })
+                    ? firstCell.date.toLocaleDateString(dateLocale, { month: 'short' })
                     : ''}
                 </span>
               );
@@ -103,7 +140,7 @@ function ActivityHeatmap({ notes }: { notes: Note[] }): ReactElement {
 
           <div className="flex gap-3">
             <div className="flex flex-col gap-1 pt-0.5">
-              {WEEKDAY_LABELS.map((label, index) => (
+              {weekdayLabels.map((label, index) => (
                 <span
                   key={label}
                   className="flex h-3.5 w-6 items-center text-[10px] text-syntax-muted"
@@ -126,7 +163,11 @@ function ActivityHeatmap({ notes }: { notes: Note[] }): ReactElement {
                         title={
                           cell.isFuture
                             ? undefined
-                            : `${formatHeatmapDate(cell.date)} · ${cell.count} note${cell.count === 1 ? '' : 's'}`
+                            : t('analyticsHeatmapTooltip', {
+                                date: formatHeatmapDate(cell.date, dateLocale),
+                                count: cell.count,
+                                unit: noteUnit(cell.count),
+                              })
                         }
                       />
                     );
@@ -139,16 +180,18 @@ function ActivityHeatmap({ notes }: { notes: Note[] }): ReactElement {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-4 text-[10px] text-syntax-muted">
-        <span>Less</span>
+        <span>{t('analyticsLess')}</span>
         <div className="flex items-center gap-1">
-          <span className="h-3.5 w-3.5 rounded-sm bg-syntax-heatmap-empty border border-syntax-heatmap-empty-border" />
-          <span className="h-3.5 w-3.5 rounded-sm bg-syntax-accent/25 border border-syntax-accent/10" />
-          <span className="h-3.5 w-3.5 rounded-sm bg-syntax-accent/60 border border-syntax-accent/20" />
-          <span className="h-3.5 w-3.5 rounded-sm bg-syntax-accent shadow-[0_0_10px_var(--syntax-accent)]" />
+          <span className="h-3.5 w-3.5 rounded-sm border border-syntax-heatmap-1-border bg-syntax-heatmap-1" />
+          <span className="h-3.5 w-3.5 rounded-sm border border-syntax-heatmap-2-border bg-syntax-heatmap-2" />
+          <span className="h-3.5 w-3.5 rounded-sm border border-syntax-heatmap-3-border bg-syntax-heatmap-3 shadow-[0_0_10px_var(--syntax-heatmap-3)]" />
         </div>
-        <span>More</span>
+        <span>{t('analyticsMore')}</span>
         <span className="ml-auto text-syntax-muted">
-          {heatmap.activeDays} active days · best streak {heatmap.longestStreak} days
+          {t('analyticsActiveDaysSummary', {
+            activeDays: heatmap.activeDays,
+            longestStreak: heatmap.longestStreak,
+          })}
         </span>
       </div>
     </section>
@@ -187,6 +230,7 @@ function InputMethodBar({
 }
 
 export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactElement {
+  const { t, locale } = useTranslation();
   const languageBreakdown = useMemo(
     () => computeLanguageBreakdown(notes),
     [notes],
@@ -219,20 +263,20 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-syntax-text">Usage &amp; Insights</h1>
-        <p className="mt-1 max-w-2xl text-sm text-syntax-muted">
-          Track your free limits, then explore how you capture and organize code.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight text-syntax-text">
+          {t('analyticsUsageTitle')}
+        </h1>
+        <p className="mt-1 max-w-2xl text-sm text-syntax-muted">{t('analyticsUsageSubtitle')}</p>
       </header>
 
       {isLoading ? (
         <div className="rounded-2xl border border-syntax-border bg-syntax-card p-10 text-center text-sm text-syntax-muted">
-          Loading analytics…
+          {t('analyticsLoading')}
         </div>
       ) : totalNotes === 0 ? (
         <>
           <div className="rounded-2xl border border-dashed border-syntax-border bg-syntax-card p-10 text-center text-sm text-syntax-muted">
-            Add your first note to unlock capture insights and activity charts.
+            {t('analyticsEmpty')}
           </div>
           <UsageSection isLoading={isLoading} notes={notes} />
         </>
@@ -240,10 +284,10 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
         <>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <section className="rounded-2xl border border-syntax-border bg-syntax-card p-5 lg:col-span-1">
-              <h2 className="mb-1 text-sm font-semibold text-syntax-text">Stack Breakdown</h2>
-              <p className="mb-4 text-xs text-syntax-muted">
-                Technologies in your library · brand colors
-              </p>
+              <h2 className="mb-1 text-sm font-semibold text-syntax-text">
+                {t('analyticsStackBreakdown')}
+              </h2>
+              <p className="mb-4 text-xs text-syntax-muted">{t('analyticsStackBreakdownDesc')}</p>
 
               <div className="relative mx-auto h-40 w-full max-w-[180px]">
                 <ResponsiveContainer height="100%" width="100%">
@@ -263,14 +307,17 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
                         <Cell key={entry.slug} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip content={<AnalyticsTooltip />} />
+                    <Tooltip
+                      content={<AnalyticsTooltip t={t} />}
+                      wrapperStyle={{ zIndex: 50, pointerEvents: 'none' }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
 
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                <div className="pointer-events-none absolute inset-0 z-0 flex flex-col items-center justify-center">
                   <span className="text-xl font-semibold text-syntax-text">{totalNotes}</span>
                   <span className="text-[10px] uppercase tracking-[0.14em] text-syntax-muted">
-                    notes
+                    {t('analyticsNotes')}
                   </span>
                 </div>
               </div>
@@ -304,20 +351,20 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
             </section>
 
             <section className="rounded-2xl border border-syntax-border bg-syntax-card p-5 lg:col-span-2">
-              <h2 className="mb-1 text-sm font-semibold text-syntax-text">Streak &amp; Momentum</h2>
-              <p className="mb-5 text-xs text-syntax-muted">
-                Consistency metrics from your capture history
-              </p>
+              <h2 className="mb-1 text-sm font-semibold text-syntax-text">
+                {t('analyticsStreakMomentum')}
+              </h2>
+              <p className="mb-5 text-xs text-syntax-muted">{t('analyticsStreakMomentumDesc')}</p>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <article className="rounded-xl border border-syntax-border bg-syntax-inset p-4">
                   <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-syntax-muted">
-                    Current Streak
+                    {t('analyticsCurrentStreak')}
                   </p>
                   <p className="mt-2 flex items-baseline gap-1.5 text-3xl font-semibold text-syntax-accent">
                     {heatmap.currentStreak}
                     <span className="inline-flex items-center gap-1 text-base text-syntax-muted">
-                      days
+                      {t('analyticsDays')}
                       <FlameIcon className="h-4 w-4 text-syntax-accent drop-shadow-[0_0_6px_var(--syntax-accent)]" />
                     </span>
                   </p>
@@ -325,36 +372,35 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
 
                 <article className="rounded-xl border border-syntax-border bg-syntax-inset p-4">
                   <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-syntax-muted">
-                    Best Streak
+                    {t('analyticsBestStreak')}
                   </p>
                   <p className="mt-2 text-3xl font-semibold text-syntax-text">
                     {heatmap.longestStreak}
-                    <span className="ml-1 text-base text-syntax-muted">days</span>
+                    <span className="ml-1 text-base text-syntax-muted">{t('analyticsDays')}</span>
                   </p>
                 </article>
 
                 <article className="rounded-xl border border-syntax-border bg-syntax-inset p-4">
                   <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-syntax-muted">
-                    Active Days
+                    {t('analyticsActiveDays')}
                   </p>
                   <p className="mt-2 text-3xl font-semibold text-syntax-text">
                     {heatmap.activeDays}
-                    <span className="ml-1 text-base text-syntax-muted">total</span>
+                    <span className="ml-1 text-base text-syntax-muted">{t('analyticsTotal')}</span>
                   </p>
                 </article>
               </div>
 
               <div className="mt-4 rounded-xl border border-syntax-border bg-syntax-inset px-4 py-3">
                 <p className="text-xs text-syntax-muted">
-                  <span className="font-medium text-syntax-text">{languageBreakdown.length}</span>{' '}
-                  technologies in your library ·{' '}
+                  {t('analyticsTechInLibrary', { count: languageBreakdown.length })}{' '}
                   <span
                     className="font-medium"
                     style={{ color: languageBreakdown[0]?.color ?? '#00eaff' }}
                   >
                     {languageBreakdown[0]?.name ?? 'N/A'}
                   </span>{' '}
-                  is your primary stack
+                  {t('analyticsPrimaryStack')}
                 </p>
               </div>
             </section>
@@ -362,57 +408,51 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
 
           <UsageSection isLoading={isLoading} notes={notes} />
 
-          <ActivityHeatmap notes={notes} />
+          <ActivityHeatmap locale={locale} notes={notes} t={t} />
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <section className="rounded-2xl border border-syntax-border bg-syntax-card p-5">
               <h2 className="mb-1 text-sm font-semibold text-syntax-text">
-                Estimated Time Saved
+                {t('analyticsTimeSaved')}
               </h2>
-              <p className="mb-4 text-xs text-syntax-muted">
-                based on average 15m context lookup per saved solution
-              </p>
+              <p className="mb-4 text-xs text-syntax-muted">{t('analyticsTimeSavedDesc')}</p>
               <p className="text-4xl font-semibold tracking-tight text-syntax-accent">
                 {timeSavedHours} hrs
               </p>
               <p className="mt-2 text-xs text-syntax-muted">
-                From {totalNotes} saved note{totalNotes === 1 ? '' : 's'} in your library
+                {t('analyticsTimeSavedFrom', { count: totalNotes })}
               </p>
             </section>
 
             <section className="rounded-2xl border border-syntax-border bg-syntax-card p-5">
               <h2 className="mb-1 text-sm font-semibold text-syntax-text">
-                Input Methods Breakdown
+                {t('analyticsInputMethods')}
               </h2>
-              <p className="mb-4 text-xs text-syntax-muted">
-                How you capture knowledge into SyntaxAI
-              </p>
+              <p className="mb-4 text-xs text-syntax-muted">{t('analyticsInputMethodsDesc')}</p>
 
               <div className="space-y-3">
                 <InputMethodBar
                   colorClass="bg-syntax-accent"
-                  label="Code snippets"
+                  label={t('analyticsCodeSnippets')}
                   total={inputTotal}
                   value={inputMethods.code}
                 />
                 <InputMethodBar
                   colorClass="bg-syntax-accent/60"
-                  label="Image OCR"
+                  label={t('analyticsImageOcr')}
                   total={inputTotal}
                   value={inputMethods.image}
                 />
                 <InputMethodBar
                   colorClass="bg-syntax-accent/30"
-                  label="Tab Context"
+                  label={t('analyticsTabContext')}
                   total={inputTotal}
                   value={inputMethods.tab}
                 />
               </div>
 
               {inputMethods.image === 0 && inputMethods.tab === 0 ? (
-                <p className="mt-3 text-[11px] text-syntax-muted">
-                  OCR and tab context tracking will appear as those flows ship.
-                </p>
+                <p className="mt-3 text-[11px] text-syntax-muted">{t('analyticsOcrTabHint')}</p>
               ) : null}
             </section>
           </div>

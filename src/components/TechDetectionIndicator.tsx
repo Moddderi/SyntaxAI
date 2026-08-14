@@ -32,7 +32,7 @@ function TechDetectLoader({ size, accentColor = '#00eaff' }: TechDetectLoaderPro
           background: `conic-gradient(from 0deg, transparent 0%, ${accentColor}55 35%, ${accentColor} 50%, transparent 65%)`,
         }}
       />
-      <div className="absolute inset-0 rounded-xl border border-[#1c1c20] bg-[#0d0d0f]" />
+      <div className="absolute inset-0 rounded-xl border border-syntax-border bg-syntax-inset" />
       <div className="absolute inset-0 flex items-center justify-center">
         <div
           className="animate-tech-pulse rounded-full"
@@ -50,8 +50,8 @@ function TechDetectLoader({ size, accentColor = '#00eaff' }: TechDetectLoaderPro
 
 export function DetectionConfirmedBadge(): ReactElement {
   return (
-    <div className="flex animate-fade-in items-center gap-1.5 rounded-full border border-[#00eaff]/20 bg-[#00eaff]/10 px-2.5 py-1 text-[10px] text-[#00eaff]">
-      <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[#00eaff]" />
+    <div className="flex animate-fade-in items-center gap-1.5 rounded-full border border-syntax-accent/20 bg-syntax-accent/10 px-2.5 py-1 text-[10px] text-syntax-accent">
+      <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-syntax-accent" />
       Detected
     </div>
   );
@@ -63,7 +63,7 @@ export function TechDetectionIndicator({
   isAnalyzing,
   isConfirmed = false,
   size = 'md',
-  cardBackgroundClass = 'border-[#141417] bg-[#141417]',
+  cardBackgroundClass = 'border-syntax-border bg-syntax-card',
 }: TechDetectionIndicatorProps): ReactElement {
   const [displayTech, setDisplayTech] = useState<{ primaryTech: string; language: string } | null>(
     null,

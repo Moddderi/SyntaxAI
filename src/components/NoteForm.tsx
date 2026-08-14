@@ -55,13 +55,13 @@ export function NoteForm({
   const showCodePreview = !isAnalyzing && Boolean(values.code.trim()) && !isCodeEditing;
 
   return (
-    <section className="animate-fade-in rounded-2xl border border-[#1c1c20] bg-[#141417] p-4">
+    <section className="animate-fade-in rounded-2xl border border-syntax-border bg-syntax-card p-4">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#00eaff]">
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-syntax-accent">
             Context Capture
           </h2>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-syntax-muted">
             {showContextBody
               ? 'Captured selection with rules and code. Edit before saving.'
               : 'Code-only capture mode. Title and code will be saved without page description.'}
@@ -77,7 +77,7 @@ export function NoteForm({
 
           {onCancel ? (
             <button
-              className="rounded-lg px-2 py-1 text-[11px] text-gray-500 transition hover:bg-[#0d0d0f] hover:text-white"
+              className="rounded-lg px-2 py-1 text-[11px] text-syntax-muted transition hover:bg-syntax-inset hover:text-syntax-text"
               onClick={onCancel}
               type="button"
             >
@@ -95,7 +95,7 @@ export function NoteForm({
 
       <div className="mb-4 flex items-start gap-3">
         <TechDetectionIndicator
-          cardBackgroundClass="border-[#141417] bg-[#141417]"
+          cardBackgroundClass="border-syntax-border bg-syntax-card"
           isAnalyzing={isAnalyzing}
           isConfirmed={isTechConfirmed}
           language={hasTech ? values.language : null}
@@ -106,7 +106,7 @@ export function NoteForm({
         <div className="min-w-0 flex-1">
           <input
             aria-label="Note title"
-            className="w-full rounded-xl border border-[#1c1c20] bg-[#0d0d0f] px-3 py-2 text-sm font-medium text-white outline-none transition placeholder:text-gray-500 focus:border-[#00eaff]/40"
+            className="w-full rounded-xl border border-syntax-border bg-syntax-inset px-3 py-2 text-sm font-medium text-syntax-text outline-none transition placeholder:text-syntax-muted focus:border-syntax-accent/40"
             onChange={(event) => onTitleChange(event.target.value)}
             placeholder="Note title"
             type="text"
@@ -118,7 +118,7 @@ export function NoteForm({
               {values.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-[#1c1c20] bg-[#0d0d0f] px-3 py-1 text-[11px] text-gray-400"
+                  className="rounded-full border border-syntax-border bg-syntax-inset px-3 py-1 text-[11px] text-syntax-muted"
                 >
                   {formatTopicLabel(tag)}
                 </span>
@@ -127,10 +127,10 @@ export function NoteForm({
           ) : null}
 
           {sourceUrl ? (
-            <p className="mt-3 truncate text-[11px] text-gray-500">
+            <p className="mt-3 truncate text-[11px] text-syntax-muted">
               Source:{' '}
               <a
-                className="text-[#00eaff] hover:underline"
+                className="text-syntax-accent hover:underline"
                 href={sourceUrl}
                 rel="noreferrer"
                 target="_blank"

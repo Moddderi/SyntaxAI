@@ -6,6 +6,7 @@ import {
   type PastedImage,
 } from '../types/capture.types';
 import { isDetectShortcut } from './DetectNoteButton';
+import { useTranslation } from '../../hooks/useTranslation';
 import { ImageDropIcon, SendIcon } from './icons';
 
 const VISIBLE_THUMBS_WIDTH_PX =
@@ -67,6 +68,7 @@ export function CaptureTextArea({
   canDetect = false,
   isAnalyzing = false,
 }: CaptureTextAreaProps): ReactElement {
+  const { t } = useTranslation();
   const hasImages = pastedImages.length > 0;
   const showDropHint = text.length === 0 && !hasImages;
 
@@ -92,13 +94,13 @@ export function CaptureTextArea({
     >
       <textarea
         aria-label="Note input"
-        className={`min-h-[220px] w-full resize-none bg-transparent px-4 pt-4 font-mono text-[13px] leading-relaxed text-white outline-none placeholder:text-gray-500 ${
+        className={`min-h-[220px] w-full resize-none bg-transparent px-4 pt-4 font-mono text-[13px] leading-relaxed text-syntax-text outline-none placeholder:text-syntax-muted ${
           hasImages ? 'pb-24' : 'pb-12'
         }`}
         onChange={(event) => onTextChange(event.target.value)}
         onKeyDown={handleKeyDown}
         onPaste={onPaste}
-        placeholder="// Paste code, text, or drop an image..."
+        placeholder={t('sidePanelPastePlaceholder')}
         spellCheck={false}
         value={text}
       />
@@ -111,10 +113,8 @@ export function CaptureTextArea({
           <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-syntax-accent/50 text-syntax-accent">
             <ImageDropIcon />
           </div>
-          <p className="text-xs font-medium text-syntax-accent">
-            Drag &amp; Drop Image
-          </p>
-          <p className="text-[11px] text-gray-400">or Paste image</p>
+          <p className="text-xs font-medium text-syntax-accent">{t('sidePanelDragDropImage')}</p>
+          <p className="text-[11px] text-syntax-muted">{t('sidePanelPasteImage')}</p>
         </div>
       ) : null}
 
@@ -133,7 +133,7 @@ export function CaptureTextArea({
                 />
                 <button
                   aria-label="Remove pasted image"
-                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-syntax-border bg-syntax-card text-gray-300 transition hover:border-syntax-accent/50 hover:bg-syntax-bg hover:text-syntax-accent"
+                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-syntax-border bg-syntax-card text-syntax-muted transition hover:border-syntax-accent/50 hover:bg-syntax-bg hover:text-syntax-accent"
                   onClick={() => onRemoveImage(image.id)}
                   type="button"
                 >
@@ -150,7 +150,7 @@ export function CaptureTextArea({
         className={`absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full transition ${
           canDetect && !isAnalyzing
             ? 'bg-syntax-accent text-black shadow-[0_0_16px_rgba(0,234,255,0.35)] hover:bg-syntax-accent/90'
-            : 'cursor-not-allowed border border-syntax-border bg-syntax-card text-gray-500'
+            : 'cursor-not-allowed border border-syntax-border bg-syntax-card text-syntax-muted'
         }`}
         disabled={!canDetect || isAnalyzing}
         onClick={onDetect}

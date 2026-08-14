@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { DetectionConfirmedBadge, TechDetectionIndicator } from '../../components/TechDetectionIndicator';
+import { useTranslation } from '../../hooks/useTranslation';
 import { formatTopicLabel } from '../../utils/noteHelpers';
 import type { DetectedNote } from '../types/capture.types';
 
@@ -20,14 +21,15 @@ export function DetectedNoteBlock({
   onTitleChange,
   sourceUrl,
 }: DetectedNoteBlockProps): ReactElement {
+  const { t } = useTranslation();
   const hasTech = Boolean(note?.primaryTech && note?.language);
   const detectedNote = note;
 
   return (
-    <section className="rounded-2xl border border-syntax-border bg-syntax-card p-4">
+    <section className="relative z-0 shrink-0 overflow-hidden rounded-2xl border border-syntax-border bg-syntax-card p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-syntax-accent">
-          DETECTED NOTE
+          {t('sidePanelDetectedNote')}
         </h2>
 
         {!isAnalyzing && note ? <DetectionConfirmedBadge /> : null}
@@ -40,9 +42,7 @@ export function DetectedNoteBlock({
       ) : null}
 
       {!note && !isAnalyzing && !error ? (
-        <p className="text-xs text-gray-500">
-          Add code, an instruction, or an image — then tap send or press ⌘/Ctrl + Enter.
-        </p>
+        <p className="text-xs text-syntax-muted">{t('sidePanelDetectedHint')}</p>
       ) : (
         <div className="flex items-start gap-3">
           <TechDetectionIndicator
@@ -57,19 +57,19 @@ export function DetectedNoteBlock({
           <div className="min-w-0 flex-1">
             <input
               aria-label="Detected note title"
-              className="w-full truncate rounded-lg border border-transparent bg-transparent px-0 py-0.5 text-sm font-medium text-white outline-none transition placeholder:text-gray-500 focus:border-syntax-accent/30 focus:bg-syntax-bg focus:px-2"
+              className="w-full truncate rounded-lg border border-transparent bg-transparent px-0 py-0.5 text-sm font-medium text-syntax-text outline-none transition placeholder:text-syntax-muted focus:border-syntax-accent/30 focus:bg-syntax-bg focus:px-2"
               onChange={(event) => onTitleChange(event.target.value)}
-              placeholder="Note title"
+              placeholder={t('sidePanelNoteTitle')}
               type="text"
               value={title}
             />
 
             {note && note.topics.length > 0 ? (
-              <div className="mt-3 flex flex-wrap items-center gap-2 animate-fade-in">
+              <div className="mt-3 flex flex-wrap items-center gap-2">
                 {note.topics.map((topic) => (
                   <span
                     key={topic}
-                    className="rounded-full border border-syntax-border bg-syntax-bg px-3 py-1 text-[11px] text-gray-400"
+                    className="rounded-full border border-syntax-border bg-syntax-bg px-3 py-1 text-[11px] text-syntax-muted"
                   >
                     {formatTopicLabel(topic)}
                   </span>
@@ -78,8 +78,8 @@ export function DetectedNoteBlock({
             ) : null}
 
             {sourceUrl ? (
-              <p className="mt-3 truncate text-[11px] text-gray-500">
-                Source:{' '}
+              <p className="mt-3 truncate text-[11px] text-syntax-muted">
+                {t('sidePanelSource')}:{' '}
                 <a
                   className="text-syntax-accent hover:underline"
                   href={sourceUrl}

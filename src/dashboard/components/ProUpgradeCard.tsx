@@ -4,6 +4,7 @@ import {
   PRO_PLAN,
   PRO_PLAN_FEATURES,
 } from '../../utils/usageLimits';
+import { openPricingPage } from '../../utils/openPricingPage';
 
 interface ProUpgradeCardProps {
   variant?: 'compact' | 'full';
@@ -12,7 +13,7 @@ interface ProUpgradeCardProps {
 
 export function ProUpgradeCard({
   variant = 'full',
-  onUpgradeClick,
+  onUpgradeClick = openPricingPage,
 }: ProUpgradeCardProps): ReactElement {
   if (variant === 'compact') {
     return (
@@ -78,7 +79,7 @@ export function ProUpgradeCard({
           >
             Upgrade to Pro
           </button>
-          <p className="mt-2 text-[11px] text-syntax-muted">Payments open soon — early access pricing</p>
+          <p className="mt-2 text-[11px] text-syntax-muted">syntaxai.app/pricing</p>
         </div>
 
         <div className="rounded-xl border border-syntax-border bg-syntax-inset/80 p-4">

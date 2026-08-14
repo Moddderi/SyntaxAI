@@ -7,6 +7,7 @@ import {
   getQuotaRemainingClass,
   type UsageQuota,
 } from '../../utils/usageLimits';
+import { openPricingPage } from '../../utils/openPricingPage';
 import { ProUpgradeCard } from './ProUpgradeCard';
 
 interface UsageSectionProps {
@@ -52,7 +53,7 @@ function UsageQuotaRow({ quota }: { quota: UsageQuota }): ReactElement {
 export function UsageSection({
   notes,
   isLoading,
-  onUpgradeClick,
+  onUpgradeClick = openPricingPage,
 }: UsageSectionProps): ReactElement {
   const overview = computeUsageOverview(notes);
 

@@ -1,6 +1,7 @@
 import { useMemo, type ReactElement, type ReactNode } from 'react';
 import { Logo } from '../../components/Logo';
 import { useTheme } from '../../hooks/useTheme';
+import { useTranslation } from '../../hooks/useTranslation';
 import type { Note } from '../../types/note';
 import { computeLibraryNavCounts } from '../../utils/noteHelpers';
 import type { LibraryNavItem, LibraryTabId } from '../types/dashboard.types';
@@ -19,6 +20,7 @@ interface SidebarProps {
   notes: Note[];
   isLoading: boolean;
   activeTab: LibraryTabId;
+  isSettingsActive: boolean;
   onTabChange: (tab: LibraryTabId) => void;
   onOpenSettings: () => void;
   onOpenBetaFeedback: () => void;
@@ -97,40 +99,42 @@ export function Sidebar({
   notes,
   isLoading,
   activeTab,
+  isSettingsActive,
   onTabChange,
   onOpenSettings,
   onOpenBetaFeedback,
 }: SidebarProps): ReactElement {
   const { isLight, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   const libraryCounts = useMemo(() => computeLibraryNavCounts(notes, 0), [notes]);
 
   const libraryNavItems = useMemo<LibraryNavItem[]>(
     () => [
       {
         id: 'all',
-        label: 'All notes',
+        label: t('navAllNotes'),
         count: libraryCounts.all,
-        isActive: activeTab === 'all',
+        isActive: activeTab === 'all' && !isSettingsActive,
       },
       {
         id: 'starred',
-        label: 'Starred',
+        label: t('navStarred'),
         count: libraryCounts.starred,
-        isActive: activeTab === 'starred',
-      },
-      {
-        id: 'stack',
-        label: 'Stack',
-        count: libraryCounts.stack,
-        isActive: activeTab === 'stack',
+        isActive: activeTab === 'starred' && !isSettingsActive,
       },
       {
         id: 'analytics',
-        label: 'Usage',
-        isActive: activeTab === 'analytics',
+        label: t('navUsage'),
+        isActive: activeTab === 'analytics' && !isSettingsActive,
+      },
+      {
+        id: 'stack',
+        label: t('navStack'),
+        count: libraryCounts.stack,
+        isActive: activeTab === 'stack' && !isSettingsActive,
       },
     ],
-    [activeTab, libraryCounts],
+    [activeTab, isSettingsActive, libraryCounts, t],
   );
 
   return (
@@ -141,14 +145,14 @@ export function Sidebar({
           <h1 className="text-base font-semibold leading-tight tracking-tight text-syntax-text">
             SyntaxAI
           </h1>
-          <p className="mt-0.5 text-[12px] leading-snug text-syntax-muted">Developer notebook</p>
+          <p className="mt-0.5 text-[12px] leading-snug text-syntax-muted">{t('appSubtitle')}</p>
         </div>
       </div>
 
       <SidebarPlanPlaque onClick={() => onTabChange('analytics')} />
 
       <section className="mb-auto">
-        <SidebarSectionLabel>Library</SidebarSectionLabel>
+        <SidebarSectionLabel>{t('navLibrary')}</SidebarSectionLabel>
         <nav className="flex flex-col gap-0.5">
           {libraryNavItems.map((item) => (
             <SidebarNavButton
@@ -167,20 +171,20 @@ export function Sidebar({
       <SidebarBetaPromo onClick={onOpenBetaFeedback} />
 
       <section className="border-t border-syntax-border pt-4">
-        <SidebarSectionLabel>Settings</SidebarSectionLabel>
+        <SidebarSectionLabel>{t('navSettings')}</SidebarSectionLabel>
         <nav className="flex flex-col gap-0.5">
           <SidebarNavButton
             icon={<SettingsIcon className={NAV_ICON_CLASS} />}
-            isActive={false}
+            isActive={isSettingsActive}
             isLoading={false}
-            label="General"
+            label={t('navGeneral')}
             onClick={onOpenSettings}
           />
           <SidebarNavButton
             icon={<SunIcon className={NAV_ICON_CLASS} />}
             isActive={false}
             isLoading={false}
-            label={isLight ? 'Dark mode' : 'Light mode'}
+            label={isLight ? t('navDarkMode') : t('navLightMode')}
             onClick={() => {
               void toggleTheme();
             }}

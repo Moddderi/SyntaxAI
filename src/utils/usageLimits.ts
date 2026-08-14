@@ -28,6 +28,14 @@ export const FREE_PLAN_FEATURES = [
 
 export type UsageQuotaId = 'notes' | 'context' | 'photos';
 
+export type UsageLimitId = UsageQuotaId;
+
+export interface UsageLimitCheck {
+  allowed: boolean;
+  limitId: UsageLimitId | null;
+  message: string | null;
+}
+
 export type UsageQuotaTone = 'comfortable' | 'watch' | 'full';
 
 export interface UsageQuota {
@@ -82,6 +90,88 @@ function hasContextBody(note: Note): boolean {
 
 function isPhotoNote(note: Note): boolean {
   return note.sourceType === 'image';
+}
+
+function countContextNotes(notes: Note[]): number {
+  return notes.filter(hasContextBody).length;
+}
+
+function countPhotoNotes(notes: Note[]): number {
+  return notes.filter(isPhotoNote).length;
+}
+
+export function isProPlanActive(): boolean {
+  return false;
+}
+
+export function checkCanSaveNote(
+  notes: Note[],
+  options: { includesContextBody: boolean; isPhotoSource: boolean },
+): UsageLimitCheck {
+  if (isProPlanActive()) {
+    return { allowed: true, limitId: null, message: null };
+  }
+
+  if (notes.length >= FREE_PLAN_LIMITS.notes) {
+    return {
+      allowed: false,
+      limitId: 'notes',
+      message: 'Your notebook is full. Upgrade to Pro to keep capturing without deleting notes.',
+    };
+  }
+
+  if (
+    options.includesContextBody &&
+    countContextNotes(notes) >= FREE_PLAN_LIMITS.contextSaves
+  ) {
+    return {
+      allowed: false,
+      limitId: 'context',
+      message: 'Page context limit reached. Pro unlocks unlimited docs and rules capture.',
+    };
+  }
+
+  if (options.isPhotoSource && countPhotoNotes(notes) >= FREE_PLAN_LIMITS.photoReads) {
+    return {
+      allowed: false,
+      limitId: 'photos',
+      message: 'Photo read limit reached. Pro lets you scan unlimited screenshots.',
+    };
+  }
+
+  return { allowed: true, limitId: null, message: null };
+}
+
+export function checkCanRunPhotoAnalysis(notes: Note[]): UsageLimitCheck {
+  if (isProPlanActive()) {
+    return { allowed: true, limitId: null, message: null };
+  }
+
+  if (countPhotoNotes(notes) >= FREE_PLAN_LIMITS.photoReads) {
+    return {
+      allowed: false,
+      limitId: 'photos',
+      message: 'Photo read limit reached. Pro lets you scan unlimited screenshots.',
+    };
+  }
+
+  return { allowed: true, limitId: null, message: null };
+}
+
+export function checkCanRunContextAnalysis(notes: Note[]): UsageLimitCheck {
+  if (isProPlanActive()) {
+    return { allowed: true, limitId: null, message: null };
+  }
+
+  if (countContextNotes(notes) >= FREE_PLAN_LIMITS.contextSaves) {
+    return {
+      allowed: false,
+      limitId: 'context',
+      message: 'Page context limit reached. Pro unlocks unlimited docs and rules capture.',
+    };
+  }
+
+  return { allowed: true, limitId: null, message: null };
 }
 
 function buildQuota(
@@ -163,7 +253,7 @@ function getPrimaryQuota(quotas: UsageQuota[]): UsageQuota {
 }
 
 export function computeUsageOverview(notes: Note[]): UsageOverview {
-  const isPro = false;
+  const isPro = isProPlanActive();
 
   if (isPro) {
     return {

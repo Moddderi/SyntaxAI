@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { SparklesIcon } from './icons';
 
 interface SidebarBetaPromoProps {
@@ -6,6 +7,8 @@ interface SidebarBetaPromoProps {
 }
 
 export function SidebarBetaPromo({ onClick }: SidebarBetaPromoProps): ReactElement {
+  const { t } = useTranslation();
+
   return (
     <button
       className="group mb-4 w-full rounded-xl border border-syntax-accent/20 bg-gradient-to-br from-syntax-accent/[0.07] to-transparent p-3.5 text-left transition hover:border-syntax-accent/35 hover:from-syntax-accent/10"
@@ -18,11 +21,12 @@ export function SidebarBetaPromo({ onClick }: SidebarBetaPromoProps): ReactEleme
         </span>
         <span className="min-w-0">
           <span className="block text-[13px] font-medium leading-snug text-syntax-text">
-            Beta feedback
+            {t('betaFeedbackTitle')}
           </span>
           <span className="mt-1 block text-[11px] leading-relaxed text-syntax-muted">
-            Testing early access? Share your experience —{' '}
-            <span className="text-syntax-accent">1 month Pro free</span> at launch.
+            {t('betaFeedbackHint')}{' '}
+            <span className="text-syntax-accent">{t('betaFeedbackReward')}</span>{' '}
+            {t('betaFeedbackHintSuffix')}
           </span>
         </span>
       </div>

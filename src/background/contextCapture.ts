@@ -4,6 +4,7 @@ import {
   type GetPageContextResponse,
   type PageContext,
 } from '../types/context';
+import { isContextCaptureEnabled } from '../storage/captureSettingsStorage';
 import { setPendingContextCapture } from '../storage/contextDraftStorage';
 import { resolveSiteType } from '../utils/siteType';
 
@@ -114,6 +115,13 @@ async function finishContextCapture(
   tab: chrome.tabs.Tab,
   fallbackSelection?: string,
 ): Promise<void> {
+  const contextEnabled = await isContextCaptureEnabled();
+
+  if (!contextEnabled) {
+    console.warn('[SyntaxAI] Context capture is disabled in settings.');
+    return;
+  }
+
   const pageContext = await resolvePageContextFromTab(tab, fallbackSelection);
 
   if (!pageContext) {

@@ -23,7 +23,7 @@ export function ContextCapturePanel({
     return (
       <textarea
         aria-label="Note body"
-        className="min-h-[160px] w-full resize-y rounded-xl border border-[#1c1c20] bg-[#0d0d0f] px-3 py-3 font-mono text-xs leading-relaxed text-gray-300 outline-none transition placeholder:text-gray-500 focus:border-[#00eaff]/40"
+        className="min-h-[160px] w-full resize-y rounded-xl border border-syntax-border bg-syntax-inset px-3 py-3 font-mono text-xs leading-relaxed text-syntax-muted outline-none transition placeholder:text-syntax-muted focus:border-syntax-accent/40"
         onChange={(event) => onContentChange(event.target.value)}
         placeholder="Rules, documentation, bullet points, and descriptions…"
         value={content}
@@ -32,7 +32,7 @@ export function ContextCapturePanel({
   }
 
   return (
-    <div className="animate-fade-in overflow-hidden rounded-xl border border-[#1c1c20] bg-[#0d0d0f] px-4 py-3">
+    <div className="animate-fade-in overflow-hidden rounded-xl border border-syntax-border bg-syntax-inset px-4 py-3">
       <MarkdownContent content={content} />
     </div>
   );

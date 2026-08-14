@@ -8,7 +8,7 @@ interface CaptureSectionHeaderProps {
 export function CaptureSectionHeader({ title, action }: CaptureSectionHeaderProps): ReactElement {
   return (
     <div className="mb-2 flex min-h-[28px] items-center justify-between gap-3">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-syntax-muted">
         {title}
       </span>
       {action ? <div className="shrink-0">{action}</div> : null}
@@ -18,10 +18,10 @@ export function CaptureSectionHeader({ title, action }: CaptureSectionHeaderProp
 
 export function AnalyzingBadge(): ReactElement {
   return (
-    <div className="flex items-center gap-1.5 rounded-full border border-[#00eaff]/20 bg-[#00eaff]/5 px-2.5 py-1 text-[10px] text-[#00eaff]/90">
+    <div className="flex items-center gap-1.5 rounded-full border border-syntax-accent/20 bg-syntax-accent/5 px-2.5 py-1 text-[10px] text-syntax-accent/90">
       <span
         aria-hidden="true"
-        className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#1c1c20] border-t-[#00eaff]"
+        className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-syntax-border border-t-[#00eaff]"
       />
       Analyzing…
     </div>
@@ -36,7 +36,7 @@ interface SectionEditButtonProps {
 export function SectionEditButton({ label, onClick }: SectionEditButtonProps): ReactElement {
   return (
     <button
-      className="rounded-lg border border-[#1c1c20] px-2.5 py-1 text-[11px] text-gray-400 transition hover:border-[#00eaff]/40 hover:text-[#00eaff]"
+      className="rounded-lg border border-syntax-border px-2.5 py-1 text-[11px] text-syntax-muted transition hover:border-syntax-accent/40 hover:text-syntax-accent"
       onClick={onClick}
       type="button"
     >

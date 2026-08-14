@@ -19,6 +19,12 @@ export default {
           'code-header': 'var(--syntax-code-header)',
           'heatmap-empty': 'var(--syntax-heatmap-empty)',
           'heatmap-empty-border': 'var(--syntax-heatmap-empty-border)',
+          'heatmap-1': 'var(--syntax-heatmap-1)',
+          'heatmap-1-border': 'var(--syntax-heatmap-1-border)',
+          'heatmap-2': 'var(--syntax-heatmap-2)',
+          'heatmap-2-border': 'var(--syntax-heatmap-2-border)',
+          'heatmap-3': 'var(--syntax-heatmap-3)',
+          'heatmap-3-border': 'var(--syntax-heatmap-3-border)',
         },
       },
       fontFamily: {

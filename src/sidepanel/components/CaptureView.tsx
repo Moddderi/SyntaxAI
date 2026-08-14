@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState, type ReactElement } from 'react';
 import { NoteForm } from '../../components/NoteForm';
+import { UpgradeLimitBanner } from '../../components/UpgradeLimitBanner';
 import { useCaptureSettings } from '../../hooks/useCaptureSettings';
+import { useNotes } from '../../hooks/useNotes';
+import { useTranslation } from '../../hooks/useTranslation';
 import { saveNote } from '../../storage/notesStorage';
 import type { PageContext } from '../../types/context';
 import { resolveCaptureContent } from '../../utils/captureContent';
@@ -12,6 +15,13 @@ import {
   resolveBaseLanguage,
   resolvePrimaryTechnology,
 } from '../../utils/techDetection';
+import {
+  checkCanRunContextAnalysis,
+  checkCanRunPhotoAnalysis,
+  checkCanSaveNote,
+  type UsageLimitCheck,
+  type UsageLimitId,
+} from '../../utils/usageLimits';
 import { useCaptureInput } from '../hooks/useCaptureInput';
 import { useContextCaptureDraft } from '../hooks/useContextCaptureDraft';
 import { useSnippetAnalysis } from '../hooks/useSnippetAnalysis';
@@ -38,14 +48,36 @@ function buildFallbackTitle(pageContext: PageContext): string {
   return firstLine.replace(/^#+\s*/, '').slice(0, 80);
 }
 
+function toLimitState(check: UsageLimitCheck): {
+  limitId: UsageLimitId;
+  message: string;
+} | null {
+  if (check.allowed || !check.limitId) {
+    return null;
+  }
+
+  return {
+    limitId: check.limitId,
+    message: check.message ?? '',
+  };
+}
+
 export function CaptureView({
   onOpenNoteDetail,
   onContextCaptureStart,
 }: CaptureViewProps): ReactElement {
   const capture = useCaptureInput();
+  const { notes } = useNotes();
   const { settings: captureSettings } = useCaptureSettings();
+  const { t } = useTranslation();
   const includeContextDescription = captureSettings.includeContextDescription;
+  const enablePasteCapture = captureSettings.enablePasteCapture;
+  const enableContextCapture = captureSettings.enableContextCapture;
   const [isSaving, setIsSaving] = useState(false);
+  const [limitState, setLimitState] = useState<{
+    limitId: UsageLimitId;
+    message: string;
+  } | null>(null);
   const [pageContextSource, setPageContextSource] = useState<PageContext | null>(null);
   const [noteBody, setNoteBody] = useState('');
   const [noteCode, setNoteCode] = useState('');
@@ -84,6 +116,21 @@ export function CaptureView({
 
   const handleContextCapture = useCallback(
     (pageContext: PageContext): void => {
+      if (!enableContextCapture) {
+        return;
+      }
+
+      const contextLimit = includeContextDescription
+        ? checkCanRunContextAnalysis(notes)
+        : { allowed: true, limitId: null, message: null };
+      const blocked = toLimitState(contextLimit);
+
+      if (blocked) {
+        setLimitState(blocked);
+        return;
+      }
+
+      setLimitState(null);
       onContextCaptureStart?.();
       clearImages();
       resetAnalysis();
@@ -101,7 +148,9 @@ export function CaptureView({
     },
     [
       clearImages,
+      enableContextCapture,
       includeContextDescription,
+      notes,
       onContextCaptureStart,
       resetAnalysis,
       runPageContextAnalysis,
@@ -177,11 +226,22 @@ export function CaptureView({
       return;
     }
 
+    if (pastedImages.length > 0) {
+      const photoLimit = checkCanRunPhotoAnalysis(notes);
+      const blocked = toLimitState(photoLimit);
+
+      if (blocked) {
+        setLimitState(blocked);
+        return;
+      }
+    }
+
+    setLimitState(null);
     setPageContextSource(null);
     setNoteBody('');
     setNoteCode('');
     void runAnalysis(text, pastedImages);
-  }, [canDetect, pastedImages, runAnalysis, text]);
+  }, [canDetect, notes, pastedImages, runAnalysis, text]);
 
   const handleCancelContextCapture = useCallback((): void => {
     setPageContextSource(null);
@@ -195,6 +255,21 @@ export function CaptureView({
       return;
     }
 
+    const includesContextBody =
+      isContextCaptureMode && includeContextDescription && noteBody.trim().length > 0;
+    const isPhotoSource = !isContextCaptureMode && pastedImages.length > 0;
+    const saveLimit = checkCanSaveNote(notes, {
+      includesContextBody,
+      isPhotoSource,
+    });
+    const blocked = toLimitState(saveLimit);
+
+    if (blocked) {
+      setLimitState(blocked);
+      return;
+    }
+
+    setLimitState(null);
     setIsSaving(true);
 
     try {
@@ -258,6 +333,7 @@ export function CaptureView({
     isContextCaptureMode,
     noteBody,
     noteCode,
+    notes,
     pageContextSource,
     pastedImages.length,
     reset,
@@ -267,7 +343,7 @@ export function CaptureView({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
-      {!isContextCaptureMode ? (
+      {!isContextCaptureMode && enablePasteCapture ? (
         <CaptureTextArea
           canDetect={canDetect}
           isAnalyzing={isAnalyzing}
@@ -282,6 +358,17 @@ export function CaptureView({
           pastedImages={capture.pastedImages}
           text={capture.text}
         />
+      ) : !isContextCaptureMode ? (
+        <div className="rounded-2xl border border-dashed border-syntax-border bg-syntax-card/60 px-4 py-8 text-center">
+          <p className="text-sm font-medium text-syntax-text">{t('sidePanelPasteDisabledTitle')}</p>
+          <p className="mt-1 text-xs leading-relaxed text-syntax-muted">
+            {t('sidePanelPasteDisabledDesc')}
+          </p>
+        </div>
+      ) : null}
+
+      {limitState ? (
+        <UpgradeLimitBanner limitId={limitState.limitId} message={limitState.message} />
       ) : null}
 
       {isContextCaptureMode && contextFormValues ? (
@@ -307,13 +394,15 @@ export function CaptureView({
         />
       )}
 
-      <SaveToLibraryButton
-        disabled={!canSave}
-        isSaving={isSaving}
-        onClick={() => {
-          void handleSave();
-        }}
-      />
+      <div className="relative z-20 shrink-0">
+        <SaveToLibraryButton
+          disabled={!canSave}
+          isSaving={isSaving}
+          onClick={() => {
+            void handleSave();
+          }}
+        />
+      </div>
 
       <div className="mt-auto shrink-0 border-t border-syntax-border pt-3">
         <RecentNotesSection onOpenNoteDetail={onOpenNoteDetail} />

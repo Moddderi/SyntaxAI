@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { buildBugReportMailto } from '../../constants/support';
 import { BugIcon, LoginIcon, SearchIcon, TrashIcon } from './icons';
 
@@ -52,6 +53,8 @@ export function DashboardTopBar({
   isTrashActive,
   trashCount,
 }: DashboardTopBarProps): ReactElement {
+  const { t } = useTranslation();
+
   const handleReportBug = (): void => {
     window.open(buildBugReportMailto(), '_blank', 'noopener,noreferrer');
   };
@@ -66,7 +69,7 @@ export function DashboardTopBar({
           onClick={onOpenQuickSearch}
           type="button"
         >
-          Search notes, tags, languages...
+          {t('topBarSearchPlaceholder')}
         </button>
         <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-syntax-border bg-syntax-bg px-1.5 py-0.5 text-[10px] text-syntax-muted">
           ⌘K
@@ -80,7 +83,7 @@ export function DashboardTopBar({
           type="button"
         >
           <BugIcon className="h-4 w-4 shrink-0" />
-          <span className="hidden min-[420px]:inline">Report a bug</span>
+          <span className="hidden min-[420px]:inline">{t('topBarReportBug')}</span>
         </button>
 
         <div className="flex items-center gap-2">
@@ -99,7 +102,7 @@ export function DashboardTopBar({
             type="button"
           >
             <LoginIcon className="h-4 w-4" />
-            Login
+            {t('topBarLogin')}
           </button>
         </div>
       </div>

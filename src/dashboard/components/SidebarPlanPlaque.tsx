@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { ChevronDownIcon } from './icons';
 
 interface SidebarPlanPlaqueProps {
@@ -6,6 +7,8 @@ interface SidebarPlanPlaqueProps {
 }
 
 export function SidebarPlanPlaque({ onClick }: SidebarPlanPlaqueProps): ReactElement {
+  const { t } = useTranslation();
+
   return (
     <button
       className="mb-6 w-full rounded-xl border border-syntax-border bg-syntax-card px-3.5 py-3 text-left transition hover:border-syntax-accent/25 hover:bg-syntax-hover"
@@ -13,14 +16,10 @@ export function SidebarPlanPlaque({ onClick }: SidebarPlanPlaqueProps): ReactEle
       type="button"
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[14px] leading-none text-syntax-text">
-          Plan: <span className="font-medium">Free</span>
-        </span>
+        <span className="text-[14px] leading-none text-syntax-text">{t('planFree')}</span>
         <ChevronDownIcon className="h-4 w-4 text-syntax-muted" />
       </div>
-      <p className="mt-1.5 text-[12px] leading-snug text-syntax-muted">
-        Upgrade to unlock all features
-      </p>
+      <p className="mt-1.5 text-[12px] leading-snug text-syntax-muted">{t('planUpgradeHint')}</p>
     </button>
   );
 }

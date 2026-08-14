@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
-import { SettingsModal } from '../components/SettingsModal';
+import { SettingsView } from './components/SettingsView';
 import { NoteDetailModal } from '../components/NoteDetailModal';
+import { useLocale } from '../hooks/useLocale';
 import { useNotes } from '../hooks/useNotes';
 import {
   consumeOpenSettingsIntent,
@@ -13,7 +14,7 @@ import {
 import type { LibraryTabId } from './types/dashboard.types';
 import type { Note } from '../types/note';
 import { AnalyticsView } from './components/AnalyticsView';
-import { BetaFeedbackModal } from './components/BetaFeedbackModal';
+import { FeedbackView } from './components/FeedbackView';
 import { DashboardTopBar } from './components/DashboardTopBar';
 import { QuickSearchModal } from './components/QuickSearchModal';
 import { Sidebar } from './components/Sidebar';
@@ -25,12 +26,13 @@ import { filterNotesByTechnology } from '../utils/noteHelpers';
 import { formatTechnologyLabel } from '../utils/techIcon';
 
 export function Dashboard(): ReactElement {
+  useLocale();
   const { notes, trashNotes, isLoading } = useNotes();
   const [activeTab, setActiveTab] = useState<LibraryTabId>('all');
   const [selectedTechnology, setSelectedTechnology] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
-  const [isBetaFeedbackOpen, setIsBetaFeedbackOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [selectedNoteForDetail, setSelectedNoteForDetail] = useState<Note | null>(null);
 
   const detailNote = useMemo(() => {
@@ -69,6 +71,8 @@ export function Dashboard(): ReactElement {
   const handleTabChange = useCallback((tab: LibraryTabId): void => {
     setSelectedTechnology(null);
     setActiveTab(tab);
+    setIsSettingsOpen(false);
+    setIsFeedbackOpen(false);
   }, []);
 
   const handleTechnologySelect = useCallback((techSlug: string): void => {
@@ -152,10 +156,13 @@ export function Dashboard(): ReactElement {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const isAnalyticsView = activeTab === 'analytics';
-  const isTrashView = activeTab === 'trash';
-  const isStackBrowseView = activeTab === 'stack' && selectedTechnology === null;
-  const isTechnologyDetailView = selectedTechnology !== null;
+  const isFeedbackView = isFeedbackOpen;
+  const isSettingsView = isSettingsOpen && !isFeedbackView;
+  const isAnalyticsView = activeTab === 'analytics' && !isSettingsView && !isFeedbackView;
+  const isTrashView = activeTab === 'trash' && !isSettingsView && !isFeedbackView;
+  const isStackBrowseView =
+    activeTab === 'stack' && selectedTechnology === null && !isSettingsView && !isFeedbackView;
+  const isTechnologyDetailView = selectedTechnology !== null && !isSettingsView && !isFeedbackView;
 
   return (
     <div className="flex h-screen overflow-hidden bg-syntax-bg text-syntax-text">
@@ -163,8 +170,15 @@ export function Dashboard(): ReactElement {
         activeTab={activeTab}
         isLoading={isLoading}
         notes={notes}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenBetaFeedback={() => setIsBetaFeedbackOpen(true)}
+        onOpenSettings={() => {
+          setIsFeedbackOpen(false);
+          setIsSettingsOpen(true);
+        }}
+        onOpenBetaFeedback={() => {
+          setIsSettingsOpen(false);
+          setIsFeedbackOpen(true);
+        }}
+        isSettingsActive={isSettingsView}
         onTabChange={handleTabChange}
       />
 
@@ -180,7 +194,16 @@ export function Dashboard(): ReactElement {
             trashCount={trashNotes.length}
           />
 
-          {isAnalyticsView ? (
+          {isFeedbackView ? (
+            <FeedbackView />
+          ) : isSettingsView ? (
+            <SettingsView
+              onOpenUsage={() => {
+                setIsSettingsOpen(false);
+                setActiveTab('analytics');
+              }}
+            />
+          ) : isAnalyticsView ? (
             <AnalyticsView isLoading={isLoading} notes={notes} />
           ) : isTrashView ? (
             <TrashGrid isLoading={isLoading} notes={trashNotes} />
@@ -218,12 +241,6 @@ export function Dashboard(): ReactElement {
         </main>
       </div>
 
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        onOpenUsage={() => setActiveTab('analytics')}
-      />
-
       <QuickSearchModal
         isOpen={isQuickSearchOpen}
         notes={notes}
@@ -234,11 +251,6 @@ export function Dashboard(): ReactElement {
       <NoteDetailModal
         note={detailNote}
         onClose={() => setSelectedNoteForDetail(null)}
-      />
-
-      <BetaFeedbackModal
-        isOpen={isBetaFeedbackOpen}
-        onClose={() => setIsBetaFeedbackOpen(false)}
       />
     </div>
   );

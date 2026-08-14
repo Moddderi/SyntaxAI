@@ -19,6 +19,12 @@
   --syntax-code-header: #141417;
   --syntax-heatmap-empty: #18181c;
   --syntax-heatmap-empty-border: #222226;
+  --syntax-heatmap-1: #0a4552;
+  --syntax-heatmap-1-border: #0f5666;
+  --syntax-heatmap-2: #007f96;
+  --syntax-heatmap-2-border: #0099b8;
+  --syntax-heatmap-3: #00eaff;
+  --syntax-heatmap-3-border: #00eaff;
 }
 
 [data-theme='light'] {
@@ -37,6 +43,12 @@
   --syntax-code-header: #f4f4f5;
   --syntax-heatmap-empty: #e4e4e7;
   --syntax-heatmap-empty-border: #d4d4d8;
+  --syntax-heatmap-1: #b8eef8;
+  --syntax-heatmap-1-border: #9de5f4;
+  --syntax-heatmap-2: #4dd4ef;
+  --syntax-heatmap-2-border: #33cceb;
+  --syntax-heatmap-3: #0099b8;
+  --syntax-heatmap-3-border: #008aa6;
 }
 
 body {
@@ -60,6 +72,12 @@ html,
 
 [data-theme='dark'] .syntax-urgency-banner {
   color: #fde68a;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--syntax-muted);
+  opacity: 0.85;
 }
 
 @keyframes fade-in {

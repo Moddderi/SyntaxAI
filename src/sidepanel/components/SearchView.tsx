@@ -65,7 +65,7 @@ function SearchResultCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="line-clamp-2 text-sm font-medium leading-snug text-white">
+            <h3 className="line-clamp-2 text-sm font-medium leading-snug text-syntax-text">
               {result.title}
             </h3>
 
@@ -73,7 +73,7 @@ function SearchResultCard({
               <div className="relative">
                 <button
                   aria-label={isCopied ? 'Code copied' : 'Copy code'}
-                  className="rounded-lg p-1 text-sm text-gray-500 transition hover:bg-syntax-bg hover:text-syntax-accent"
+                  className="rounded-lg p-1 text-sm text-syntax-muted transition hover:bg-syntax-bg hover:text-syntax-accent"
                   onClick={(event) => void handleCopyCode(event)}
                   type="button"
                 >
@@ -88,7 +88,7 @@ function SearchResultCard({
 
               <button
                 aria-label="Delete note"
-                className="rounded-lg p-1 text-gray-600 opacity-70 transition hover:bg-syntax-bg hover:text-red-400 hover:opacity-100"
+                className="rounded-lg p-1 text-syntax-muted opacity-70 transition hover:bg-syntax-bg hover:text-red-400 hover:opacity-100"
                 onClick={(event) => {
                   event.stopPropagation();
                   onDelete(result.id);
@@ -113,20 +113,20 @@ function SearchResultCard({
                 </svg>
               </button>
 
-              <span className="min-w-[2.75rem] text-right text-[10px] text-gray-500">
+              <span className="min-w-[2.75rem] text-right text-[10px] text-syntax-muted">
                 {result.capturedAt}
               </span>
             </div>
           </div>
 
-          <p className="mt-1 truncate text-xs text-zinc-400">{result.previewLine}</p>
+          <p className="mt-1 truncate text-xs text-syntax-muted">{result.previewLine}</p>
 
           {result.topics.length > 0 ? (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {result.topics.slice(0, 3).map((topic) => (
                 <span
                   key={topic}
-                  className="rounded-full border border-syntax-border bg-syntax-bg px-2 py-0.5 text-[10px] text-gray-400"
+                  className="rounded-full border border-syntax-border bg-syntax-bg px-2 py-0.5 text-[10px] text-syntax-muted"
                 >
                   {formatTopicLabel(topic)}
                 </span>
@@ -214,22 +214,22 @@ export function SearchView({
   return (
     <div className="flex flex-col gap-4">
       <div className="relative">
-        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-syntax-muted" />
         <input
           aria-label="Search notes"
-          className="h-11 w-full rounded-xl border border-syntax-border bg-syntax-bg py-2 pl-10 pr-14 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-syntax-accent/40"
+          className="h-11 w-full rounded-xl border border-syntax-border bg-syntax-bg py-2 pl-10 pr-14 text-sm text-syntax-text outline-none transition placeholder:text-syntax-muted focus:border-syntax-accent/40"
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Найти по коду, теме, заголовку..."
           type="search"
           value={query}
         />
-        <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-syntax-border bg-syntax-card px-1.5 py-0.5 text-[10px] text-gray-400">
+        <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-syntax-border bg-syntax-card px-1.5 py-0.5 text-[10px] text-syntax-muted">
           ⌘K
         </kbd>
       </div>
 
       <section>
-        <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+        <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-syntax-muted">
           Filter · Technologies
         </h2>
         {technologyFilters.length > 0 ? (
@@ -238,7 +238,7 @@ export function SearchView({
               className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${
                 selectedTech === null
                   ? 'border-syntax-accent text-syntax-accent'
-                  : 'border-syntax-border bg-syntax-card text-gray-400 hover:border-syntax-accent/30 hover:text-white'
+                  : 'border-syntax-border bg-syntax-card text-syntax-muted hover:border-syntax-accent/30 hover:text-syntax-text'
               }`}
               onClick={() => setSelectedTech(null)}
               type="button"
@@ -256,7 +256,7 @@ export function SearchView({
                   className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${
                     isActive
                       ? 'border-syntax-accent text-syntax-accent'
-                      : 'border-syntax-border bg-syntax-card text-gray-400 hover:border-syntax-accent/30 hover:text-white'
+                      : 'border-syntax-border bg-syntax-card text-syntax-muted hover:border-syntax-accent/30 hover:text-syntax-text'
                   }`}
                   onClick={() => setSelectedTech(filter.tech)}
                   type="button"
@@ -269,7 +269,7 @@ export function SearchView({
             })}
           </div>
         ) : (
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-syntax-muted">
             Technologies appear as you add notes.
           </p>
         )}
@@ -277,7 +277,7 @@ export function SearchView({
 
       <section>
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-syntax-muted">
             Results
           </h2>
           <span className="text-[10px] font-medium text-syntax-accent">
@@ -295,7 +295,7 @@ export function SearchView({
               />
             ))
           ) : (
-            <div className="rounded-2xl border border-dashed border-syntax-border bg-syntax-card p-6 text-center text-xs text-gray-400">
+            <div className="rounded-2xl border border-dashed border-syntax-border bg-syntax-card p-6 text-center text-xs text-syntax-muted">
               No notes match your search.
             </div>
           )}
