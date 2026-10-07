@@ -1,4 +1,7 @@
+import type { LibraryTabId } from '../dashboard/types/dashboard.types';
+
 export const OPEN_SETTINGS_STORAGE_KEY = 'syntaxai_open_settings';
+export const OPEN_LIBRARY_TAB_STORAGE_KEY = 'syntaxai_open_library_tab';
 
 function isChromeRuntimeAvailable(): boolean {
   return typeof chrome !== 'undefined' && Boolean(chrome.runtime?.openOptionsPage);
@@ -16,11 +19,46 @@ export function openDashboard(): void {
 export async function openDashboardSettings(): Promise<void> {
   if (typeof chrome !== 'undefined' && chrome.storage?.local) {
     await chrome.storage.local.set({ [OPEN_SETTINGS_STORAGE_KEY]: true });
-    void chrome.runtime.openOptionsPage();
+    if (isChromeRuntimeAvailable()) {
+      void chrome.runtime.openOptionsPage();
+    }
     return;
   }
 
   window.open('/src/dashboard/index.html#settings', '_blank');
+}
+
+export async function openDashboardAllNotes(): Promise<void> {
+  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    await chrome.storage.local.set({ [OPEN_LIBRARY_TAB_STORAGE_KEY]: 'all' });
+    if (isChromeRuntimeAvailable()) {
+      void chrome.runtime.openOptionsPage();
+    }
+    return;
+  }
+
+  window.open('/src/dashboard/index.html#library-all', '_blank');
+}
+
+export async function consumeOpenLibraryTabIntent(): Promise<LibraryTabId | null> {
+  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    const result = await chrome.storage.local.get(OPEN_LIBRARY_TAB_STORAGE_KEY);
+    const tab = result[OPEN_LIBRARY_TAB_STORAGE_KEY];
+
+    if (tab === 'all' || tab === 'starred' || tab === 'stack' || tab === 'analytics' || tab === 'trash') {
+      await chrome.storage.local.remove(OPEN_LIBRARY_TAB_STORAGE_KEY);
+      return tab;
+    }
+
+    return null;
+  }
+
+  if (window.location.hash === '#library-all') {
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    return 'all';
+  }
+
+  return null;
 }
 
 export async function consumeOpenSettingsIntent(): Promise<boolean> {

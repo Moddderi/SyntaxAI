@@ -21,7 +21,7 @@ export function AnalyzingBadge(): ReactElement {
     <div className="flex items-center gap-1.5 rounded-full border border-syntax-accent/20 bg-syntax-accent/5 px-2.5 py-1 text-[10px] text-syntax-accent/90">
       <span
         aria-hidden="true"
-        className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-syntax-border border-t-[#00eaff]"
+        className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-syntax-border border-t-syntax-accent"
       />
       Analyzing…
     </div>

@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState, type ReactElement, type ReactNode } from 'react';
 import {
+  ensureOpenAiApiKeyLoaded,
   getApiKeyStatus,
   getOpenAiApiKey,
+  loadOpenAiApiKeyFromStorage,
   maskApiKey,
   OPENAI_API_KEY_ENV_HINT,
+  saveOpenAiApiKey,
 } from '../services/apiKeyStorage';
 import {
   getCaptureSettings,
@@ -31,7 +34,7 @@ function SettingsToggle({
   return (
     <button
       aria-checked={checked}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ease-out ${
         checked ? 'bg-syntax-accent' : 'bg-syntax-border'
       } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
       disabled={disabled}
@@ -40,8 +43,8 @@ function SettingsToggle({
       type="button"
     >
       <span
-        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${
-          checked ? 'left-[22px]' : 'left-0.5'
+        className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full shadow-sm transition-transform duration-200 ease-out ${
+          checked ? 'translate-x-5 bg-syntax-accent-fg' : 'translate-x-0 bg-syntax-text'
         }`}
       />
     </button>
@@ -100,27 +103,52 @@ export function SettingsPanel({
   const { t } = useTranslation();
   const { isLight, setTheme } = useTheme();
   const [keyPreview, setKeyPreview] = useState<string | null>(null);
+  const [apiKeyDraft, setApiKeyDraft] = useState('');
+  const [isSavingApiKey, setIsSavingApiKey] = useState(false);
   const [status, setStatus] = useState<'active' | 'missing'>('missing');
+  const [usingDevEnvKey, setUsingDevEnvKey] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [captureSettings, setCaptureSettings] = useState<CaptureSettings>({
     enablePasteCapture: true,
     enableContextCapture: true,
-    includeContextDescription: true,
   });
-  const [savingCaptureKey, setSavingCaptureKey] = useState<keyof CaptureSettings | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
   const loadSettings = useCallback((): void => {
-    const apiKey = getOpenAiApiKey();
+    void ensureOpenAiApiKeyLoaded().then(() => {
+      const apiKey = getOpenAiApiKey();
+      const devKey = import.meta.env.DEV && Boolean(import.meta.env.VITE_OPENAI_API_KEY?.trim());
 
-    setStatus(getApiKeyStatus());
-    setKeyPreview(apiKey ? maskApiKey(apiKey) : null);
-    setError(null);
-    setSuccessMessage(null);
+      setUsingDevEnvKey(devKey);
+      setStatus(getApiKeyStatus());
+      setKeyPreview(apiKey ? maskApiKey(apiKey) : null);
+      setError(null);
+      setSuccessMessage(null);
+    });
 
     void getCaptureSettings().then(setCaptureSettings);
   }, []);
+
+  const handleSaveApiKey = useCallback((): void => {
+    setIsSavingApiKey(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    void saveOpenAiApiKey(apiKeyDraft)
+      .then(() => loadOpenAiApiKeyFromStorage())
+      .then(() => {
+        setApiKeyDraft('');
+        setSuccessMessage(t('settingsOpenAiSaved'));
+        loadSettings();
+      })
+      .catch(() => {
+        setError('Failed to save API key.');
+      })
+      .finally(() => {
+        setIsSavingApiKey(false);
+      });
+  }, [apiKeyDraft, loadSettings, t]);
 
   useEffect(() => {
     loadSettings();
@@ -135,21 +163,18 @@ export function SettingsPanel({
     key: keyof CaptureSettings,
     enabled: boolean,
   ): Promise<void> => {
-    setSavingCaptureKey(key);
     setError(null);
-    setSuccessMessage(null);
+    setCaptureSettings((current) => ({ ...current, [key]: enabled }));
 
     try {
       const patch: Partial<CaptureSettings> = { [key]: enabled };
       const next = await updateCaptureSettings(patch);
       setCaptureSettings(next);
-      setSuccessMessage(t('settingsSaved'));
     } catch (toggleError) {
+      setCaptureSettings((current) => ({ ...current, [key]: !enabled }));
       setError(
         toggleError instanceof Error ? toggleError.message : t('settingsCaptureError'),
       );
-    } finally {
-      setSavingCaptureKey(null);
     }
   };
 
@@ -171,8 +196,6 @@ export function SettingsPanel({
   const handleOpenUsage = (): void => {
     onOpenUsage?.();
   };
-
-  const isCaptureSaving = savingCaptureKey !== null;
 
   return (
     <div>
@@ -215,49 +238,13 @@ export function SettingsPanel({
         <SettingsGroupLabel>{t('settingsGroupCapture')}</SettingsGroupLabel>
 
         <SettingsRow
-          description={t('settingsPasteCaptureDesc')}
-          disabled={isCaptureSaving}
-          label={t('settingsPasteCaptureLabel')}
-          trailing={
-            <SettingsToggle
-              checked={captureSettings.enablePasteCapture}
-              disabled={isCaptureSaving}
-              onChange={(enabled) => {
-                void handleCaptureSettingChange('enablePasteCapture', enabled);
-              }}
-            />
-          }
-        />
-
-        <SettingsDivider />
-
-        <SettingsRow
           description={t('settingsContextCaptureDesc')}
-          disabled={isCaptureSaving}
           label={t('settingsContextCaptureLabel')}
           trailing={
             <SettingsToggle
               checked={captureSettings.enableContextCapture}
-              disabled={isCaptureSaving}
               onChange={(enabled) => {
                 void handleCaptureSettingChange('enableContextCapture', enabled);
-              }}
-            />
-          }
-        />
-
-        <SettingsDivider />
-
-        <SettingsRow
-          description={t('settingsPageDescriptionDesc')}
-          disabled={isCaptureSaving || !captureSettings.enableContextCapture}
-          label={t('settingsPageDescriptionLabel')}
-          trailing={
-            <SettingsToggle
-              checked={captureSettings.includeContextDescription}
-              disabled={isCaptureSaving || !captureSettings.enableContextCapture}
-              onChange={(enabled) => {
-                void handleCaptureSettingChange('includeContextDescription', enabled);
               }}
             />
           }
@@ -281,13 +268,39 @@ export function SettingsPanel({
           </div>
 
           {keyPreview ? (
-            <p className="mb-2 font-mono text-xs text-syntax-muted">
-              From <code className="text-syntax-text">.env</code>: {keyPreview}
-            </p>
+            <p className="mb-2 font-mono text-xs text-syntax-muted">{keyPreview}</p>
           ) : null}
 
+          {usingDevEnvKey ? (
+            <p className="mb-3 text-[13px] leading-relaxed text-syntax-muted">
+              {t('settingsOpenAiDevEnv')}
+            </p>
+          ) : (
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                autoComplete="off"
+                className="min-w-0 flex-1 rounded-xl border border-syntax-border bg-syntax-bg px-3 py-2 font-mono text-xs text-syntax-text outline-none ring-syntax-accent focus:ring-2"
+                onChange={(event) => setApiKeyDraft(event.target.value)}
+                placeholder={t('settingsOpenAiPlaceholder')}
+                spellCheck={false}
+                type="password"
+                value={apiKeyDraft}
+              />
+              <button
+                className="syntax-btn-primary shrink-0 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide disabled:opacity-50"
+                disabled={isSavingApiKey || apiKeyDraft.trim().length === 0}
+                onClick={handleSaveApiKey}
+                type="button"
+              >
+                {t('settingsOpenAiSave')}
+              </button>
+            </div>
+          )}
+
           <p className="text-[13px] leading-relaxed text-syntax-muted">
-            {status === 'active' ? t('settingsOpenAiFromEnv') : OPENAI_API_KEY_ENV_HINT}
+            {status === 'active'
+              ? t('settingsOpenAiStoredLocally')
+              : OPENAI_API_KEY_ENV_HINT}
           </p>
         </div>
 
@@ -333,7 +346,7 @@ export function SettingsPanel({
               </button>
             ) : null}
             <button
-              className="h-9 rounded-full bg-syntax-accent px-4 text-[13px] font-semibold text-black transition hover:opacity-90"
+              className="h-9 rounded-full bg-syntax-accent px-4 text-[13px] font-semibold text-syntax-accent-fg transition hover:opacity-90"
               onClick={openPricingPage}
               type="button"
             >

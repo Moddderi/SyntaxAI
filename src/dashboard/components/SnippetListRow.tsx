@@ -1,6 +1,5 @@
 import type { ReactElement } from 'react';
 import { NestedTechIcons } from '../../components/NestedTechIcons';
-import { formatTopicLabel } from '../../utils/noteHelpers';
 import type { SnippetItem } from '../types/dashboard.types';
 import { SnippetQuickActions } from './SnippetQuickActions';
 
@@ -21,7 +20,7 @@ export function SnippetListRow({
 }: SnippetListRowProps): ReactElement {
   return (
     <article
-      className={`group relative flex cursor-pointer items-center gap-3 rounded-2xl border bg-syntax-card px-4 py-3 transition ${
+      className={`syntax-press syntax-focus-ring group relative flex cursor-pointer items-center gap-3 rounded-2xl border bg-syntax-card px-4 py-3 ${
         isHighlighted
           ? 'border-syntax-accent ring-2 ring-syntax-accent/30'
           : 'border-syntax-border hover:border-syntax-accent/30'
@@ -53,30 +52,18 @@ export function SnippetListRow({
         ) : null}
       </div>
 
-      {snippet.topics.length > 0 ? (
-        <div className="hidden min-w-0 flex-wrap justify-end gap-1.5 md:flex md:max-w-[12rem]">
-          {snippet.topics.slice(0, 2).map((topic) => (
-            <span
-              key={topic}
-              className="rounded-full border border-syntax-border bg-syntax-inset px-2 py-0.5 text-[10px] text-syntax-muted"
-            >
-              {formatTopicLabel(topic)}
-            </span>
-          ))}
-        </div>
-      ) : null}
-
-      <span className="hidden shrink-0 text-[10px] text-syntax-muted lg:inline">
+      <span className="hidden shrink-0 text-[10px] tabular-nums text-syntax-muted sm:inline">
         {snippet.updatedAt}
       </span>
 
       <SnippetQuickActions
+        className="rounded-xl border border-syntax-border bg-syntax-inset/80 p-0.5"
         code={snippet.code}
         isStarred={snippet.isStarred}
         onRequestDelete={onRequestDelete}
         onToggleStar={onToggleStar}
+        showCopy
         snippetId={snippet.id}
-        variant="inline"
       />
     </article>
   );

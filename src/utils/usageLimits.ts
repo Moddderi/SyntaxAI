@@ -338,7 +338,7 @@ export function getQuotaBarClass(tone: UsageQuotaTone): string {
     case 'watch':
       return 'bg-amber-400';
     default:
-      return 'bg-[#00eaff]';
+      return 'bg-syntax-accent';
   }
 }
 
@@ -349,7 +349,7 @@ export function getQuotaRemainingClass(tone: UsageQuotaTone): string {
     case 'watch':
       return 'text-amber-300';
     default:
-      return 'text-[#00eaff]';
+      return 'text-syntax-accent';
   }
 }
 

@@ -56,10 +56,10 @@ export function SnippetGrid({
 
   return (
     <section>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="sticky top-0 z-10 -mx-1 mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-syntax-border/80 bg-syntax-bg/95 px-1 py-3 backdrop-blur-md">
         <div>
-          <h2 className="text-lg font-semibold text-syntax-text">{title}</h2>
-          <p className="text-sm text-syntax-muted">
+          <h2 className="syntax-title text-syntax-text">{title}</h2>
+          <p className="mt-1 text-sm text-syntax-muted">
             {isLoading ? 'Loading…' : `${totalCount} snippet${totalCount === 1 ? '' : 's'}`}
           </p>
         </div>
@@ -68,9 +68,10 @@ export function SnippetGrid({
           <div className="flex items-center rounded-xl border border-syntax-border bg-syntax-card p-1">
             <button
               aria-label="Grid view"
-              className={`rounded-lg p-2 transition ${
+              aria-pressed={viewMode === 'grid'}
+              className={`syntax-press syntax-focus-ring rounded-lg p-2 ${
                 viewMode === 'grid'
-                  ? 'bg-syntax-inset text-syntax-accent'
+                  ? 'bg-syntax-accent text-syntax-accent-fg'
                   : 'text-syntax-muted hover:text-syntax-text'
               }`}
               onClick={() => setViewMode('grid')}
@@ -80,9 +81,10 @@ export function SnippetGrid({
             </button>
             <button
               aria-label="List view"
-              className={`rounded-lg p-2 transition ${
+              aria-pressed={viewMode === 'list'}
+              className={`syntax-press syntax-focus-ring rounded-lg p-2 ${
                 viewMode === 'list'
-                  ? 'bg-syntax-inset text-syntax-accent'
+                  ? 'bg-syntax-accent text-syntax-accent-fg'
                   : 'text-syntax-muted hover:text-syntax-text'
               }`}
               onClick={() => setViewMode('list')}
@@ -92,12 +94,9 @@ export function SnippetGrid({
             </button>
           </div>
 
-          <button
-            className="rounded-xl border border-syntax-border bg-syntax-card px-3 py-2 text-xs text-syntax-muted transition hover:text-syntax-text"
-            type="button"
-          >
+          <span className="syntax-label rounded-xl border border-syntax-border bg-syntax-card px-3 py-2 text-[10px] text-syntax-muted">
             Recently updated
-          </button>
+          </span>
         </div>
       </div>
 
@@ -115,8 +114,6 @@ export function SnippetGrid({
                 key={snippet.id}
                 isHighlighted={highlightedNoteId === snippet.id}
                 onOpenDetail={onOpenDetail}
-                onRequestDelete={setDeleteNoteId}
-                onToggleStar={handleToggleStar}
                 snippet={snippet}
               />
             ) : (
@@ -132,12 +129,15 @@ export function SnippetGrid({
           )}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-syntax-border bg-syntax-card p-10 text-center">
-          <p className="text-sm text-syntax-muted">
+        <div className="rounded-2xl border border-dashed border-syntax-border bg-syntax-card px-6 py-14 text-center">
+          <p className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-syntax-text">
+            {isLoading ? 'Loading' : 'Empty'}
+          </p>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-syntax-muted">
             {isLoading
               ? 'Loading your library…'
               : (emptyMessage ??
-                'No notes yet. Add code from the side panel to get started.')}
+                'No notes yet. Capture code or a screenshot from the side panel — it lands here instantly.')}
           </p>
         </div>
       )}

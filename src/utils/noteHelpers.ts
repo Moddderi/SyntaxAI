@@ -1,42 +1,52 @@
 import type { TechnologyNavItem, SnippetItem } from '../dashboard/types/dashboard.types';
 import type { DetectedNote } from '../sidepanel/types/capture.types';
 import type { Note, NoteSourceType } from '../types/note';
+import { readCachedLocale, type Locale } from '../storage/localeStorage';
 import { buildPlainTextPreview } from './markdownPreview';
 import { resolveNoteTechnology } from './pageContextTechDetection';
 import { formatTechnologyLabel, getTechBrandColor, resolveDeviconSlug } from './techIcon';
 
-export function formatRelativeTime(isoDate: string): string {
+export function noteHasAiExplanation(note: Note): boolean {
+  return Boolean(note.summary?.trim() || note.body?.trim());
+}
+
+function resolveLocale(locale?: Locale): Locale {
+  return locale ?? readCachedLocale();
+}
+
+export function formatRelativeTime(isoDate: string, locale?: Locale): string {
+  const resolved = resolveLocale(locale);
   const date = new Date(isoDate);
   const diffMs = Date.now() - date.getTime();
 
   if (diffMs < 0) {
-    return 'just now';
+    return resolved === 'uk' ? 'щойно' : 'just now';
   }
 
   const diffMinutes = Math.floor(diffMs / 60_000);
 
   if (diffMinutes < 1) {
-    return 'just now';
+    return resolved === 'uk' ? 'щойно' : 'just now';
   }
 
   if (diffMinutes < 60) {
-    return `${diffMinutes}m ago`;
+    return resolved === 'uk' ? `${diffMinutes} хв тому` : `${diffMinutes}m ago`;
   }
 
   const diffHours = Math.floor(diffMinutes / 60);
 
   if (diffHours < 24) {
-    return `${diffHours}h ago`;
+    return resolved === 'uk' ? `${diffHours} год тому` : `${diffHours}h ago`;
   }
 
   const diffDays = Math.floor(diffHours / 24);
 
   if (diffDays < 7) {
-    return `${diffDays}d ago`;
+    return resolved === 'uk' ? `${diffDays} дн тому` : `${diffDays}d ago`;
   }
 
   const diffWeeks = Math.floor(diffDays / 7);
-  return `${diffWeeks}w ago`;
+  return resolved === 'uk' ? `${diffWeeks} тиж тому` : `${diffWeeks}w ago`;
 }
 
 export function getCodePreview(code: string): string {
@@ -60,8 +70,11 @@ export function getNotePreviewLine(
   return getCodePreview(code);
 }
 
-export function formatNoteDate(isoDate: string): string {
-  return new Intl.DateTimeFormat('ru-RU', {
+export function formatNoteDate(isoDate: string, locale?: Locale): string {
+  const resolved = resolveLocale(locale);
+  const tag = resolved === 'uk' ? 'uk-UA' : 'en-US';
+
+  return new Intl.DateTimeFormat(tag, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -71,8 +84,7 @@ export function formatNoteDate(isoDate: string): string {
 }
 
 export function formatTopicLabel(topic: string): string {
-  const normalized = topic.replace(/^#+/, '').trim();
-  return normalized ? `#${normalized}` : '';
+  return topic.replace(/^#+/, '').trim();
 }
 
 export function noteToSnippetItem(note: Note): SnippetItem {

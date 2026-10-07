@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
 import { SettingsView } from './components/SettingsView';
+import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { NoteDetailModal } from '../components/NoteDetailModal';
+import { deleteNote, toggleStar } from '../storage/notesStorage';
 import { useLocale } from '../hooks/useLocale';
 import { useNotes } from '../hooks/useNotes';
 import {
+  consumeOpenLibraryTabIntent,
   consumeOpenSettingsIntent,
+  OPEN_LIBRARY_TAB_STORAGE_KEY,
   OPEN_SETTINGS_STORAGE_KEY,
 } from '../utils/dashboardNavigation';
 import {
@@ -34,6 +38,7 @@ export function Dashboard(): ReactElement {
   const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [selectedNoteForDetail, setSelectedNoteForDetail] = useState<Note | null>(null);
+  const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
 
   const detailNote = useMemo(() => {
     if (!selectedNoteForDetail) {
@@ -111,15 +116,24 @@ export function Dashboard(): ReactElement {
   );
 
   useEffect(() => {
-    const openSettingsIfRequested = async (): Promise<void> => {
-      const shouldOpen = await consumeOpenSettingsIntent();
+    const openDeepLinkIfRequested = async (): Promise<void> => {
+      const libraryTab = await consumeOpenLibraryTabIntent();
 
-      if (shouldOpen) {
+      if (libraryTab) {
+        setIsSettingsOpen(false);
+        setIsFeedbackOpen(false);
+        setSelectedTechnology(null);
+        setActiveTab(libraryTab);
+      }
+
+      const shouldOpenSettings = await consumeOpenSettingsIntent();
+
+      if (shouldOpenSettings) {
         setIsSettingsOpen(true);
       }
     };
 
-    void openSettingsIfRequested();
+    void openDeepLinkIfRequested();
 
     if (typeof chrome === 'undefined' || !chrome.storage?.onChanged) {
       return;
@@ -132,6 +146,23 @@ export function Dashboard(): ReactElement {
       if (areaName === 'local' && changes[OPEN_SETTINGS_STORAGE_KEY]?.newValue === true) {
         setIsSettingsOpen(true);
         void chrome.storage.local.remove(OPEN_SETTINGS_STORAGE_KEY);
+      }
+
+      const libraryTab = changes[OPEN_LIBRARY_TAB_STORAGE_KEY]?.newValue;
+
+      if (
+        areaName === 'local' &&
+        (libraryTab === 'all' ||
+          libraryTab === 'starred' ||
+          libraryTab === 'stack' ||
+          libraryTab === 'analytics' ||
+          libraryTab === 'trash')
+      ) {
+        setIsSettingsOpen(false);
+        setIsFeedbackOpen(false);
+        setSelectedTechnology(null);
+        setActiveTab(libraryTab);
+        void chrome.storage.local.remove(OPEN_LIBRARY_TAB_STORAGE_KEY);
       }
     };
 
@@ -163,6 +194,19 @@ export function Dashboard(): ReactElement {
   const isStackBrowseView =
     activeTab === 'stack' && selectedTechnology === null && !isSettingsView && !isFeedbackView;
   const isTechnologyDetailView = selectedTechnology !== null && !isSettingsView && !isFeedbackView;
+  const viewKey = isFeedbackView
+    ? 'feedback'
+    : isSettingsView
+      ? 'settings'
+      : isAnalyticsView
+        ? 'analytics'
+        : isTrashView
+          ? 'trash'
+          : isStackBrowseView
+            ? 'stack'
+            : isTechnologyDetailView && selectedTechnology
+              ? `tech:${selectedTechnology}`
+              : activeTab;
 
   return (
     <div className="flex h-screen overflow-hidden bg-syntax-bg text-syntax-text">
@@ -194,6 +238,7 @@ export function Dashboard(): ReactElement {
             trashCount={trashNotes.length}
           />
 
+          <div className="syntax-view-enter" key={viewKey}>
           {isFeedbackView ? (
             <FeedbackView />
           ) : isSettingsView ? (
@@ -238,6 +283,7 @@ export function Dashboard(): ReactElement {
               />
             </>
           )}
+          </div>
         </main>
       </div>
 
@@ -251,6 +297,25 @@ export function Dashboard(): ReactElement {
       <NoteDetailModal
         note={detailNote}
         onClose={() => setSelectedNoteForDetail(null)}
+        onRequestDelete={setDeleteNoteId}
+        onToggleStar={(noteId) => {
+          void toggleStar(noteId);
+        }}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={deleteNoteId !== null}
+        noteTitle={notes.find((item) => item.id === deleteNoteId)?.title ?? 'this note'}
+        onCancel={() => setDeleteNoteId(null)}
+        onConfirm={() => {
+          if (!deleteNoteId) {
+            return;
+          }
+
+          void deleteNote(deleteNoteId);
+          setDeleteNoteId(null);
+          setSelectedNoteForDetail(null);
+        }}
       />
     </div>
   );

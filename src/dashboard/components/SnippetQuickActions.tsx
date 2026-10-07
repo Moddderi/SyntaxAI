@@ -1,7 +1,11 @@
 import { useCallback, useState, type MouseEvent, type ReactElement } from 'react';
-import { StarIcon, TrashIcon } from './icons';
+import { useTranslation } from '../../hooks/useTranslation';
+import { CopyIcon, StarIcon, TrashIcon } from './icons';
 
 const COPY_FEEDBACK_MS = 2000;
+
+const ACTION_BUTTON_CLASS =
+  'flex h-7 w-7 items-center justify-center rounded-lg text-syntax-muted transition hover:bg-syntax-inset hover:text-syntax-accent';
 
 interface SnippetQuickActionsProps {
   snippetId: string;
@@ -9,7 +13,7 @@ interface SnippetQuickActionsProps {
   isStarred: boolean;
   onToggleStar: (id: string) => void;
   onRequestDelete: (id: string) => void;
-  variant?: 'floating' | 'inline';
+  showCopy?: boolean;
   className?: string;
 }
 
@@ -19,9 +23,10 @@ export function SnippetQuickActions({
   isStarred,
   onToggleStar,
   onRequestDelete,
-  variant = 'floating',
+  showCopy = false,
   className = '',
 }: SnippetQuickActionsProps): ReactElement {
+  const { t } = useTranslation();
   const [isCopied, setIsCopied] = useState(false);
 
   const stopPropagation = (event: MouseEvent<HTMLButtonElement>): void => {
@@ -43,54 +48,49 @@ export function SnippetQuickActions({
     [code],
   );
 
-  const containerClass =
-    variant === 'floating'
-      ? 'absolute right-4 top-4 z-10 flex items-center gap-1 rounded-full border border-syntax-border bg-syntax-inset/95 p-1 opacity-0 shadow-lg backdrop-blur-sm transition group-hover:opacity-100'
-      : 'flex shrink-0 items-center gap-1';
-
   return (
-    <div className={`${containerClass} ${className}`.trim()}>
-      <div className="relative">
+    <div
+      className={`flex shrink-0 items-center gap-0.5 ${className}`.trim()}
+      onClick={(event) => event.stopPropagation()}
+      role="toolbar"
+    >
+      {showCopy ? (
         <button
-          aria-label={isCopied ? 'Code copied' : 'Copy code'}
-          className="rounded-full p-1.5 text-sm text-syntax-muted transition hover:bg-syntax-card hover:text-syntax-accent"
+          aria-label={isCopied ? t('snippetActionCopied') : t('snippetActionCopyCode')}
+          className={ACTION_BUTTON_CLASS}
           onClick={(event) => void handleCopyCode(event)}
           type="button"
         >
-          {isCopied ? '✓' : '📋'}
+          {isCopied ? (
+            <span className="text-[10px] font-bold text-syntax-accent">✓</span>
+          ) : (
+            <CopyIcon className="h-3.5 w-3.5" />
+          )}
         </button>
-        {isCopied && variant === 'floating' ? (
-          <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-syntax-accent px-2 py-0.5 text-[10px] font-semibold text-black">
-            Copied!
-          </span>
-        ) : null}
-      </div>
+      ) : null}
 
       <button
-        aria-label={isStarred ? 'Remove from starred' : 'Add to starred'}
-        className="rounded-full p-1.5 text-syntax-muted transition hover:bg-syntax-card hover:text-syntax-accent"
+        aria-label={isStarred ? t('snippetActionUnstar') : t('snippetActionStar')}
+        className={`${ACTION_BUTTON_CLASS} ${isStarred ? 'text-syntax-accent' : ''}`}
         onClick={(event) => {
           stopPropagation(event);
           onToggleStar(snippetId);
         }}
         type="button"
       >
-        <StarIcon
-          className={`h-4 w-4 ${isStarred ? 'text-syntax-accent' : ''}`}
-          filled={isStarred}
-        />
+        <StarIcon className="h-3.5 w-3.5" filled={isStarred} />
       </button>
 
       <button
-        aria-label="Delete note"
-        className="rounded-full p-1.5 text-syntax-muted transition hover:bg-syntax-card hover:text-red-400"
+        aria-label={t('snippetActionDelete')}
+        className={`${ACTION_BUTTON_CLASS} hover:text-red-400`}
         onClick={(event) => {
           stopPropagation(event);
           onRequestDelete(snippetId);
         }}
         type="button"
       >
-        <TrashIcon className="h-4 w-4" />
+        <TrashIcon className="h-3.5 w-3.5" />
       </button>
     </div>
   );

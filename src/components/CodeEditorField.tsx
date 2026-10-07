@@ -19,22 +19,25 @@ export function CodeEditorField({
   const languageLabel = getCodeBlockLanguageLabel(language);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-syntax-border bg-syntax-code">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-syntax-border bg-syntax-code">
       <div className="flex items-center border-b border-syntax-border bg-syntax-card px-3 py-1.5">
         <span className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-syntax-muted">
           {languageLabel}
         </span>
       </div>
 
-      <textarea
-        aria-label="Code block"
-        className={`${minHeightClass} w-full resize-y bg-transparent px-3 py-3 font-mono text-xs leading-6 text-syntax-muted outline-none transition placeholder:text-syntax-muted focus:bg-black/10 [tab-size:2]`}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        spellCheck={false}
-        style={{ whiteSpace: 'pre', overflowX: 'auto' }}
-        value={code}
-      />
+      <div className="max-w-full overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
+        <textarea
+          aria-label="Code block"
+          className={`${minHeightClass} block min-w-full w-max max-w-none resize-y bg-transparent px-3 py-3 font-mono text-xs leading-6 text-syntax-muted outline-none transition placeholder:text-syntax-muted focus:bg-syntax-text/[0.04] [tab-size:2]`}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          spellCheck={false}
+          style={{ whiteSpace: 'pre' }}
+          value={code}
+          wrap="off"
+        />
+      </div>
     </div>
   );
 }

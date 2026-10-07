@@ -5,7 +5,6 @@ import {
   type FormEvent,
   type ReactElement,
 } from 'react';
-import { normalizeTopics } from '../services/aiService';
 import type { Note } from '../types/note';
 import { CodeBlock } from './CodeBlock';
 
@@ -24,7 +23,6 @@ export function EditNoteModal({
 }: EditNoteModalProps): ReactElement | null {
   const [title, setTitle] = useState('');
   const [code, setCode] = useState('');
-  const [topicsInput, setTopicsInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const resetForm = useCallback((): void => {
@@ -34,7 +32,6 @@ export function EditNoteModal({
 
     setTitle(note.title);
     setCode(note.code);
-    setTopicsInput(note.topics.join(', '));
     setIsSaving(false);
   }, [note]);
 
@@ -75,16 +72,10 @@ export function EditNoteModal({
 
     setIsSaving(true);
 
-    const rawTopics = topicsInput
-      .split(',')
-      .map((topic) => topic.trim())
-      .filter((topic) => topic.length > 0);
-
     onSave({
       ...note,
       title: trimmedTitle,
       code: trimmedCode,
-      topics: normalizeTopics(rawTopics),
     });
 
     setIsSaving(false);
@@ -108,7 +99,7 @@ export function EditNoteModal({
           <h2 className="text-lg font-semibold text-syntax-text" id="edit-note-title">
             Edit note
           </h2>
-          <p className="mt-1 text-sm text-syntax-muted">Update title, code, or topics.</p>
+          <p className="mt-1 text-sm text-syntax-muted">Update title or code.</p>
         </div>
 
         <form className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-4" onSubmit={handleSubmit}>
@@ -141,18 +132,6 @@ export function EditNoteModal({
             value={code}
           />
 
-          <label className="mb-2 block text-xs text-syntax-muted" htmlFor="edit-note-topics">
-            Topics (comma-separated)
-          </label>
-          <input
-            className="mb-6 h-11 w-full rounded-xl border border-syntax-border bg-syntax-inset px-3 text-sm text-syntax-text outline-none transition placeholder:text-syntax-muted focus:border-syntax-accent/40"
-            id="edit-note-topics"
-            onChange={(event) => setTopicsInput(event.target.value)}
-            placeholder="auth, state-management, hooks"
-            type="text"
-            value={topicsInput}
-          />
-
           <div className="mt-auto flex items-center gap-2">
             <button
               className="h-10 flex-1 rounded-full border border-syntax-border text-sm text-syntax-muted transition hover:bg-syntax-inset hover:text-syntax-text"
@@ -162,7 +141,7 @@ export function EditNoteModal({
               Cancel
             </button>
             <button
-              className="h-10 flex-1 rounded-full bg-syntax-accent text-sm font-semibold text-black transition hover:bg-syntax-accent/90 disabled:opacity-50"
+              className="h-10 flex-1 rounded-full bg-syntax-accent text-sm font-semibold text-syntax-accent-fg transition hover:bg-syntax-accent/90 disabled:opacity-50"
               disabled={isSaving || !title.trim() || !code.trim()}
               type="submit"
             >

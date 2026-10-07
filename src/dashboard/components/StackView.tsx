@@ -27,7 +27,7 @@ function StackTechCard({
       className="group relative overflow-hidden rounded-2xl border border-syntax-border bg-syntax-card p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-opacity-60"
       onClick={() => onSelect(item.slug)}
       style={{
-        boxShadow: `inset 0 1px 0 0 rgba(255,255,255,0.03)`,
+        boxShadow: `inset 0 1px 0 0 var(--syntax-inset-highlight)`,
       }}
       type="button"
     >

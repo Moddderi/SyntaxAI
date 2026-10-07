@@ -22,7 +22,7 @@ export function TechHeroBanner({
     <section
       className="animate-fade-in mb-8 overflow-hidden rounded-2xl border border-syntax-border bg-syntax-card bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-syntax-accent/10 via-transparent to-transparent p-6 transition-all"
       style={{
-        boxShadow: `inset 0 1px 0 0 rgba(255,255,255,0.04), 0 0 40px -12px ${accentColor}33`,
+        boxShadow: `inset 0 1px 0 0 var(--syntax-inset-highlight), 0 0 40px -12px ${accentColor}33`,
       }}
     >
       {onBackToStack ? (
@@ -47,7 +47,7 @@ export function TechHeroBanner({
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex flex-wrap items-center gap-3">
             <h1
-              className="text-3xl font-bold tracking-tight text-syntax-text drop-shadow-[0_0_18px_rgba(0,234,255,0.25)]"
+              className="font-mono text-3xl font-bold uppercase tracking-tight text-syntax-text drop-shadow-[0_0_18px_rgb(255_255_255/0.2)]"
               style={{ textShadow: `0 0 28px ${accentColor}44` }}
             >
               {techName}

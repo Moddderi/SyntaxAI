@@ -4,28 +4,15 @@ import {
   type GetPageContextResponse,
   type PageContext,
 } from '../types/context';
-import { isContextCaptureEnabled } from '../storage/captureSettingsStorage';
 import { setPendingContextCapture } from '../storage/contextDraftStorage';
+import { isRestrictedExtensionUrl, openCapturePanel } from '../extension/panel';
 import { resolveSiteType } from '../utils/siteType';
 
 const CONTEXT_CAPTURE_COMMAND = 'capture-context';
 
-function isRestrictedUrl(url: string | undefined): boolean {
-  if (!url) {
-    return true;
-  }
-
-  return (
-    url.startsWith('chrome://') ||
-    url.startsWith('chrome-extension://') ||
-    url.startsWith('edge://') ||
-    url.startsWith('about:')
-  );
-}
-
 function openSidePanelForTab(tabId: number): void {
-  void chrome.sidePanel.open({ tabId }).catch((error: unknown) => {
-    console.error('[SyntaxAI] Failed to open side panel:', error);
+  void openCapturePanel(tabId).catch((error: unknown) => {
+    console.error('[SyntaxAI] Failed to open capture panel:', error);
   });
 }
 
@@ -46,7 +33,7 @@ function buildFallbackPageContext(
   const trimmedSelection = selectedText.trim();
   const pageUrl = tab.url ?? '';
 
-  if (!trimmedSelection || isRestrictedUrl(pageUrl)) {
+  if (!trimmedSelection || isRestrictedExtensionUrl(pageUrl)) {
     return null;
   }
 
@@ -93,7 +80,7 @@ async function resolvePageContextFromTab(
   tab: chrome.tabs.Tab,
   fallbackSelection?: string,
 ): Promise<PageContext | null> {
-  if (!tab.id || isRestrictedUrl(tab.url)) {
+  if (!tab.id || isRestrictedExtensionUrl(tab.url)) {
     return null;
   }
 
@@ -115,13 +102,6 @@ async function finishContextCapture(
   tab: chrome.tabs.Tab,
   fallbackSelection?: string,
 ): Promise<void> {
-  const contextEnabled = await isContextCaptureEnabled();
-
-  if (!contextEnabled) {
-    console.warn('[SyntaxAI] Context capture is disabled in settings.');
-    return;
-  }
-
   const pageContext = await resolvePageContextFromTab(tab, fallbackSelection);
 
   if (!pageContext) {

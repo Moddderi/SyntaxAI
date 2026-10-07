@@ -1,9 +1,11 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 
+const extensionOutDir = process.env.EXTENSION_OUT_DIR ?? 'dist';
+
 export default defineConfig({
   build: {
-    outDir: 'dist/content',
+    outDir: resolve(__dirname, extensionOutDir, 'content'),
     emptyOutDir: true,
     copyPublicDir: false,
     lib: {

@@ -3,12 +3,14 @@ import { NoteForm } from '../../components/NoteForm';
 import { UpgradeLimitBanner } from '../../components/UpgradeLimitBanner';
 import { useCaptureSettings } from '../../hooks/useCaptureSettings';
 import { useNotes } from '../../hooks/useNotes';
-import { useTranslation } from '../../hooks/useTranslation';
 import { saveNote } from '../../storage/notesStorage';
 import type { PageContext } from '../../types/context';
-import { resolveCaptureContent } from '../../utils/captureContent';
+import {
+  buildFallbackTitle,
+  resolveCaptureContent,
+  resolveContextCaptureTitle,
+} from '../../utils/captureContent';
 import { buildNoteFromCapture } from '../../utils/noteHelpers';
-import { buildPlainTextPreview } from '../../utils/markdownPreview';
 import { resolveContextCaptureTech } from '../../utils/pageContextTechDetection';
 import { sanitizeCapturedCode } from '../../utils/selectionFormatter';
 import {
@@ -35,19 +37,6 @@ interface CaptureViewProps {
   onContextCaptureStart?: () => void;
 }
 
-function buildFallbackTitle(pageContext: PageContext): string {
-  const fromPageTitle = pageContext.pageTitle.trim();
-
-  if (fromPageTitle && fromPageTitle !== pageContext.url) {
-    return fromPageTitle.length > 80 ? `${fromPageTitle.slice(0, 77)}…` : fromPageTitle;
-  }
-
-  const firstLine =
-    pageContext.rawContent.split('\n').find((line) => line.trim().length > 0) ?? 'Captured note';
-
-  return firstLine.replace(/^#+\s*/, '').slice(0, 80);
-}
-
 function toLimitState(check: UsageLimitCheck): {
   limitId: UsageLimitId;
   message: string;
@@ -69,10 +58,7 @@ export function CaptureView({
   const capture = useCaptureInput();
   const { notes } = useNotes();
   const { settings: captureSettings } = useCaptureSettings();
-  const { t } = useTranslation();
-  const includeContextDescription = captureSettings.includeContextDescription;
-  const enablePasteCapture = captureSettings.enablePasteCapture;
-  const enableContextCapture = captureSettings.enableContextCapture;
+  const aiAddsContext = captureSettings.enableContextCapture;
   const [isSaving, setIsSaving] = useState(false);
   const [limitState, setLimitState] = useState<{
     limitId: UsageLimitId;
@@ -96,33 +82,25 @@ export function CaptureView({
   } = useSnippetAnalysis(text, pastedImages);
 
   useEffect(() => {
-    if (!includeContextDescription) {
-      setNoteBody('');
-    }
-  }, [includeContextDescription]);
-
-  useEffect(() => {
-    if (!contextAnalysis) {
+    if (!contextAnalysis || !pageContextSource) {
       return;
     }
 
-    if (includeContextDescription) {
-      setNoteBody(contextAnalysis.formattedNote);
+    setNoteBody(aiAddsContext ? contextAnalysis.formattedNote : '');
+
+    const aiCode = sanitizeCapturedCode(contextAnalysis.primaryCode);
+    if (aiCode) {
+      setNoteCode(aiCode);
     }
 
-    setNoteCode(sanitizeCapturedCode(contextAnalysis.primaryCode));
-    setEditedTitle(contextAnalysis.suggestedTitle);
-  }, [contextAnalysis, includeContextDescription, setEditedTitle]);
+    setEditedTitle((prev) =>
+      resolveContextCaptureTitle(pageContextSource, prev, contextAnalysis.suggestedTitle),
+    );
+  }, [aiAddsContext, contextAnalysis, pageContextSource, setEditedTitle]);
 
   const handleContextCapture = useCallback(
     (pageContext: PageContext): void => {
-      if (!enableContextCapture) {
-        return;
-      }
-
-      const contextLimit = includeContextDescription
-        ? checkCanRunContextAnalysis(notes)
-        : { allowed: true, limitId: null, message: null };
+      const contextLimit = checkCanRunContextAnalysis(notes);
       const blocked = toLimitState(contextLimit);
 
       if (blocked) {
@@ -137,7 +115,7 @@ export function CaptureView({
 
       const { noteBody: initialBody, noteCode: initialCode } = resolveCaptureContent(
         pageContext,
-        includeContextDescription,
+        aiAddsContext,
       );
 
       setPageContextSource(pageContext);
@@ -147,9 +125,8 @@ export function CaptureView({
       void runPageContextAnalysis(pageContext);
     },
     [
+      aiAddsContext,
       clearImages,
-      enableContextCapture,
-      includeContextDescription,
       notes,
       onContextCaptureStart,
       resetAnalysis,
@@ -197,7 +174,11 @@ export function CaptureView({
 
   const contextFormValues = pageContextSource
     ? {
-        title: editedTitle,
+        title: resolveContextCaptureTitle(
+          pageContextSource,
+          editedTitle,
+          contextAnalysis?.suggestedTitle,
+        ),
         noteBody,
         code: noteCode,
         language: contextLanguage,
@@ -208,7 +189,7 @@ export function CaptureView({
 
   const canSaveContext =
     isContextCaptureMode &&
-    Boolean(noteCode.trim() || (includeContextDescription && noteBody.trim())) &&
+    Boolean(noteCode.trim() || (aiAddsContext && noteBody.trim())) &&
     !isAnalyzing &&
     !isSaving;
 
@@ -256,7 +237,7 @@ export function CaptureView({
     }
 
     const includesContextBody =
-      isContextCaptureMode && includeContextDescription && noteBody.trim().length > 0;
+      isContextCaptureMode && aiAddsContext && noteBody.trim().length > 0;
     const isPhotoSource = !isContextCaptureMode && pastedImages.length > 0;
     const saveLimit = checkCanSaveNote(notes, {
       includesContextBody,
@@ -274,15 +255,13 @@ export function CaptureView({
 
     try {
       if (isContextCaptureMode && pageContextSource) {
-        const title =
-          editedTitle.trim() ||
-          contextAnalysis?.suggestedTitle ||
-          buildFallbackTitle(pageContextSource);
+        const title = resolveContextCaptureTitle(
+          pageContextSource,
+          editedTitle,
+          contextAnalysis?.suggestedTitle,
+        );
 
-        const savedBody = includeContextDescription ? noteBody.trim() : '';
-        const summarySource = includeContextDescription
-          ? buildPlainTextPreview(noteBody, contextAnalysis?.formattedNote)
-          : editedTitle.trim() || contextAnalysis?.suggestedTitle;
+        const savedBody = aiAddsContext ? noteBody.trim() : '';
 
         const note = buildNoteFromCapture(
           noteCode.trim(),
@@ -292,7 +271,6 @@ export function CaptureView({
             language: contextLanguage,
             topics: contextAnalysis?.tags ?? [],
             code: noteCode.trim(),
-            summary: summarySource || undefined,
           },
           'tab',
           pageContextSource.url,
@@ -324,12 +302,12 @@ export function CaptureView({
     }
   }, [
     canSave,
+    aiAddsContext,
     contextAnalysis,
     contextLanguage,
     contextPrimaryTech,
     detectedNote,
     editedTitle,
-    includeContextDescription,
     isContextCaptureMode,
     noteBody,
     noteCode,
@@ -343,7 +321,7 @@ export function CaptureView({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
-      {!isContextCaptureMode && enablePasteCapture ? (
+      {!isContextCaptureMode ? (
         <CaptureTextArea
           canDetect={canDetect}
           isAnalyzing={isAnalyzing}
@@ -358,13 +336,6 @@ export function CaptureView({
           pastedImages={capture.pastedImages}
           text={capture.text}
         />
-      ) : !isContextCaptureMode ? (
-        <div className="rounded-2xl border border-dashed border-syntax-border bg-syntax-card/60 px-4 py-8 text-center">
-          <p className="text-sm font-medium text-syntax-text">{t('sidePanelPasteDisabledTitle')}</p>
-          <p className="mt-1 text-xs leading-relaxed text-syntax-muted">
-            {t('sidePanelPasteDisabledDesc')}
-          </p>
-        </div>
       ) : null}
 
       {limitState ? (
@@ -380,7 +351,7 @@ export function CaptureView({
           onCodeChange={setNoteCode}
           onNoteBodyChange={setNoteBody}
           onTitleChange={setEditedTitle}
-          showContextBody={includeContextDescription}
+          showContextBody={aiAddsContext}
           sourceUrl={pageContextSource?.url}
           values={contextFormValues}
         />

@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
-import logoUrl from '../assets/logo.svg';
+import logoMarkDarkUrl from '../assets/logo-mark-black.png';
+import logoMarkLightUrl from '../assets/logo-mark.png';
 
 interface LogoProps {
   className?: string;
@@ -11,11 +12,20 @@ export function Logo({
   label = 'SyntaxAI',
 }: LogoProps): ReactElement {
   return (
-    <img
-      alt={label}
-      className={className}
-      draggable={false}
-      src={logoUrl}
-    />
+    <span className={`relative inline-block shrink-0 ${className}`}>
+      <img
+        alt={label}
+        className="h-full w-full object-contain dark:hidden"
+        draggable={false}
+        src={logoMarkDarkUrl}
+      />
+      <img
+        alt=""
+        aria-hidden
+        className="hidden h-full w-full object-contain dark:block"
+        draggable={false}
+        src={logoMarkLightUrl}
+      />
+    </span>
   );
 }

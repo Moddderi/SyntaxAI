@@ -1,5 +1,6 @@
 import { useMemo, type ReactElement, type ReactNode } from 'react';
 import { Logo } from '../../components/Logo';
+import { SyntaxWordmark } from '../../components/SyntaxWordmark';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from '../../hooks/useTranslation';
 import type { Note } from '../../types/note';
@@ -30,9 +31,7 @@ const NAV_ICON_CLASS = 'h-4 w-4 shrink-0';
 
 function SidebarSectionLabel({ children }: { children: string }): ReactElement {
   return (
-    <h2 className="mb-2.5 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-syntax-muted">
-      {children}
-    </h2>
+    <h2 className="syntax-label mb-2.5 px-3 text-syntax-muted">{children}</h2>
   );
 }
 
@@ -53,10 +52,11 @@ function SidebarNavButton({
 }): ReactElement {
   return (
     <button
-      className={`flex w-full items-center justify-between rounded-[10px] px-3 py-2 text-[14px] leading-snug transition ${
+      aria-current={isActive ? 'page' : undefined}
+      className={`syntax-press syntax-focus-ring flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[14px] leading-snug ${
         isActive
-          ? 'bg-syntax-nav-active font-medium text-syntax-text'
-          : 'font-normal text-syntax-muted hover:bg-syntax-hover hover:text-syntax-text'
+          ? 'border border-syntax-border bg-syntax-nav-active font-medium text-syntax-text shadow-[inset_3px_0_0_0_var(--syntax-accent)]'
+          : 'border border-transparent font-normal text-syntax-muted hover:border-syntax-border hover:bg-syntax-hover hover:text-syntax-text'
       }`}
       onClick={onClick}
       type="button"
@@ -66,7 +66,13 @@ function SidebarNavButton({
         <span className="truncate">{label}</span>
       </span>
       {count !== undefined ? (
-        <span className="ml-2 shrink-0 tabular-nums text-[12px] text-syntax-muted">
+        <span
+          className={`ml-2 shrink-0 rounded-full px-2 py-0.5 font-mono text-[11px] tabular-nums ${
+            isActive
+              ? 'bg-syntax-accent/10 text-syntax-accent'
+              : 'text-syntax-muted'
+          }`}
+        >
           {isLoading ? '—' : count}
         </span>
       ) : null}
@@ -142,10 +148,10 @@ export function Sidebar({
       <div className="mb-5 flex items-center gap-3 px-1">
         <Logo className="h-9 w-9" />
         <div className="min-w-0">
-          <h1 className="text-base font-semibold leading-tight tracking-tight text-syntax-text">
-            SyntaxAI
+          <h1 className="leading-none">
+            <SyntaxWordmark size="md" />
           </h1>
-          <p className="mt-0.5 text-[12px] leading-snug text-syntax-muted">{t('appSubtitle')}</p>
+          <p className="syntax-label mt-1 text-[9px] text-syntax-muted">{t('appSubtitle')}</p>
         </div>
       </div>
 

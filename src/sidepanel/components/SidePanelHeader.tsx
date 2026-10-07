@@ -1,13 +1,13 @@
 import type { ReactElement } from 'react';
 import type { SidePanelMode } from '../types/capture.types';
 import { Logo } from '../../components/Logo';
+import { SyntaxWordmark } from '../../components/SyntaxWordmark';
 import { useTranslation } from '../../hooks/useTranslation';
 import { HomeIcon, SettingsIcon } from './icons';
-import { openDashboard } from '../../utils/dashboardNavigation';
+import { openDashboard, openDashboardSettings } from '../../utils/dashboardNavigation';
 
 interface SidePanelHeaderProps {
   mode: SidePanelMode;
-  onOpenSettings: () => void;
 }
 
 const HEADER_ICON_BUTTON_CLASS =
@@ -20,7 +20,7 @@ function getSubtitle(
   return mode === 'search' ? t('sidePanelQuickSearch') : t('sidePanelQuickNote');
 }
 
-export function SidePanelHeader({ mode, onOpenSettings }: SidePanelHeaderProps): ReactElement {
+export function SidePanelHeader({ mode }: SidePanelHeaderProps): ReactElement {
   const { t } = useTranslation();
 
   return (
@@ -29,10 +29,10 @@ export function SidePanelHeader({ mode, onOpenSettings }: SidePanelHeaderProps):
         <Logo className="h-8 w-8 shrink-0" />
 
         <div className="min-w-0">
-          <h1 className="text-[15px] font-semibold leading-tight tracking-tight text-syntax-text">
-            SyntaxAI
+          <h1 className="leading-none">
+            <SyntaxWordmark size="sm" />
           </h1>
-          <p className="text-[11px] font-medium lowercase tracking-wide text-syntax-muted">
+          <p className="syntax-label mt-0.5 text-[10px] text-syntax-muted">
             {getSubtitle(mode, t)}
           </p>
         </div>
@@ -42,7 +42,9 @@ export function SidePanelHeader({ mode, onOpenSettings }: SidePanelHeaderProps):
         <button
           aria-label="Open settings"
           className={HEADER_ICON_BUTTON_CLASS}
-          onClick={onOpenSettings}
+          onClick={() => {
+            void openDashboardSettings();
+          }}
           type="button"
         >
           <SettingsIcon />

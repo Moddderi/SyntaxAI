@@ -127,6 +127,24 @@ export function TextIcon({ className = 'h-4 w-4' }: IconProps): ReactElement {
   );
 }
 
+export function CopyIcon({ className = 'h-4 w-4' }: IconProps): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.75"
+      viewBox="0 0 24 24"
+    >
+      <rect height="10" rx="1.5" width="10" x="9" y="9" />
+      <path d="M7 15H6.5A1.5 1.5 0 0 1 5 13.5v-8A1.5 1.5 0 0 1 6.5 4h8A1.5 1.5 0 0 1 16 5.5V7" />
+    </svg>
+  );
+}
+
 export function EditIcon({ className = 'h-4 w-4' }: IconProps): ReactElement {
   return (
     <svg

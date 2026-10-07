@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
+import { SyntaxCaptureAnalyzingPanel } from '../../components/SyntaxNeonLoader';
 import { DetectionConfirmedBadge, TechDetectionIndicator } from '../../components/TechDetectionIndicator';
 import { useTranslation } from '../../hooks/useTranslation';
-import { formatTopicLabel } from '../../utils/noteHelpers';
 import type { DetectedNote } from '../types/capture.types';
 
 interface DetectedNoteBlockProps {
@@ -26,11 +26,9 @@ export function DetectedNoteBlock({
   const detectedNote = note;
 
   return (
-    <section className="relative z-0 shrink-0 overflow-hidden rounded-2xl border border-syntax-border bg-syntax-card p-4">
+    <section className="syntax-elevated relative z-0 shrink-0 overflow-hidden rounded-2xl border border-syntax-border bg-syntax-card p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-syntax-accent">
-          {t('sidePanelDetectedNote')}
-        </h2>
+        <h2 className="syntax-label text-syntax-accent">{t('sidePanelDetectedNote')}</h2>
 
         {!isAnalyzing && note ? <DetectionConfirmedBadge /> : null}
       </div>
@@ -41,7 +39,9 @@ export function DetectedNoteBlock({
         </p>
       ) : null}
 
-      {!note && !isAnalyzing && !error ? (
+      {isAnalyzing ? (
+        <SyntaxCaptureAnalyzingPanel compact message={t('contextCaptureAnalyzing')} />
+      ) : !note && !error ? (
         <p className="text-xs text-syntax-muted">{t('sidePanelDetectedHint')}</p>
       ) : (
         <div className="flex items-start gap-3">
@@ -63,19 +63,6 @@ export function DetectedNoteBlock({
               type="text"
               value={title}
             />
-
-            {note && note.topics.length > 0 ? (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {note.topics.map((topic) => (
-                  <span
-                    key={topic}
-                    className="rounded-full border border-syntax-border bg-syntax-bg px-3 py-1 text-[11px] text-syntax-muted"
-                  >
-                    {formatTopicLabel(topic)}
-                  </span>
-                ))}
-              </div>
-            ) : null}
 
             {sourceUrl ? (
               <p className="mt-3 truncate text-[11px] text-syntax-muted">

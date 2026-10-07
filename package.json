@@ -4,9 +4,14 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite build --watch & vite build --config vite.content.config.ts --watch",
-    "build": "tsc -b && vite build && vite build --config vite.content.config.ts",
-    "typecheck": "tsc -b"
+    "dev": "vite build --watch",
+    "build": "npm run build:chrome",
+    "build:chrome": "tsc -b && vite build",
+    "build:firefox": "tsc -b && vite build --mode firefox",
+    "build:all": "npm run build:chrome && npm run build:firefox",
+    "firefox:run": "npm run build:firefox && web-ext run --source-dir dist-firefox",
+    "typecheck": "tsc -b",
+    "icons:generate": "python3 scripts/generate-extension-icons.py"
   },
   "dependencies": {
     "react": "^19.1.0",

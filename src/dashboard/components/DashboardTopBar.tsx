@@ -30,15 +30,15 @@ function TopBarIconButton({
       aria-pressed={isActive}
       className={`relative flex h-10 w-10 items-center justify-center rounded-xl border transition ${
         isActive
-          ? 'border-syntax-accent/30 bg-syntax-accent/10 text-syntax-accent'
-          : 'border-syntax-border bg-syntax-card text-syntax-muted hover:border-syntax-accent/20 hover:text-syntax-text'
+          ? 'syntax-elevated border-syntax-accent/30 bg-syntax-accent/10 text-syntax-accent'
+          : 'syntax-elevated border-syntax-border bg-syntax-card text-syntax-muted hover:border-syntax-accent/20 hover:text-syntax-text'
       }`}
       onClick={onClick}
       type="button"
     >
       {children}
       {badge !== undefined && badge > 0 ? (
-        <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-syntax-accent px-1 text-[10px] font-semibold text-black">
+        <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-syntax-accent px-1 text-[10px] font-semibold text-syntax-accent-fg">
           {badge > 9 ? '9+' : badge}
         </span>
       ) : null}
@@ -65,7 +65,7 @@ export function DashboardTopBar({
         <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-syntax-muted" />
         <button
           aria-label="Open quick search"
-          className="h-10 w-full rounded-xl border border-syntax-border bg-syntax-card py-2 pl-10 pr-14 text-left text-[13px] text-syntax-muted transition hover:border-syntax-accent/25 hover:text-syntax-text"
+          className="syntax-elevated h-10 w-full rounded-xl border border-syntax-border bg-syntax-card py-2 pl-10 pr-14 text-left text-[13px] text-syntax-muted transition hover:border-syntax-accent/25 hover:text-syntax-text"
           onClick={onOpenQuickSearch}
           type="button"
         >
@@ -97,7 +97,7 @@ export function DashboardTopBar({
           </TopBarIconButton>
 
           <button
-            className="flex h-10 items-center gap-2 rounded-xl bg-syntax-accent px-3.5 text-[13px] font-semibold text-black transition hover:opacity-90"
+            className="syntax-btn-primary syntax-focus-ring flex h-10 items-center gap-2 px-3.5 text-[11px]"
             onClick={onLoginClick}
             type="button"
           >

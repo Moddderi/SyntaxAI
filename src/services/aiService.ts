@@ -1,6 +1,11 @@
-import { getOpenAiApiKey, OPENAI_API_KEY_ENV_HINT } from './apiKeyStorage';
+import { getLocale } from '../storage/localeStorage';
+import { buildSnippetAnalyzerSystemPrompt } from '../utils/aiLocalePrompts';
 import {
-  buildTechSlugPromptList,
+  ensureOpenAiApiKeyLoaded,
+  getOpenAiApiKey,
+  OPENAI_API_KEY_ENV_HINT,
+} from './apiKeyStorage';
+import {
   resolveBaseLanguage,
   resolvePrimaryTechnology,
 } from '../utils/techDetection';
@@ -8,51 +13,6 @@ import { resolveDeviconSlug } from '../utils/techIcon';
 
 const OPENAI_CHAT_COMPLETIONS_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_MODEL = 'gpt-4o-mini';
-
-const SYSTEM_PROMPT = `You are SyntaxAI, a developer snippet analyzer for a Chrome extension notebook.
-
-Analyze the user input and return JSON only (no markdown).
-
-Separate the stack into three fields:
-
-1. "primaryTech" — main framework, library, or tool slug for the card icon.
-   Examples: redux, react, nextjs, django, docker, prisma, python (when plain script).
-   Priority: framework > meta-framework > library/tool > base language when nothing else applies.
-
-2. "language" — base programming language slug ONLY (not frameworks).
-   Examples: typescript, javascript, python, go, rust, cplusplus, java, bash.
-   Use typescript vs javascript based on syntax (types/interfaces → typescript).
-
-3. "topics" — 1 to 3 contextual task tags WITHOUT language or framework names.
-   Good: "auth", "state-management", "http-request", "hooks", "middleware", "pagination"
-   Bad: "typescript", "react", "python", "redux", "#js", "javascript"
-
-4. "summary" — 1-2 short sentences IN RUSSIAN explaining what the code does or the task context.
-   Example: "Хук для debounce значения с задержкой 300 мс. Используется в поисковых полях."
-
-Preferred Devicon slugs (examples): ${buildTechSlugPromptList()}
-- You MAY return ANY lowercase slug for primaryTech and language.
-
-Intent recognition:
-1. Raw code: extract title, primaryTech, language, topics, and code.
-2. Natural language (e.g. "save react auth hook"): infer from intent.
-3. Image(s): OCR into "code", then detect all fields from extracted code.
-
-Output schema:
-{
-  "title": "string",
-  "primaryTech": "string",
-  "language": "string",
-  "topics": ["auth", "state-management"],
-  "summary": "string",
-  "code": "string"
-}
-
-Requirements:
-- All slugs lowercase, no # prefix in topics.
-- topics must describe WHAT the snippet does, not WHICH stack it uses.
-- summary MUST be in Russian, concise, helpful for a developer notebook.
-- "code" = final snippet from input or OCR, empty string if none.`;
 
 export interface AnalyzeSnippetInput {
   promptOrCode: string;
@@ -255,6 +215,7 @@ function buildUserContent(
 export async function analyzeSnippetWithAI(
   input: AnalyzeSnippetInput,
 ): Promise<AnalyzeSnippetResult> {
+  await ensureOpenAiApiKeyLoaded();
   const apiKey = getOpenAiApiKey();
 
   if (!apiKey) {
@@ -262,6 +223,8 @@ export async function analyzeSnippetWithAI(
   }
 
   const userContent = buildUserContent(input.promptOrCode, input.imagesBase64);
+  const locale = await getLocale();
+  const systemPrompt = buildSnippetAnalyzerSystemPrompt(locale);
 
   const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
     method: 'POST',
@@ -273,7 +236,7 @@ export async function analyzeSnippetWithAI(
       model: OPENAI_MODEL,
       response_format: { type: 'json_object' },
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: userContent },
       ],
       temperature: 0.2,

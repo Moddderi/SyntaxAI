@@ -1,31 +1,25 @@
 import type { ReactElement } from 'react';
 import { NestedTechIcons } from '../../components/NestedTechIcons';
 import { CodeBlock } from '../../components/CodeBlock';
-import { formatTopicLabel } from '../../utils/noteHelpers';
 import type { SnippetItem } from '../types/dashboard.types';
-import { SnippetQuickActions } from './SnippetQuickActions';
 
 interface SnippetCardProps {
   snippet: SnippetItem;
-  onToggleStar: (id: string) => void;
-  onRequestDelete: (id: string) => void;
   onOpenDetail: (id: string) => void;
   isHighlighted?: boolean;
 }
 
 export function SnippetCard({
   snippet,
-  onToggleStar,
-  onRequestDelete,
   onOpenDetail,
   isHighlighted = false,
 }: SnippetCardProps): ReactElement {
   return (
     <article
-      className={`group relative flex cursor-pointer flex-col rounded-3xl border bg-syntax-card p-6 transition ${
+      className={`syntax-elevated syntax-press syntax-focus-ring relative flex cursor-pointer flex-col rounded-3xl border bg-syntax-card p-6 hover:-translate-y-0.5 ${
         isHighlighted
           ? 'border-syntax-accent ring-2 ring-syntax-accent/30'
-          : 'border-syntax-border hover:border-syntax-accent/30'
+          : 'border-syntax-border hover:border-syntax-accent/40 hover:shadow-[var(--syntax-glow)]'
       }`}
       data-note-id={snippet.id}
       onClick={() => onOpenDetail(snippet.id)}
@@ -38,16 +32,11 @@ export function SnippetCard({
       role="button"
       tabIndex={0}
     >
-      <SnippetQuickActions
-        code={snippet.code}
-        isStarred={snippet.isStarred}
-        onRequestDelete={onRequestDelete}
-        onToggleStar={onToggleStar}
-        snippetId={snippet.id}
-        variant="floating"
-      />
+      <span className="pointer-events-none absolute right-6 top-6 text-[11px] tabular-nums text-syntax-muted">
+        {snippet.updatedAt}
+      </span>
 
-      <div className="mb-4 pr-28">
+      <div className="mb-4 pr-16">
         <div className="flex items-start gap-4">
           <NestedTechIcons
             language={snippet.language}
@@ -55,14 +44,9 @@ export function SnippetCard({
             size="lg"
           />
 
-          <div className="min-w-0 flex-1 pt-1">
-            <div className="flex items-start justify-between gap-3">
-              <h3 className="line-clamp-2 text-base font-semibold leading-snug text-syntax-text">
-                {snippet.title}
-              </h3>
-              <span className="shrink-0 text-xs text-syntax-muted">{snippet.updatedAt}</span>
-            </div>
-          </div>
+          <h3 className="line-clamp-2 min-w-0 flex-1 pt-1 text-base font-semibold leading-snug text-syntax-text">
+            {snippet.title}
+          </h3>
         </div>
       </div>
 
@@ -80,19 +64,6 @@ export function SnippetCard({
         showLanguageLabel
         size="md"
       />
-
-      {snippet.topics.length > 0 ? (
-        <div className="mt-auto flex flex-wrap gap-2.5">
-          {snippet.topics.map((topic) => (
-            <span
-              key={topic}
-              className="rounded-full border border-syntax-border bg-syntax-inset px-3 py-1.5 text-xs text-syntax-muted"
-            >
-              {formatTopicLabel(topic)}
-            </span>
-          ))}
-        </div>
-      ) : null}
     </article>
   );
 }

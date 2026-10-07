@@ -16,7 +16,6 @@ export function useCaptureSettings(): UseCaptureSettingsResult {
   const [settings, setSettings] = useState<CaptureSettings>({
     enablePasteCapture: true,
     enableContextCapture: true,
-    includeContextDescription: true,
   });
   const [isLoading, setIsLoading] = useState(true);
 

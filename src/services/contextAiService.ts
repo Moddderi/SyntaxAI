@@ -1,27 +1,19 @@
 import type { MixedContentAnalysisResult, PageContext } from '../types/context';
+import { getLocale, type Locale } from '../storage/localeStorage';
+import {
+  buildMixedContentSystemPrompt,
+  buildMixedContentUserPrompt,
+} from '../utils/aiLocalePrompts';
 import { resolveNoteTechnology } from '../utils/pageContextTechDetection';
-import { getOpenAiApiKey, OPENAI_API_KEY_ENV_HINT } from './apiKeyStorage';
+import {
+  ensureOpenAiApiKeyLoaded,
+  getOpenAiApiKey,
+  OPENAI_API_KEY_ENV_HINT,
+} from './apiKeyStorage';
 import { AiServiceError, normalizeTopics } from './aiService';
 
 const OPENAI_CHAT_COMPLETIONS_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_MODEL = 'gpt-4o-mini';
-
-const MIXED_CONTENT_SYSTEM_PROMPT = `Ты — AI-ассистент для разработчиков в SyntaxAI. Тебе передан выделенный фрагмент из документации/сайта, который содержит текстовые правила и блоки кода.
-
-Твоя задача — вернуть STRICTLY JSON без markdown-оберток (\`\`\`json) со следующей структурой:
-{
-  "suggestedTitle": "Ёмкий заголовок заметки",
-  "formattedNote": "Полный структурированный текст заметки в формате Markdown, включая текстовые правила, буллеты и описания",
-  "primaryCode": "Основной извлеченный блок кода (если он есть)",
-  "language": "язык программирования (javascript, typescript, python и т.д.)",
-  "tags": ["массив", "тегов", "без-решеток"]
-}
-
-Правила:
-1. НЕ теряй важный контекст (версии, правила работы функций, предупреждения из текста).
-2. Если кода несколько блоков — объедини их или занеси главный в primaryCode, а остальные сохрани внутри formattedNote.
-3. tags — только контекст задачи, без названий языков и фреймворков.
-4. formattedNote должен быть готов к сохранению как markdown-заметка разработчика.`;
 
 interface RawMixedContentAnalysisResult {
   suggestedTitle: string;
@@ -65,7 +57,13 @@ function coerceRawMixedContentAnalysisResult(
           ? record.summary
           : null;
 
-  if (!suggestedTitle || !formattedNote) {
+  const hasNoteBody = Boolean(formattedNote?.trim());
+  const hasCode = Boolean(
+    (typeof record.primaryCode === 'string' && record.primaryCode.trim()) ||
+      (typeof record.code === 'string' && record.code.trim()),
+  );
+
+  if (!suggestedTitle && !hasNoteBody && !hasCode) {
     return null;
   }
 
@@ -84,21 +82,21 @@ function coerceRawMixedContentAnalysisResult(
     : [];
 
   return {
-    suggestedTitle,
-    formattedNote,
+    suggestedTitle: suggestedTitle ?? '',
+    formattedNote: formattedNote ?? '',
     primaryCode,
     language,
     tags,
   };
 }
 
-function buildMixedContentUserPrompt(pageContext: PageContext): string {
+function buildMixedContentUserMessage(pageContext: PageContext, locale: Locale): string {
   const descriptionLine = pageContext.metaDescription
     ? `- Description: ${pageContext.metaDescription}`
     : '';
 
   return [
-    'Проанализируй выделенный фрагмент страницы и подготовь заметку для базы знаний разработчика.',
+    buildMixedContentUserPrompt(locale),
     '',
     'Page context:',
     `- Site type: ${pageContext.siteType}`,
@@ -127,8 +125,13 @@ function normalizeMixedContentResult(
     language: raw.language.trim().toLowerCase(),
   });
 
+  const suggestedTitle =
+    raw.suggestedTitle.trim() ||
+    pageContext.pageTitle.trim() ||
+    'Captured note';
+
   return {
-    suggestedTitle: raw.suggestedTitle.trim(),
+    suggestedTitle,
     formattedNote,
     primaryCode,
     language: resolvedTech.language,
@@ -140,11 +143,15 @@ function normalizeMixedContentResult(
 export async function analyzeMixedPageContextWithAI(
   pageContext: PageContext,
 ): Promise<MixedContentAnalysisResult> {
+  await ensureOpenAiApiKeyLoaded();
   const apiKey = getOpenAiApiKey();
 
   if (!apiKey) {
     throw new AiServiceError(`OpenAI API key is missing. ${OPENAI_API_KEY_ENV_HINT}`);
   }
+
+  const locale = await getLocale();
+  const systemPrompt = buildMixedContentSystemPrompt(locale);
 
   const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
     method: 'POST',
@@ -156,8 +163,8 @@ export async function analyzeMixedPageContextWithAI(
       model: OPENAI_MODEL,
       response_format: { type: 'json_object' },
       messages: [
-        { role: 'system', content: MIXED_CONTENT_SYSTEM_PROMPT },
-        { role: 'user', content: buildMixedContentUserPrompt(pageContext) },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: buildMixedContentUserMessage(pageContext, locale) },
       ],
       temperature: 0.2,
     }),

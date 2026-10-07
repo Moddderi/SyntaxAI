@@ -5,16 +5,13 @@ export const CAPTURE_SETTINGS_CHANGED_EVENT = 'syntaxai-capture-settings-changed
 export interface CaptureSettings {
   /** Paste code, text, or screenshots in the side panel. */
   enablePasteCapture: boolean;
-  /** Capture page selection and docs via hotkey or context menu. */
+  /** AI adds page context around selection during capture. */
   enableContextCapture: boolean;
-  /** When true, context capture saves markdown body (rules, docs text). */
-  includeContextDescription: boolean;
 }
 
 const DEFAULT_CAPTURE_SETTINGS: CaptureSettings = {
   enablePasteCapture: true,
   enableContextCapture: true,
-  includeContextDescription: true,
 };
 
 function isChromeStorageAvailable(): boolean {
@@ -37,12 +34,8 @@ function normalizeCaptureSettings(raw: unknown): CaptureSettings {
       typeof record.enableContextCapture === 'boolean'
         ? record.enableContextCapture
         : typeof record.includeContextDescription === 'boolean'
-          ? true
+          ? record.includeContextDescription
           : DEFAULT_CAPTURE_SETTINGS.enableContextCapture,
-    includeContextDescription:
-      typeof record.includeContextDescription === 'boolean'
-        ? record.includeContextDescription
-        : DEFAULT_CAPTURE_SETTINGS.includeContextDescription,
   };
 }
 
@@ -96,10 +89,6 @@ export async function updateCaptureSettings(
   const next = { ...current, ...patch };
   await saveCaptureSettings(next);
   return next;
-}
-
-export async function setIncludeContextDescription(enabled: boolean): Promise<void> {
-  await updateCaptureSettings({ includeContextDescription: enabled });
 }
 
 export async function isContextCaptureEnabled(): Promise<boolean> {

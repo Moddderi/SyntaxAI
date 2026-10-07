@@ -37,7 +37,7 @@ export function CodeCapturePanel({
 
   return (
     <div className="animate-fade-in">
-      <CodeBlock code={code} language={language} showLanguageLabel size="sm" />
+      <CodeBlock code={code} language={language} showCopy showLanguageLabel size="sm" />
     </div>
   );
 }

@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { TechIcon } from '../../components/TechIcon';
 import type { Note } from '../../types/note';
-import { formatTopicLabel, searchNotes } from '../../utils/noteHelpers';
+import { searchNotes } from '../../utils/noteHelpers';
 import { SearchIcon } from './icons';
 
 interface QuickSearchModalProps {
@@ -142,11 +142,6 @@ export function QuickSearchModal({
                   <span className="mt-0.5 block truncate font-mono text-[11px] text-syntax-muted">
                     {note.code.slice(0, 80)}
                   </span>
-                  {note.topics.length > 0 ? (
-                    <span className="mt-1 block truncate text-[10px] text-syntax-muted">
-                      {note.topics.map((topic) => formatTopicLabel(topic)).join(' ')}
-                    </span>
-                  ) : null}
                 </span>
               </button>
             ))

@@ -30,7 +30,7 @@ export function ProUpgradeCard({
             </p>
           </div>
           <button
-            className="shrink-0 rounded-full bg-syntax-accent px-3 py-1.5 text-[11px] font-semibold text-black transition hover:bg-syntax-accent/90"
+            className="shrink-0 rounded-full bg-syntax-accent px-3 py-1.5 text-[11px] font-semibold text-syntax-accent-fg transition hover:bg-syntax-accent/90"
             onClick={onUpgradeClick}
             type="button"
           >
@@ -73,7 +73,7 @@ export function ProUpgradeCard({
           </ul>
 
           <button
-            className="mt-5 h-11 rounded-full bg-syntax-accent px-6 text-sm font-semibold text-black transition hover:bg-syntax-accent/90"
+            className="mt-5 h-11 rounded-full bg-syntax-accent px-6 text-sm font-semibold text-syntax-accent-fg transition hover:bg-syntax-accent/90"
             onClick={onUpgradeClick}
             type="button"
           >

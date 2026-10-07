@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { consumePendingContextCapture } from '../../storage/contextDraftStorage';
-import { getCaptureSettings } from '../../storage/captureSettingsStorage';
 import { CONTEXT_CAPTURE_STORAGE_KEY } from '../../types/context';
 import type { PageContext } from '../../types/context';
 
@@ -18,13 +17,6 @@ export function useContextCaptureDraft({
   }, [onCapture]);
 
   const consumeDraft = useCallback(async (): Promise<void> => {
-    const captureSettings = await getCaptureSettings();
-
-    if (!captureSettings.enableContextCapture) {
-      await consumePendingContextCapture();
-      return;
-    }
-
     const pageContext = await consumePendingContextCapture();
 
     if (pageContext) {

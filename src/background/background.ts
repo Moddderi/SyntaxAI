@@ -1,3 +1,4 @@
+import { registerCapturePanelBehavior } from '../extension/panel';
 import {
   ensureContextCaptureMenu,
   registerContextCaptureListeners,
@@ -10,11 +11,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 void ensureContextCaptureMenu();
 
-void chrome.sidePanel
-  .setPanelBehavior({ openPanelOnActionClick: true })
-  .catch((error: unknown) => {
-    console.error('[SyntaxAI] Failed to configure side panel behavior:', error);
-  });
+registerCapturePanelBehavior();
 
 registerContextCaptureListeners();
 

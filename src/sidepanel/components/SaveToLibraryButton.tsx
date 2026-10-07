@@ -16,7 +16,7 @@ export function SaveToLibraryButton({
 
   return (
     <button
-      className="h-12 w-full rounded-full bg-syntax-accent font-semibold text-black transition hover:bg-syntax-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+      className="syntax-btn-primary syntax-focus-ring h-12 w-full disabled:cursor-not-allowed disabled:opacity-50"
       disabled={disabled}
       onClick={onClick}
       type="button"

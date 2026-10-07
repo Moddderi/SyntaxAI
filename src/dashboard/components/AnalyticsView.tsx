@@ -64,12 +64,15 @@ function AnalyticsTooltip({
   const item = payload[0];
   const count = item.payload?.count ?? item.value ?? 0;
   const percentage = item.payload?.percentage;
-  const accentColor = item.payload?.color ?? '#00eaff';
+  const accentColor = item.payload?.color;
 
   return (
     <div className="relative z-50 rounded-xl border border-syntax-border bg-syntax-card px-3 py-2 text-xs shadow-lg">
       <p className="font-medium text-syntax-text">{item.name}</p>
-      <p className="mt-0.5" style={{ color: accentColor }}>
+      <p
+        className={`mt-0.5 ${accentColor ? '' : 'text-syntax-accent'}`}
+        style={accentColor ? { color: accentColor } : undefined}
+      >
         {percentage !== undefined
           ? t('analyticsNotesTooltip', { count, percentage })
           : t('analyticsNotesTooltipCount', { count })}
@@ -263,7 +266,7 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-syntax-text">
+        <h1 className="font-mono text-xl font-bold uppercase tracking-[0.1em] text-syntax-text md:text-2xl">
           {t('analyticsUsageTitle')}
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-syntax-muted">{t('analyticsUsageSubtitle')}</p>
@@ -395,8 +398,12 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
                 <p className="text-xs text-syntax-muted">
                   {t('analyticsTechInLibrary', { count: languageBreakdown.length })}{' '}
                   <span
-                    className="font-medium"
-                    style={{ color: languageBreakdown[0]?.color ?? '#00eaff' }}
+                    className={`font-medium ${languageBreakdown[0]?.color ? '' : 'text-syntax-accent'}`}
+                    style={
+                      languageBreakdown[0]?.color
+                        ? { color: languageBreakdown[0].color }
+                        : undefined
+                    }
                   >
                     {languageBreakdown[0]?.name ?? 'N/A'}
                   </span>{' '}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { analyzeMixedPageContextWithAI } from '../../services/contextAiService';
 import { analyzeSnippetWithAI, AiServiceError } from '../../services/aiService';
 import type { AnalyzeSnippetResult } from '../../services/aiService';
@@ -10,7 +10,7 @@ interface UseSnippetAnalysisResult {
   analysis: AnalyzeSnippetResult | null;
   contextAnalysis: MixedContentAnalysisResult | null;
   editedTitle: string;
-  setEditedTitle: (title: string) => void;
+  setEditedTitle: Dispatch<SetStateAction<string>>;
   isAnalyzing: boolean;
   error: string | null;
   runAnalysis: (promptOrCode: string, pastedImages: PastedImage[]) => Promise<void>;
@@ -146,7 +146,7 @@ export function useSnippetAnalysis(
       }
 
       setContextAnalysis(result);
-      setEditedTitle(result.suggestedTitle);
+      setEditedTitle((prev) => result.suggestedTitle.trim() || prev);
     } catch (analysisError) {
       if (requestIdRef.current !== requestId) {
         return;

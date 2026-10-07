@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import { useNotes } from '../../hooks/useNotes';
 import { formatRelativeTime } from '../../utils/noteHelpers';
 import { resolveDeviconSlug } from '../../utils/techIcon';
-import { openDashboard } from '../../utils/dashboardNavigation';
+import { openDashboardAllNotes } from '../../utils/dashboardNavigation';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ClockIcon } from './icons';
 import { TechIcon } from '../../components/TechIcon';
@@ -30,7 +30,9 @@ export function RecentNotesSection({
 
         <button
           className="text-[11px] font-medium text-syntax-accent transition hover:text-syntax-accent/80"
-          onClick={openDashboard}
+          onClick={() => {
+            void openDashboardAllNotes();
+          }}
           type="button"
         >
           {t('sidePanelOpenAll')}

@@ -22,7 +22,8 @@ export function GlobalModeTabs({
   return (
     <nav
       aria-label="Side panel mode"
-      className="grid shrink-0 grid-cols-2 gap-1 rounded-xl border border-syntax-border bg-syntax-card p-1"
+      className="syntax-elevated grid shrink-0 grid-cols-2 gap-1 rounded-xl border border-syntax-border bg-syntax-card p-1"
+      role="tablist"
     >
       {modeTabs.map((tab) => {
         const isActive = activeMode === tab.id;
@@ -31,9 +32,9 @@ export function GlobalModeTabs({
           <button
             key={tab.id}
             aria-selected={isActive}
-            className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition ${
+            className={`syntax-press syntax-focus-ring flex items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 font-mono text-[10px] font-bold uppercase tracking-wide ${
               isActive
-                ? 'bg-syntax-accent text-black'
+                ? 'bg-syntax-accent text-syntax-accent-fg shadow-[var(--syntax-glow)]'
                 : 'text-syntax-muted hover:bg-syntax-bg hover:text-syntax-text'
             }`}
             onClick={() => onModeChange(tab.id)}

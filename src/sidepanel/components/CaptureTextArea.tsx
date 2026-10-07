@@ -85,7 +85,7 @@ export function CaptureTextArea({
     <section
       className={`relative min-h-[220px] rounded-2xl border border-dashed bg-syntax-bg transition-colors ${
         isDragging
-          ? 'border-syntax-accent shadow-[0_0_0_1px_rgba(0,234,255,0.35)]'
+          ? 'border-syntax-accent shadow-[0_0_0_1px_var(--syntax-accent-ring)]'
           : 'border-syntax-border'
       }`}
       onDragLeave={onDragLeave}
@@ -120,7 +120,7 @@ export function CaptureTextArea({
 
       {hasImages ? (
         <div
-          className="absolute bottom-3 left-4 overflow-x-auto pr-2 [scrollbar-width:thin] [scrollbar-color:rgba(0,234,255,0.35)_transparent]"
+          className="absolute bottom-3 left-4 overflow-x-auto pr-2 [scrollbar-width:thin] [scrollbar-color:var(--syntax-accent-ring)_transparent]"
           style={{ maxWidth: `min(${VISIBLE_THUMBS_WIDTH_PX}px, calc(100% - 6rem))` }}
         >
           <div className="flex w-max items-center gap-2">
@@ -128,7 +128,7 @@ export function CaptureTextArea({
               <div key={image.id} className="relative shrink-0">
                 <img
                   alt="Pasted note preview"
-                  className="h-16 w-16 rounded-xl border border-syntax-accent/40 object-cover shadow-[0_0_16px_rgba(0,234,255,0.15)]"
+                  className="h-16 w-16 rounded-xl border border-syntax-accent/40 object-cover shadow-[var(--syntax-glow)]"
                   src={image.previewUrl}
                 />
                 <button
@@ -149,7 +149,7 @@ export function CaptureTextArea({
         aria-label="Detect note"
         className={`absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full transition ${
           canDetect && !isAnalyzing
-            ? 'bg-syntax-accent text-black shadow-[0_0_16px_rgba(0,234,255,0.35)] hover:bg-syntax-accent/90'
+            ? 'bg-syntax-accent text-syntax-accent-fg shadow-[var(--syntax-glow-strong)] hover:bg-syntax-accent/90'
             : 'cursor-not-allowed border border-syntax-border bg-syntax-card text-syntax-muted'
         }`}
         disabled={!canDetect || isAnalyzing}

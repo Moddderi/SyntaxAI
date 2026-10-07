@@ -5,17 +5,23 @@ import {
   type KeyboardEvent,
   type ReactElement,
 } from 'react';
+import { useTranslation } from '../hooks/useTranslation';
 import { saveNote } from '../storage/notesStorage';
 import type { Note } from '../types/note';
-import { formatNoteDate, formatTopicLabel } from '../utils/noteHelpers';
+import { formatNoteDate, noteHasAiExplanation } from '../utils/noteHelpers';
 import { resolveNoteTechnology } from '../utils/pageContextTechDetection';
+import { AiInsightIcon } from './AiInsightIcon';
+import { SyntaxSectionHead } from './SyntaxSectionHead';
 import { CodeBlock } from './CodeBlock';
 import { MarkdownContent } from './MarkdownContent';
+import { StarIcon, TrashIcon } from '../dashboard/components/icons';
 import { NestedTechIcons } from './NestedTechIcons';
 
 interface NoteDetailModalProps {
   note: Note | null;
   onClose: () => void;
+  onToggleStar?: (noteId: string) => void;
+  onRequestDelete?: (noteId: string) => void;
 }
 
 interface EditFormState {
@@ -23,7 +29,6 @@ interface EditFormState {
   summary: string;
   body: string;
   code: string;
-  topicsInput: string;
 }
 
 function buildEditFormState(note: Note): EditFormState {
@@ -32,18 +37,19 @@ function buildEditFormState(note: Note): EditFormState {
     summary: note.summary ?? '',
     body: note.body ?? '',
     code: note.code,
-    topicsInput: note.topics.join(', '),
   };
 }
 
-function parseTopicsInput(input: string): string[] {
-  return input
-    .split(',')
-    .map((topic) => topic.replace(/^#+/, '').trim())
-    .filter((topic) => topic.length > 0);
-}
+const MODAL_ICON_BUTTON_CLASS =
+  'flex h-8 w-8 items-center justify-center rounded-lg text-syntax-muted transition hover:bg-syntax-inset hover:text-syntax-accent';
 
-export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactElement | null {
+export function NoteDetailModal({
+  note,
+  onClose,
+  onToggleStar,
+  onRequestDelete,
+}: NoteDetailModalProps): ReactElement | null {
+  const { t, locale } = useTranslation();
   const [title, setTitle] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -170,15 +176,12 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
         sourceUrl: note.sourceUrl,
         language: note.language,
       });
-      const topics = parseTopicsInput(editForm.topicsInput);
-
       const updatedNote: Note = {
         ...note,
         title: trimmedTitle,
         summary: editForm.summary.trim() || undefined,
         body: editForm.body.trim() || undefined,
         code: trimmedCode,
-        topics,
         language: resolvedTech.language,
         primaryTech: resolvedTech.primaryTech,
       };
@@ -197,9 +200,10 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
     return null;
   }
 
-  const summaryText =
-    note.summary?.trim() ||
-    'AI-описание появится для новых заметок после анализа кода.';
+  const contextIncludesCode = /```[\w-]*\n[\s\S]*?```/.test(note.body ?? '');
+  const showAiInsight = noteHasAiExplanation(note) || isEditing;
+  const summaryMarkdown = note.summary?.trim() ?? '';
+  const bodyMarkdown = note.body?.trim() ?? '';
 
   const editPreviewTech = resolveNoteTechnology({
     title: editForm.title,
@@ -222,7 +226,7 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
         onClick={(event) => event.stopPropagation()}
         role="dialog"
       >
-        <header className="border-b border-syntax-border px-6 py-5">
+        <header className="border-b border-syntax-accent/30 px-6 py-5">
           <div className="flex items-start gap-4">
             <NestedTechIcons
               language={note.language}
@@ -247,7 +251,7 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
               ) : (
                 <input
                   aria-label="Note title"
-                  className="w-full truncate bg-transparent text-xl font-semibold text-syntax-text outline-none transition placeholder:text-syntax-muted focus:rounded-lg focus:bg-syntax-inset focus:px-2 focus:py-1"
+                  className="w-full bg-transparent text-xl font-semibold leading-snug text-syntax-text outline-none transition placeholder:text-syntax-muted focus:rounded-lg focus:bg-syntax-inset focus:px-2 focus:py-1"
                   id="note-detail-title"
                   onBlur={handleTitleBlur}
                   onChange={(event) => setTitle(event.target.value)}
@@ -256,10 +260,36 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
                   value={title}
                 />
               )}
-              <p className="mt-1 text-sm text-syntax-muted">{formatNoteDate(note.createdAt)}</p>
+              <time className="mt-1 block text-xs tabular-nums text-syntax-muted">
+                {formatNoteDate(note.createdAt, locale)}
+              </time>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1">
+              {onToggleStar ? (
+                <button
+                  aria-label={
+                    note.isStarred ? t('snippetActionUnstar') : t('snippetActionStar')
+                  }
+                  className={`${MODAL_ICON_BUTTON_CLASS} ${note.isStarred ? 'text-syntax-accent' : ''}`}
+                  onClick={() => onToggleStar(note.id)}
+                  type="button"
+                >
+                  <StarIcon className="h-4 w-4" filled={note.isStarred} />
+                </button>
+              ) : null}
+
+              {onRequestDelete ? (
+                <button
+                  aria-label={t('snippetActionDelete')}
+                  className={`${MODAL_ICON_BUTTON_CLASS} hover:text-red-400`}
+                  onClick={() => onRequestDelete(note.id)}
+                  type="button"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              ) : null}
+
               {!isEditing ? (
                 <button
                   className="rounded-full border border-syntax-border bg-syntax-inset px-3 py-1.5 text-xs text-syntax-muted transition hover:border-syntax-accent/40 hover:text-syntax-accent"
@@ -282,76 +312,75 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          <section className="mb-5 rounded-2xl border border-transparent bg-syntax-inset p-[1px] [background:linear-gradient(135deg,rgba(0,234,255,0.45),rgba(167,139,250,0.35))]">
-            <div className="rounded-[15px] bg-syntax-inset px-4 py-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-medium text-syntax-accent">
-                <span aria-hidden="true">✨</span>
-                <span>AI Insight</span>
-              </div>
+        <div className="min-h-0 flex-1 overflow-y-auto divide-y divide-syntax-accent/30">
+          {showAiInsight ? (
+            <section className="px-6 py-5">
+              <SyntaxSectionHead
+                accent
+                className="mb-4"
+                icon={<AiInsightIcon />}
+                title={t('noteDetailAiInsight')}
+              />
+              <p className="mb-4 text-xs leading-relaxed text-syntax-muted">
+                {t('noteDetailAiInsightCaption')}
+              </p>
 
               {isEditing ? (
-                <textarea
-                  aria-label="AI insight summary"
-                  className="min-h-[100px] w-full resize-y rounded-xl border border-syntax-border bg-syntax-card px-3 py-3 text-sm leading-relaxed text-syntax-muted outline-none transition focus:border-syntax-accent/40"
-                  onChange={(event) =>
-                    setEditForm((current) =>
-                      current ? { ...current, summary: event.target.value } : current,
-                    )
-                  }
-                  placeholder="Short AI summary…"
-                  value={editForm.summary}
-                />
+                <div className="space-y-4">
+                  <textarea
+                    aria-label="AI insight summary"
+                    className="min-h-[100px] w-full resize-y border border-syntax-border bg-syntax-inset px-3 py-3 text-sm leading-relaxed text-syntax-muted outline-none transition focus:border-syntax-accent/40"
+                    onChange={(event) =>
+                      setEditForm((current) =>
+                        current ? { ...current, summary: event.target.value } : current,
+                      )
+                    }
+                    placeholder="Short AI summary…"
+                    value={editForm.summary}
+                  />
+                  <textarea
+                    aria-label="Note context body"
+                    className="min-h-[180px] w-full resize-y border border-syntax-border bg-syntax-inset px-3 py-3 font-mono text-xs leading-relaxed text-syntax-muted outline-none transition focus:border-syntax-accent/40"
+                    onChange={(event) =>
+                      setEditForm((current) =>
+                        current ? { ...current, body: event.target.value } : current,
+                      )
+                    }
+                    placeholder="Markdown context, rules, documentation…"
+                    value={editForm.body}
+                  />
+                </div>
               ) : (
-                <MarkdownContent className="text-sm" content={summaryText} />
+                <div className="space-y-4 text-sm text-syntax-muted">
+                  {summaryMarkdown ? <MarkdownContent content={summaryMarkdown} /> : null}
+                  {bodyMarkdown ? <MarkdownContent content={bodyMarkdown} /> : null}
+                </div>
               )}
-            </div>
-          </section>
-
-          {(note.body?.trim() || isEditing) ? (
-            <section className="mb-5 rounded-2xl border border-syntax-border bg-syntax-inset px-4 py-4">
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-syntax-muted">
-                Context
-              </h3>
-
-              {isEditing ? (
-                <textarea
-                  aria-label="Note context body"
-                  className="min-h-[180px] w-full resize-y rounded-xl border border-syntax-border bg-syntax-card px-3 py-3 font-mono text-xs leading-relaxed text-syntax-muted outline-none transition focus:border-syntax-accent/40"
-                  onChange={(event) =>
-                    setEditForm((current) =>
-                      current ? { ...current, body: event.target.value } : current,
-                    )
-                  }
-                  placeholder="Markdown context, rules, documentation…"
-                  value={editForm.body}
-                />
-              ) : note.body?.trim() ? (
-                <MarkdownContent content={note.body} />
-              ) : null}
             </section>
           ) : null}
 
-          <section className="relative">
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-syntax-muted">
-                Code
-              </h3>
-              <div className="relative">
-                <button
-                  className="rounded-full border border-syntax-border bg-syntax-inset px-3 py-1.5 text-xs text-syntax-muted transition hover:border-syntax-accent/40 hover:text-syntax-accent"
-                  onClick={() => void handleCopyCode()}
-                  type="button"
-                >
-                  Copy Code
-                </button>
-                {isCopied ? (
-                  <span className="absolute -top-8 right-0 rounded-md bg-syntax-accent px-2 py-1 text-[10px] font-semibold text-black">
-                    Copied!
-                  </span>
-                ) : null}
-              </div>
-            </div>
+          {contextIncludesCode && !isEditing ? null : (
+          <section className="relative px-6 py-5">
+            <SyntaxSectionHead
+              className="mb-4"
+              title={t('noteDetailCode')}
+              trailing={
+                <div className="relative">
+                  <button
+                    className="rounded-full border border-syntax-border bg-syntax-inset px-3 py-1.5 text-xs text-syntax-muted transition hover:border-syntax-accent/40 hover:text-syntax-accent"
+                    onClick={() => void handleCopyCode()}
+                    type="button"
+                  >
+                    Copy Code
+                  </button>
+                  {isCopied ? (
+                    <span className="absolute -top-8 right-0 rounded-md bg-syntax-accent px-2 py-1 text-[10px] font-semibold text-syntax-accent-fg">
+                      Copied!
+                    </span>
+                  ) : null}
+                </div>
+              }
+            />
 
             {isEditing ? (
               <textarea
@@ -375,55 +404,20 @@ export function NoteDetailModal({ note, onClose }: NoteDetailModalProps): ReactE
               </div>
             ) : null}
           </section>
-
-          {isEditing ? (
-            <section className="mt-5">
-              <label className="block">
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-syntax-muted">
-                  Tags
-                </span>
-                <input
-                  aria-label="Note tags"
-                  className="w-full rounded-xl border border-syntax-border bg-syntax-inset px-3 py-2 text-sm text-syntax-muted outline-none transition focus:border-syntax-accent/40"
-                  onChange={(event) =>
-                    setEditForm((current) =>
-                      current ? { ...current, topicsInput: event.target.value } : current,
-                    )
-                  }
-                  placeholder="forms, error-handling, validation"
-                  type="text"
-                  value={editForm.topicsInput}
-                />
-              </label>
-              <p className="mt-2 text-[11px] text-syntax-muted">Separate tags with commas.</p>
-            </section>
-          ) : null}
+          )}
 
           {saveError ? (
-            <p className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+            <p className="mx-6 mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
               {saveError}
             </p>
           ) : null}
         </div>
 
-        <footer className="border-t border-syntax-border px-6 py-4">
-          {!isEditing && note.topics.length > 0 ? (
-            <div className="mb-3 flex flex-wrap gap-2">
-              {note.topics.map((topic) => (
-                <span
-                  key={topic}
-                  className="rounded-full border border-syntax-border bg-syntax-inset px-3 py-1 text-xs text-syntax-muted"
-                >
-                  {formatTopicLabel(topic)}
-                </span>
-              ))}
-            </div>
-          ) : null}
-
+        <footer className="border-t border-syntax-accent/30 px-6 py-4">
           {isEditing ? (
             <div className="mb-3 flex flex-wrap gap-3">
               <button
-                className="h-10 rounded-full bg-syntax-accent px-5 text-sm font-semibold text-black transition hover:bg-syntax-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-10 rounded-full bg-syntax-accent px-5 text-sm font-semibold text-syntax-accent-fg transition hover:bg-syntax-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isSaving}
                 onClick={() => void handleSaveEdits()}
                 type="button"

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useTheme } from '../hooks/useTheme';
 import { NestedTechIcons } from './NestedTechIcons';
 import { getTechBrandColor } from '../utils/techIcon';
 
@@ -18,10 +19,10 @@ const BOX_SIZES: Record<'md' | 'lg', string> = {
 
 interface TechDetectLoaderProps {
   size: 'md' | 'lg';
-  accentColor?: string;
+  accentColor: string;
 }
 
-function TechDetectLoader({ size, accentColor = '#00eaff' }: TechDetectLoaderProps): ReactElement {
+function TechDetectLoader({ size, accentColor }: TechDetectLoaderProps): ReactElement {
   const boxSize = BOX_SIZES[size];
 
   return (
@@ -65,6 +66,7 @@ export function TechDetectionIndicator({
   size = 'md',
   cardBackgroundClass = 'border-syntax-border bg-syntax-card',
 }: TechDetectionIndicatorProps): ReactElement {
+  const { isLight } = useTheme();
   const [displayTech, setDisplayTech] = useState<{ primaryTech: string; language: string } | null>(
     null,
   );
@@ -87,7 +89,11 @@ export function TechDetectionIndicator({
     }
   }, [isAnalyzing, language, primaryTech]);
 
-  const accentColor = displayTech ? getTechBrandColor(displayTech.primaryTech) : '#00eaff';
+  const neutralAccent = isLight ? '#0a0a0a' : '#ffffff';
+  const accentColor =
+    isAnalyzing || !displayTech
+      ? neutralAccent
+      : getTechBrandColor(displayTech.primaryTech);
 
   return (
     <div
@@ -107,7 +113,7 @@ export function TechDetectionIndicator({
           />
         </div>
       ) : (
-        <TechDetectLoader size={size} />
+        <TechDetectLoader accentColor={accentColor} size={size} />
       )}
     </div>
   );

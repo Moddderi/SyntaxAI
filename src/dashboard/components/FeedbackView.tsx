@@ -130,7 +130,7 @@ export function FeedbackView(): ReactElement {
 
         <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center">
           <button
-            className="h-12 rounded-full bg-syntax-accent px-8 text-sm font-semibold text-black transition hover:bg-syntax-accent/90"
+            className="h-12 rounded-full bg-syntax-accent px-8 text-sm font-semibold text-syntax-accent-fg transition hover:bg-syntax-accent/90"
             type="submit"
           >
             {t('feedbackSubmit')}

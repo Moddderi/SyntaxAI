@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./src/**/*.{js,ts,jsx,tsx,html}'],
+  darkMode: ['selector', '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
@@ -9,6 +10,8 @@ export default {
           card: 'var(--syntax-card)',
           border: 'var(--syntax-border)',
           accent: 'var(--syntax-accent)',
+          'accent-fg': 'var(--syntax-accent-fg)',
+          'accent-muted': 'var(--syntax-accent-muted)',
           text: 'var(--syntax-text)',
           muted: 'var(--syntax-muted)',
           hover: 'var(--syntax-hover)',
@@ -28,15 +31,9 @@ export default {
         },
       },
       fontFamily: {
-        sans: [
-          'Inter',
-          'system-ui',
-          '-apple-system',
-          'BlinkMacSystemFont',
-          'Segoe UI',
-          'sans-serif',
-        ],
+        sans: ['"Work Sans"', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        display: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
     },
   },

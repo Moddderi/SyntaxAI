@@ -5,7 +5,6 @@ import { deleteNote } from '../../storage/notesStorage';
 import {
   computeTechnologyNavItems,
   formatRelativeTime,
-  formatTopicLabel,
   getCodePreview,
   getNotePreviewLine,
 } from '../../utils/noteHelpers';
@@ -80,7 +79,7 @@ function SearchResultCard({
                   {isCopied ? '✓' : '📋'}
                 </button>
                 {isCopied ? (
-                  <span className="pointer-events-none absolute -top-7 right-0 whitespace-nowrap rounded-md bg-syntax-accent px-2 py-0.5 text-[10px] font-semibold text-black">
+                  <span className="pointer-events-none absolute -top-7 right-0 whitespace-nowrap rounded-md bg-syntax-accent px-2 py-0.5 text-[10px] font-semibold text-syntax-accent-fg">
                     Copied!
                   </span>
                 ) : null}
@@ -121,18 +120,6 @@ function SearchResultCard({
 
           <p className="mt-1 truncate text-xs text-syntax-muted">{result.previewLine}</p>
 
-          {result.topics.length > 0 ? (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {result.topics.slice(0, 3).map((topic) => (
-                <span
-                  key={topic}
-                  className="rounded-full border border-syntax-border bg-syntax-bg px-2 py-0.5 text-[10px] text-syntax-muted"
-                >
-                  {formatTopicLabel(topic)}
-                </span>
-              ))}
-            </div>
-          ) : null}
         </div>
       </div>
     </article>

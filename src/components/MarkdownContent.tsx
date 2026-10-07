@@ -68,6 +68,7 @@ const markdownComponents: Components = {
         <CodeBlock
           code={codeText}
           language={languageMatch[1]}
+          showCopy
           showLanguageLabel
           size="sm"
         />
@@ -75,7 +76,7 @@ const markdownComponents: Components = {
     }
 
     return (
-      <code className="rounded-md bg-syntax-code px-1.5 py-0.5 font-mono text-[12px] text-syntax-accent">
+      <code className="syntax-inline-code rounded-md px-1.5 py-0.5 font-mono text-[12px]">
         {children}
       </code>
     );
