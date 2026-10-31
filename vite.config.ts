@@ -3,7 +3,6 @@ import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { copyFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { viteOpenAiKeyDefine } from './vite.openaiEnv';
 
 type ExtensionTarget = 'chrome' | 'firefox';
 
@@ -52,7 +51,6 @@ export default defineConfig(({ mode }) => {
     base: './',
     plugins: [react(), extensionBuildPlugin(target, outDir)],
     define: {
-      ...viteOpenAiKeyDefine(mode),
       'import.meta.env.VITE_EXTENSION_TARGET': JSON.stringify(target),
     },
     build: {

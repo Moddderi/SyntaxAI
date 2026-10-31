@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
+import { AuthGate } from '../components/AuthGate';
+import { useAuthSession } from '../hooks/useAuthSession';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { NoteDetailModal } from '../components/NoteDetailModal';
 import { deleteNote, toggleStar } from '../storage/notesStorage';
@@ -17,6 +18,7 @@ import { useNotes } from '../hooks/useNotes';
 export function SidePanel(): ReactElement {
   useTheme();
   useLocale();
+  const { status: authStatus } = useAuthSession();
   const [activeMode, setActiveMode] = useState<SidePanelMode>('capture');
   const [selectedNoteForDetail, setSelectedNoteForDetail] = useState<Note | null>(null);
   const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
@@ -64,6 +66,14 @@ export function SidePanel(): ReactElement {
 
   return (
     <main className="flex min-h-screen flex-col bg-syntax-bg">
+      {authStatus === 'loading' ? (
+        <div className="flex flex-1 items-center justify-center p-8 text-sm text-syntax-muted">
+          …
+        </div>
+      ) : authStatus === 'signed_out' ? (
+        <AuthGate compact />
+      ) : (
+        <>
       <SidePanelHeader mode={activeMode} />
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
@@ -104,7 +114,8 @@ export function SidePanel(): ReactElement {
           setSelectedNoteForDetail(null);
         }}
       />
-
+        </>
+      )}
     </main>
   );
 }

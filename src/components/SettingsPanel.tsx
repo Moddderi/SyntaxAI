@@ -1,14 +1,5 @@
 import { useCallback, useEffect, useState, type ReactElement, type ReactNode } from 'react';
 import {
-  ensureOpenAiApiKeyLoaded,
-  getApiKeyStatus,
-  getOpenAiApiKey,
-  loadOpenAiApiKeyFromStorage,
-  maskApiKey,
-  OPENAI_API_KEY_ENV_HINT,
-  saveOpenAiApiKey,
-} from '../services/apiKeyStorage';
-import {
   getCaptureSettings,
   updateCaptureSettings,
   type CaptureSettings,
@@ -102,11 +93,6 @@ export function SettingsPanel({
 }: SettingsPanelProps): ReactElement {
   const { t } = useTranslation();
   const { isLight, setTheme } = useTheme();
-  const [keyPreview, setKeyPreview] = useState<string | null>(null);
-  const [apiKeyDraft, setApiKeyDraft] = useState('');
-  const [isSavingApiKey, setIsSavingApiKey] = useState(false);
-  const [status, setStatus] = useState<'active' | 'missing'>('missing');
-  const [usingDevEnvKey, setUsingDevEnvKey] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [captureSettings, setCaptureSettings] = useState<CaptureSettings>({
@@ -116,39 +102,10 @@ export function SettingsPanel({
   const [isExporting, setIsExporting] = useState(false);
 
   const loadSettings = useCallback((): void => {
-    void ensureOpenAiApiKeyLoaded().then(() => {
-      const apiKey = getOpenAiApiKey();
-      const devKey = import.meta.env.DEV && Boolean(import.meta.env.VITE_OPENAI_API_KEY?.trim());
-
-      setUsingDevEnvKey(devKey);
-      setStatus(getApiKeyStatus());
-      setKeyPreview(apiKey ? maskApiKey(apiKey) : null);
-      setError(null);
-      setSuccessMessage(null);
-    });
-
-    void getCaptureSettings().then(setCaptureSettings);
-  }, []);
-
-  const handleSaveApiKey = useCallback((): void => {
-    setIsSavingApiKey(true);
     setError(null);
     setSuccessMessage(null);
-
-    void saveOpenAiApiKey(apiKeyDraft)
-      .then(() => loadOpenAiApiKeyFromStorage())
-      .then(() => {
-        setApiKeyDraft('');
-        setSuccessMessage(t('settingsOpenAiSaved'));
-        loadSettings();
-      })
-      .catch(() => {
-        setError('Failed to save API key.');
-      })
-      .finally(() => {
-        setIsSavingApiKey(false);
-      });
-  }, [apiKeyDraft, loadSettings, t]);
+    void getCaptureSettings().then(setCaptureSettings);
+  }, []);
 
   useEffect(() => {
     loadSettings();
@@ -249,60 +206,6 @@ export function SettingsPanel({
             />
           }
         />
-
-        <SettingsDivider />
-        <SettingsGroupLabel>{t('settingsGroupAi')}</SettingsGroupLabel>
-
-        <div className="px-5 py-4">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="text-sm font-medium text-syntax-text">{t('settingsOpenAiLabel')}</p>
-            <span
-              className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${
-                status === 'active'
-                  ? 'bg-syntax-accent/10 text-syntax-accent'
-                  : 'bg-red-500/10 text-red-400'
-              }`}
-            >
-              {status === 'active' ? t('settingsOpenAiActive') : t('settingsOpenAiMissing')}
-            </span>
-          </div>
-
-          {keyPreview ? (
-            <p className="mb-2 font-mono text-xs text-syntax-muted">{keyPreview}</p>
-          ) : null}
-
-          {usingDevEnvKey ? (
-            <p className="mb-3 text-[13px] leading-relaxed text-syntax-muted">
-              {t('settingsOpenAiDevEnv')}
-            </p>
-          ) : (
-            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-              <input
-                autoComplete="off"
-                className="min-w-0 flex-1 rounded-xl border border-syntax-border bg-syntax-bg px-3 py-2 font-mono text-xs text-syntax-text outline-none ring-syntax-accent focus:ring-2"
-                onChange={(event) => setApiKeyDraft(event.target.value)}
-                placeholder={t('settingsOpenAiPlaceholder')}
-                spellCheck={false}
-                type="password"
-                value={apiKeyDraft}
-              />
-              <button
-                className="syntax-btn-primary shrink-0 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide disabled:opacity-50"
-                disabled={isSavingApiKey || apiKeyDraft.trim().length === 0}
-                onClick={handleSaveApiKey}
-                type="button"
-              >
-                {t('settingsOpenAiSave')}
-              </button>
-            </div>
-          )}
-
-          <p className="text-[13px] leading-relaxed text-syntax-muted">
-            {status === 'active'
-              ? t('settingsOpenAiStoredLocally')
-              : OPENAI_API_KEY_ENV_HINT}
-          </p>
-        </div>
 
         <SettingsDivider />
         <SettingsGroupLabel>{t('settingsGroupLibrary')}</SettingsGroupLabel>

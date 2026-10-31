@@ -11,6 +11,7 @@ import {
   resolvePrimaryTechnology,
 } from '../utils/techDetection';
 import { resolveNoteTechnology } from '../utils/pageContextTechDetection';
+import { enqueueNoteSyncIds } from './syncQueueStorage';
 import { resolveDeviconSlug } from '../utils/techIcon';
 
 const NOTE_SOURCE_TYPES: NoteSourceType[] = ['code', 'image', 'tab'];
@@ -103,6 +104,7 @@ function normalizeNote(raw: Record<string, unknown>): Note | null {
     body,
     sourceUrl,
     createdAt: raw.createdAt,
+    updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : raw.createdAt,
     isStarred: raw.isStarred,
     isDeleted: raw.isDeleted === true,
     sourceType: isNoteSourceType(raw.sourceType) ? raw.sourceType : 'code',
@@ -155,7 +157,7 @@ async function readNotesFromStorage(): Promise<Note[]> {
   }
 }
 
-async function writeNotesToStorage(notes: Note[]): Promise<void> {
+async function writeNotesToStorage(notes: Note[], options?: { skipSyncQueue?: boolean }): Promise<void> {
   if (isChromeStorageAvailable()) {
     await chrome.storage.local.set({ [NOTES_STORAGE_KEY]: notes });
     return;
@@ -163,6 +165,30 @@ async function writeNotesToStorage(notes: Note[]): Promise<void> {
 
   localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes));
   notifyNotesChanged();
+
+  if (options?.skipSyncQueue) {
+    return;
+  }
+}
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+async function persistNotes(notes: Note[], syncIds: string[], skipSyncQueue = false): Promise<void> {
+  await writeNotesToStorage(notes, { skipSyncQueue });
+
+  if (!skipSyncQueue && syncIds.length > 0) {
+    await enqueueNoteSyncIds(syncIds);
+  }
+}
+
+export async function getAllNotesRaw(): Promise<Note[]> {
+  return readNotesFromStorage();
+}
+
+export async function writeNotesFromSync(notes: Note[]): Promise<void> {
+  await writeNotesToStorage(notes, { skipSyncQueue: true });
 }
 
 export async function getNotes(): Promise<Note[]> {
@@ -178,14 +204,18 @@ export async function getTrashNotes(): Promise<Note[]> {
 export async function saveNote(note: Note): Promise<void> {
   const notes = await readNotesFromStorage();
   const existingIndex = notes.findIndex((item) => item.id === note.id);
+  const nextNote: Note = {
+    ...note,
+    updatedAt: nowIso(),
+  };
 
   if (existingIndex >= 0) {
-    notes[existingIndex] = note;
+    notes[existingIndex] = nextNote;
   } else {
-    notes.unshift(note);
+    notes.unshift(nextNote);
   }
 
-  await writeNotesToStorage(notes);
+  await persistNotes(notes, [nextNote.id]);
 }
 
 export async function toggleStar(id: string): Promise<void> {
@@ -199,9 +229,11 @@ export async function toggleStar(id: string): Promise<void> {
   notes[targetIndex] = {
     ...notes[targetIndex],
     isStarred: !notes[targetIndex].isStarred,
+    updatedAt: nowIso(),
   };
 
-  await writeNotesToStorage(notes);
+  const noteId = notes[targetIndex].id;
+  await persistNotes(notes, [noteId]);
 }
 
 export async function deleteNote(id: string): Promise<void> {
@@ -215,9 +247,10 @@ export async function deleteNote(id: string): Promise<void> {
   notes[targetIndex] = {
     ...notes[targetIndex],
     isDeleted: true,
+    updatedAt: nowIso(),
   };
 
-  await writeNotesToStorage(notes);
+  await persistNotes(notes, [id]);
 }
 
 export async function restoreNote(id: string): Promise<void> {
@@ -231,13 +264,29 @@ export async function restoreNote(id: string): Promise<void> {
   notes[targetIndex] = {
     ...notes[targetIndex],
     isDeleted: false,
+    updatedAt: nowIso(),
   };
 
-  await writeNotesToStorage(notes);
+  await persistNotes(notes, [id]);
 }
 
 export async function permanentlyDeleteNote(id: string): Promise<void> {
   const notes = await readNotesFromStorage();
+  const targetIndex = notes.findIndex((note) => note.id === id);
+
+  if (targetIndex < 0) {
+    return;
+  }
+
+  const tombstone: Note = {
+    ...notes[targetIndex],
+    isDeleted: true,
+    updatedAt: nowIso(),
+  };
+
+  notes[targetIndex] = tombstone;
+  await persistNotes(notes, [id]);
+
   const nextNotes = notes.filter((note) => note.id !== id);
-  await writeNotesToStorage(nextNotes);
+  await writeNotesToStorage(nextNotes, { skipSyncQueue: true });
 }

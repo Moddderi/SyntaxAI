@@ -1,4 +1,5 @@
 import type { Note } from '../types/note';
+import { areBillingLimitsEnforced } from '../services/billingState';
 
 export const FREE_PLAN_LIMITS = {
   notes: 30,
@@ -108,6 +109,10 @@ export function checkCanSaveNote(
   notes: Note[],
   options: { includesContextBody: boolean; isPhotoSource: boolean },
 ): UsageLimitCheck {
+  if (!areBillingLimitsEnforced()) {
+    return { allowed: true, limitId: null, message: null };
+  }
+
   if (isProPlanActive()) {
     return { allowed: true, limitId: null, message: null };
   }
@@ -143,6 +148,10 @@ export function checkCanSaveNote(
 }
 
 export function checkCanRunPhotoAnalysis(notes: Note[]): UsageLimitCheck {
+  if (!areBillingLimitsEnforced()) {
+    return { allowed: true, limitId: null, message: null };
+  }
+
   if (isProPlanActive()) {
     return { allowed: true, limitId: null, message: null };
   }
@@ -159,6 +168,10 @@ export function checkCanRunPhotoAnalysis(notes: Note[]): UsageLimitCheck {
 }
 
 export function checkCanRunContextAnalysis(notes: Note[]): UsageLimitCheck {
+  if (!areBillingLimitsEnforced()) {
+    return { allowed: true, limitId: null, message: null };
+  }
+
   if (isProPlanActive()) {
     return { allowed: true, limitId: null, message: null };
   }

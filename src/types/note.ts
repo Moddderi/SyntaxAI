@@ -11,6 +11,7 @@ export interface Note {
   body?: string;
   sourceUrl?: string;
   createdAt: string;
+  updatedAt?: string;
   isStarred: boolean;
   isDeleted?: boolean;
   sourceType?: NoteSourceType;

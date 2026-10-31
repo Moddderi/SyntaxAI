@@ -1,18 +1,10 @@
 import { getLocale } from '../storage/localeStorage';
-import { buildSnippetAnalyzerSystemPrompt } from '../utils/aiLocalePrompts';
-import {
-  ensureOpenAiApiKeyLoaded,
-  getOpenAiApiKey,
-  OPENAI_API_KEY_ENV_HINT,
-} from './apiKeyStorage';
 import {
   resolveBaseLanguage,
   resolvePrimaryTechnology,
 } from '../utils/techDetection';
 import { resolveDeviconSlug } from '../utils/techIcon';
-
-const OPENAI_CHAT_COMPLETIONS_URL = 'https://api.openai.com/v1/chat/completions';
-const OPENAI_MODEL = 'gpt-4o-mini';
+import { apiFetchAuthed } from './apiClient';
 
 export interface AnalyzeSnippetInput {
   promptOrCode: string;
@@ -35,33 +27,6 @@ export class AiServiceError extends Error {
   }
 }
 
-interface OpenAiChatMessageContentText {
-  type: 'text';
-  text: string;
-}
-
-interface OpenAiChatMessageContentImage {
-  type: 'image_url';
-  image_url: {
-    url: string;
-  };
-}
-
-type OpenAiChatMessageContent =
-  | OpenAiChatMessageContentText
-  | OpenAiChatMessageContentImage;
-
-interface OpenAiChatCompletionResponse {
-  choices?: Array<{
-    message?: {
-      content?: string;
-    };
-  }>;
-  error?: {
-    message?: string;
-  };
-}
-
 interface RawAnalyzeSnippetResult {
   title: string;
   primaryTech?: string;
@@ -70,6 +35,11 @@ interface RawAnalyzeSnippetResult {
   tags?: string[];
   summary?: string;
   code: string;
+}
+
+interface AnalyzeSnippetApiResponse {
+  result?: RawAnalyzeSnippetResult;
+  error?: string;
 }
 
 const BLOCKED_TOPIC_TERMS = new Set([
@@ -183,91 +153,59 @@ function normalizeResult(
   };
 }
 
-function buildUserContent(
-  promptOrCode: string,
-  imagesBase64?: string[],
-): OpenAiChatMessageContent[] {
-  const content: OpenAiChatMessageContent[] = [];
-
-  if (promptOrCode.trim()) {
-    content.push({
-      type: 'text',
-      text: promptOrCode.trim(),
-    });
+function assertHasInput(promptOrCode: string, imagesBase64?: string[]): void {
+  if (promptOrCode.trim() || (imagesBase64 && imagesBase64.length > 0)) {
+    return;
   }
 
-  if (imagesBase64 && imagesBase64.length > 0) {
-    imagesBase64.forEach((dataUrl) => {
-      content.push({
-        type: 'image_url',
-        image_url: { url: dataUrl },
-      });
-    });
+  throw new AiServiceError('Nothing to analyze: provide code, text, or an image.');
+}
+
+async function readAiErrorMessage(response: Response): Promise<string> {
+  if (response.status === 401) {
+    return 'Sign in to SyntaxAI to use AI analysis.';
   }
 
-  if (content.length === 0) {
-    throw new AiServiceError('Nothing to analyze: provide code, text, or an image.');
+  if (response.status === 503) {
+    return 'AI is temporarily unavailable. Try again later.';
   }
 
-  return content;
+  try {
+    const payload = (await response.json()) as AnalyzeSnippetApiResponse;
+    if (typeof payload.error === 'string' && payload.error.trim()) {
+      return payload.error;
+    }
+  } catch {
+    // fall through
+  }
+
+  return `AI request failed with status ${response.status}.`;
 }
 
 export async function analyzeSnippetWithAI(
   input: AnalyzeSnippetInput,
 ): Promise<AnalyzeSnippetResult> {
-  await ensureOpenAiApiKeyLoaded();
-  const apiKey = getOpenAiApiKey();
+  assertHasInput(input.promptOrCode, input.imagesBase64);
 
-  if (!apiKey) {
-    throw new AiServiceError(`OpenAI API key is missing. ${OPENAI_API_KEY_ENV_HINT}`);
-  }
-
-  const userContent = buildUserContent(input.promptOrCode, input.imagesBase64);
   const locale = await getLocale();
-  const systemPrompt = buildSnippetAnalyzerSystemPrompt(locale);
-
-  const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
+  const response = await apiFetchAuthed('/api/v1/ai/analyze-snippet', {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify({
-      model: OPENAI_MODEL,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userContent },
-      ],
-      temperature: 0.2,
+      locale,
+      promptOrCode: input.promptOrCode,
+      imagesBase64: input.imagesBase64,
     }),
   });
 
-  const payload = (await response.json()) as OpenAiChatCompletionResponse;
-
   if (!response.ok) {
-    throw new AiServiceError(
-      payload.error?.message ?? `OpenAI request failed with status ${response.status}.`,
-    );
+    throw new AiServiceError(await readAiErrorMessage(response));
   }
 
-  const content = payload.choices?.[0]?.message?.content;
+  const payload = (await response.json()) as AnalyzeSnippetApiResponse;
 
-  if (!content) {
-    throw new AiServiceError('OpenAI returned an empty response.');
+  if (!isRawAnalyzeSnippetResult(payload.result)) {
+    throw new AiServiceError('AI JSON does not match the expected schema.');
   }
 
-  let parsed: unknown;
-
-  try {
-    parsed = JSON.parse(content) as unknown;
-  } catch {
-    throw new AiServiceError('OpenAI returned invalid JSON.');
-  }
-
-  if (!isRawAnalyzeSnippetResult(parsed)) {
-    throw new AiServiceError('OpenAI JSON does not match the expected schema.');
-  }
-
-  return normalizeResult(parsed, input.promptOrCode);
+  return normalizeResult(payload.result, input.promptOrCode);
 }

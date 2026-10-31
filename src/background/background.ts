@@ -3,6 +3,8 @@ import {
   ensureContextCaptureMenu,
   registerContextCaptureListeners,
 } from './contextCapture';
+import { registerAuthMessageHandlers, runStartupAuthAndSync } from './authCoordinator';
+import { registerSyncMessageHandlers, startSyncAlarms } from './syncCoordinator';
 
 chrome.runtime.onInstalled.addListener(() => {
   console.info('[SyntaxAI] Extension installed');
@@ -15,4 +17,8 @@ registerCapturePanelBehavior();
 
 registerContextCaptureListeners();
 
-export {};
+registerAuthMessageHandlers();
+registerSyncMessageHandlers();
+startSyncAlarms();
+
+void runStartupAuthAndSync();

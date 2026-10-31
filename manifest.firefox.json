@@ -39,8 +39,8 @@
     "scripts": ["background.js"],
     "type": "module"
   },
-  "permissions": ["storage", "tabs", "scripting", "activeTab", "contextMenus"],
-  "host_permissions": ["https://api.openai.com/*", "<all_urls>"],
+  "permissions": ["storage", "tabs", "scripting", "activeTab", "contextMenus", "alarms"],
+  "host_permissions": ["https://syntaxai.app/*", "<all_urls>"],
   "commands": {
     "capture-context": {
       "suggested_key": {

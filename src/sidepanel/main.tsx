@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { SidePanel } from './SidePanel';
 import { applyTheme, getTheme } from '../storage/themeStorage';
 import { applyLocale, getLocale } from '../storage/localeStorage';
-import { ensureOpenAiApiKeyLoaded } from '../services/apiKeyStorage';
+import { hydrateBillingFromSessionCache } from '../services/sessionService';
 import '../styles/index.css';
 
 const rootElement = document.getElementById('root');
@@ -12,7 +12,7 @@ if (!rootElement) {
   throw new Error('Root element #root not found');
 }
 
-void Promise.all([getTheme(), getLocale(), ensureOpenAiApiKeyLoaded()]).then(([theme, locale]) => {
+void Promise.all([getTheme(), getLocale(), hydrateBillingFromSessionCache()]).then(([theme, locale]) => {
   applyTheme(theme);
   applyLocale(locale);
 });

@@ -138,6 +138,7 @@ export function buildNoteFromCapture(
     body: resolvedBody,
     sourceUrl: sourceUrl?.trim() || undefined,
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     isStarred: false,
     isDeleted: false,
     sourceType,

@@ -28,9 +28,13 @@ import { TechHeroBanner } from './components/TechHeroBanner';
 import { TrashGrid } from './components/TrashGrid';
 import { filterNotesByTechnology } from '../utils/noteHelpers';
 import { formatTechnologyLabel } from '../utils/techIcon';
+import { AuthGate } from '../components/AuthGate';
+import { useAuthSession } from '../hooks/useAuthSession';
+import { openAuthPage } from '../utils/openAuthPage';
 
 export function Dashboard(): ReactElement {
   useLocale();
+  const { status: authStatus, user } = useAuthSession();
   const { notes, trashNotes, isLoading } = useNotes();
   const [activeTab, setActiveTab] = useState<LibraryTabId>('all');
   const [selectedTechnology, setSelectedTechnology] = useState<string | null>(null);
@@ -210,6 +214,12 @@ export function Dashboard(): ReactElement {
 
   return (
     <div className="flex h-screen overflow-hidden bg-syntax-bg text-syntax-text">
+      {authStatus === 'loading' ? (
+        <div className="flex flex-1 items-center justify-center text-sm text-syntax-muted">…</div>
+      ) : authStatus === 'signed_out' ? (
+        <AuthGate />
+      ) : (
+        <>
       <Sidebar
         activeTab={activeTab}
         isLoading={isLoading}
@@ -230,9 +240,8 @@ export function Dashboard(): ReactElement {
         <main className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
           <DashboardTopBar
             isTrashActive={isTrashView}
-            onLoginClick={() => {
-              /* Auth flow — coming soon */
-            }}
+            onLoginClick={openAuthPage}
+            signedInEmail={user?.email ?? null}
             onOpenQuickSearch={() => setIsQuickSearchOpen(true)}
             onOpenTrash={() => handleTabChange('trash')}
             trashCount={trashNotes.length}
@@ -317,6 +326,8 @@ export function Dashboard(): ReactElement {
           setSelectedNoteForDetail(null);
         }}
       />
+        </>
+      )}
     </div>
   );
 }

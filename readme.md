@@ -53,14 +53,11 @@ npm run dev
 
 Reload the extension in the browser after changes.
 
-### OpenAI API key
+### AI (server key)
 
-| Mode | How to configure |
-|------|------------------|
-| `npm run dev` | Copy `.env.example` → `.env`, set `VITE_OPENAI_API_KEY` |
-| `build:chrome` / `build:firefox` | **Settings → OpenAI** — key is saved in `chrome.storage.local` (not baked into the bundle) |
+End users **never** paste an OpenAI key. The extension calls `https://syntaxai.app/api/v1/ai/*` with the device token after sign-in. The production key is `OPENAI_API_KEY` on **syntaxai-web** (Vercel / `.env.local`) — never in the extension bundle.
 
-**Security:** `dist/` and `dist-firefox/` are gitignored — do not commit build output. If a key was ever committed, [rotate it](https://platform.openai.com/api-keys) before pushing again. After fixing history, `git push` should pass GitHub secret scanning.
+**Security:** `dist/` and `dist-firefox/` are gitignored — do not commit build output.
 
 ## Browsers
 

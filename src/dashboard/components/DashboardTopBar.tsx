@@ -7,6 +7,7 @@ interface DashboardTopBarProps {
   onOpenQuickSearch: () => void;
   onOpenTrash: () => void;
   onLoginClick?: () => void;
+  signedInEmail?: string | null;
   isTrashActive: boolean;
   trashCount: number;
 }
@@ -50,6 +51,7 @@ export function DashboardTopBar({
   onOpenQuickSearch,
   onOpenTrash,
   onLoginClick,
+  signedInEmail = null,
   isTrashActive,
   trashCount,
 }: DashboardTopBarProps): ReactElement {
@@ -96,14 +98,23 @@ export function DashboardTopBar({
             <TrashIcon className="h-[17px] w-[17px]" />
           </TopBarIconButton>
 
-          <button
-            className="syntax-btn-primary syntax-focus-ring flex h-10 items-center gap-2 px-3.5 text-[11px]"
-            onClick={onLoginClick}
-            type="button"
-          >
-            <LoginIcon className="h-4 w-4" />
-            {t('topBarLogin')}
-          </button>
+          {signedInEmail ? (
+            <span
+              className="syntax-elevated flex h-10 max-w-[200px] items-center truncate rounded-full border border-syntax-border bg-syntax-card px-3.5 text-[11px] font-medium text-syntax-muted"
+              title={signedInEmail}
+            >
+              {signedInEmail}
+            </span>
+          ) : (
+            <button
+              className="syntax-btn-primary syntax-focus-ring flex h-10 items-center gap-2 px-3.5 text-[11px]"
+              onClick={onLoginClick}
+              type="button"
+            >
+              <LoginIcon className="h-4 w-4" />
+              {t('topBarLogin')}
+            </button>
+          )}
         </div>
       </div>
     </div>
