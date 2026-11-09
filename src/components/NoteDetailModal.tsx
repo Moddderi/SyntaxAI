@@ -175,6 +175,7 @@ export function NoteDetailModal({
         body: editForm.body.trim() || undefined,
         sourceUrl: note.sourceUrl,
         language: note.language,
+        preferredPrimaryTech: note.primaryTech,
       });
       const updatedNote: Note = {
         ...note,
@@ -211,6 +212,7 @@ export function NoteDetailModal({
     body: editForm.body,
     sourceUrl: note.sourceUrl,
     language: note.language,
+    preferredPrimaryTech: note.primaryTech,
   });
 
   return (

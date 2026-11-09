@@ -1,4 +1,5 @@
 import { useEffect, type ReactElement } from 'react';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface ConfirmDeleteModalProps {
   isOpen: boolean;
@@ -13,6 +14,8 @@ export function ConfirmDeleteModal({
   onConfirm,
   onCancel,
 }: ConfirmDeleteModalProps): ReactElement | null {
+  const { t } = useTranslation();
+
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -46,12 +49,10 @@ export function ConfirmDeleteModal({
         role="dialog"
       >
         <h2 className="text-lg font-semibold text-syntax-text" id="confirm-delete-title">
-          Delete note?
+          {t('confirmDeleteTitle')}
         </h2>
         <p className="mt-2 text-sm text-syntax-muted">
-          Are you sure you want to delete{' '}
-          <span className="font-medium text-syntax-muted">&ldquo;{noteTitle}&rdquo;</span>? It will
-          move to Trash.
+          {t('confirmDeleteBody', { title: noteTitle })}
         </p>
 
         <div className="mt-6 flex items-center gap-2">
@@ -60,14 +61,14 @@ export function ConfirmDeleteModal({
             onClick={onCancel}
             type="button"
           >
-            Cancel
+            {t('confirmDeleteCancel')}
           </button>
           <button
             className="h-10 flex-1 rounded-full bg-red-500/90 text-sm font-semibold text-syntax-text transition hover:bg-red-500"
             onClick={onConfirm}
             type="button"
           >
-            Delete
+            {t('confirmDeleteConfirm')}
           </button>
         </div>
       </div>

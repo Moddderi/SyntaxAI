@@ -64,6 +64,12 @@ export function DetectedNoteBlock({
               value={title}
             />
 
+            {note?.summary?.trim() ? (
+              <p className="mt-2 text-[13px] leading-relaxed text-syntax-muted">
+                {note.summary.trim()}
+              </p>
+            ) : null}
+
             {sourceUrl ? (
               <p className="mt-3 truncate text-[11px] text-syntax-muted">
                 {t('sidePanelSource')}:{' '}

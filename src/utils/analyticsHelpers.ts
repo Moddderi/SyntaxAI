@@ -1,3 +1,4 @@
+import type { TranslationKey } from '../i18n/translations';
 import type { Note } from '../types/note';
 import { formatTechnologyLabel, getTechBrandColor, resolveDeviconSlug } from './techIcon';
 
@@ -277,6 +278,20 @@ export function computeInputMethodBreakdown(notes: Note[]): InputMethodBreakdown
   );
 }
 
+export function getLibraryTabTitleKey(tab: string): TranslationKey {
+  switch (tab) {
+    case 'starred':
+      return 'libraryStarredNotes';
+    case 'stack':
+      return 'libraryYourStack';
+    case 'trash':
+      return 'libraryTrash';
+    default:
+      return 'libraryAllNotes';
+  }
+}
+
+/** @deprecated Prefer getLibraryTabTitleKey + t() */
 export function getLibraryTabTitle(tab: string): string {
   switch (tab) {
     case 'starred':

@@ -1,14 +1,18 @@
 import type { ReactElement } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
-import { buildBugReportMailto } from '../../constants/support';
+import type { SyntaxAiSessionUser } from '../../types/api';
+import { AccountMenu } from './AccountMenu';
 import { BugIcon, LoginIcon, SearchIcon, TrashIcon } from './icons';
 
 interface DashboardTopBarProps {
   onOpenQuickSearch: () => void;
   onOpenTrash: () => void;
+  onOpenBugReport: () => void;
   onLoginClick?: () => void;
-  signedInEmail?: string | null;
+  signedInUser?: SyntaxAiSessionUser | null;
+  onAuthRefresh: () => Promise<void>;
   isTrashActive: boolean;
+  isBugReportActive?: boolean;
   trashCount: number;
 }
 
@@ -50,16 +54,15 @@ function TopBarIconButton({
 export function DashboardTopBar({
   onOpenQuickSearch,
   onOpenTrash,
+  onOpenBugReport,
   onLoginClick,
-  signedInEmail = null,
+  signedInUser = null,
+  onAuthRefresh,
   isTrashActive,
+  isBugReportActive = false,
   trashCount,
 }: DashboardTopBarProps): ReactElement {
   const { t } = useTranslation();
-
-  const handleReportBug = (): void => {
-    window.open(buildBugReportMailto(), '_blank', 'noopener,noreferrer');
-  };
 
   return (
     <div className="mb-6 flex items-center gap-3">
@@ -80,8 +83,13 @@ export function DashboardTopBar({
 
       <div className="flex shrink-0 items-center gap-3">
         <button
-          className="flex items-center gap-2 whitespace-nowrap text-[13px] text-syntax-muted transition hover:text-syntax-text"
-          onClick={handleReportBug}
+          aria-pressed={isBugReportActive}
+          className={`flex items-center gap-2 whitespace-nowrap text-[13px] transition ${
+            isBugReportActive
+              ? 'text-syntax-accent'
+              : 'text-syntax-muted hover:text-syntax-text'
+          }`}
+          onClick={onOpenBugReport}
           type="button"
         >
           <BugIcon className="h-4 w-4 shrink-0" />
@@ -98,13 +106,16 @@ export function DashboardTopBar({
             <TrashIcon className="h-[17px] w-[17px]" />
           </TopBarIconButton>
 
-          {signedInEmail ? (
-            <span
-              className="syntax-elevated flex h-10 max-w-[200px] items-center truncate rounded-full border border-syntax-border bg-syntax-card px-3.5 text-[11px] font-medium text-syntax-muted"
-              title={signedInEmail}
-            >
-              {signedInEmail}
-            </span>
+          {signedInUser ? (
+            <AccountMenu
+              onSignedOut={() => {
+                void onAuthRefresh();
+              }}
+              onUserUpdated={() => {
+                void onAuthRefresh();
+              }}
+              user={signedInUser}
+            />
           ) : (
             <button
               className="syntax-btn-primary syntax-focus-ring flex h-10 items-center gap-2 px-3.5 text-[11px]"

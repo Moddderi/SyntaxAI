@@ -22,6 +22,7 @@ interface SidebarProps {
   isLoading: boolean;
   activeTab: LibraryTabId;
   isSettingsActive: boolean;
+  billingEnabled: boolean;
   onTabChange: (tab: LibraryTabId) => void;
   onOpenSettings: () => void;
   onOpenBetaFeedback: () => void;
@@ -106,6 +107,7 @@ export function Sidebar({
   isLoading,
   activeTab,
   isSettingsActive,
+  billingEnabled,
   onTabChange,
   onOpenSettings,
   onOpenBetaFeedback,
@@ -155,7 +157,10 @@ export function Sidebar({
         </div>
       </div>
 
-      <SidebarPlanPlaque onClick={() => onTabChange('analytics')} />
+      <SidebarPlanPlaque
+        billingEnabled={billingEnabled}
+        onClick={() => onTabChange('analytics')}
+      />
 
       <section className="mb-auto">
         <SidebarSectionLabel>{t('navLibrary')}</SidebarSectionLabel>
@@ -174,7 +179,7 @@ export function Sidebar({
         </nav>
       </section>
 
-      <SidebarBetaPromo onClick={onOpenBetaFeedback} />
+      <SidebarBetaPromo billingEnabled={billingEnabled} onClick={onOpenBetaFeedback} />
 
       <section className="border-t border-syntax-border pt-4">
         <SidebarSectionLabel>{t('navSettings')}</SidebarSectionLabel>

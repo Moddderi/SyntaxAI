@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import type { Note } from '../../types/note';
+import { useAuthSession } from '../../hooks/useAuthSession';
 import {
   computeUsageOverview,
   formatQuotaRemaining,
@@ -54,8 +55,14 @@ export function UsageSection({
   notes,
   isLoading,
   onUpgradeClick = openPricingPage,
-}: UsageSectionProps): ReactElement {
+}: UsageSectionProps): ReactElement | null {
+  const { billingEnabled } = useAuthSession();
   const overview = computeUsageOverview(notes);
+
+  // Beta: hide Free/Pro quota sales card — AnalyticsView still shows real stats.
+  if (!billingEnabled) {
+    return null;
+  }
 
   return (
     <section className="overflow-hidden rounded-2xl border border-syntax-border bg-syntax-card">

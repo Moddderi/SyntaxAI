@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { NoteForm } from '../../components/NoteForm';
 import { UpgradeLimitBanner } from '../../components/UpgradeLimitBanner';
 import { useCaptureSettings } from '../../hooks/useCaptureSettings';
@@ -30,7 +30,7 @@ import { useSnippetAnalysis } from '../hooks/useSnippetAnalysis';
 import { CaptureTextArea } from './CaptureTextArea';
 import { DetectedNoteBlock } from './DetectedNoteBlock';
 import { RecentNotesSection } from './RecentNotesSection';
-import { SaveToLibraryButton } from './SaveToLibraryButton';
+import { SaveToLibraryButton, type SaveButtonStatus } from './SaveToLibraryButton';
 
 interface CaptureViewProps {
   onOpenNoteDetail: (noteId: string) => void;
@@ -59,7 +59,9 @@ export function CaptureView({
   const { notes } = useNotes();
   const { settings: captureSettings } = useCaptureSettings();
   const aiAddsContext = captureSettings.enableContextCapture;
-  const [isSaving, setIsSaving] = useState(false);
+  const aiPasteExplanations = captureSettings.enablePasteExplanations;
+  const [saveStatus, setSaveStatus] = useState<SaveButtonStatus>('idle');
+  const saveResetTimerRef = useRef<number | null>(null);
   const [limitState, setLimitState] = useState<{
     limitId: UsageLimitId;
     message: string;
@@ -68,6 +70,15 @@ export function CaptureView({
   const [noteBody, setNoteBody] = useState('');
   const [noteCode, setNoteCode] = useState('');
   const { text, reset, clearImages, pastedImages } = capture;
+  const isSaving = saveStatus === 'saving';
+
+  useEffect(() => {
+    return () => {
+      if (saveResetTimerRef.current !== null) {
+        window.clearTimeout(saveResetTimerRef.current);
+      }
+    };
+  }, []);
 
   const {
     analysis,
@@ -148,7 +159,7 @@ export function CaptureView({
           language: analysis.language,
           topics: analysis.topics,
           code: analysis.code,
-          summary: analysis.summary,
+          summary: aiPasteExplanations ? analysis.summary : undefined,
         }
       : null;
 
@@ -251,7 +262,11 @@ export function CaptureView({
     }
 
     setLimitState(null);
-    setIsSaving(true);
+    if (saveResetTimerRef.current !== null) {
+      window.clearTimeout(saveResetTimerRef.current);
+      saveResetTimerRef.current = null;
+    }
+    setSaveStatus('saving');
 
     try {
       if (isContextCaptureMode && pageContextSource) {
@@ -285,6 +300,7 @@ export function CaptureView({
           {
             ...detectedNote,
             title: editedTitle.trim() || detectedNote.title,
+            summary: aiPasteExplanations ? detectedNote.summary : undefined,
           },
           sourceType,
         );
@@ -297,12 +313,18 @@ export function CaptureView({
       setNoteCode('');
       reset();
       resetAnalysis();
-    } finally {
-      setIsSaving(false);
+      setSaveStatus('saved');
+      saveResetTimerRef.current = window.setTimeout(() => {
+        setSaveStatus('idle');
+        saveResetTimerRef.current = null;
+      }, 1400);
+    } catch {
+      setSaveStatus('idle');
     }
   }, [
     canSave,
     aiAddsContext,
+    aiPasteExplanations,
     contextAnalysis,
     contextLanguage,
     contextPrimaryTech,
@@ -367,11 +389,11 @@ export function CaptureView({
 
       <div className="relative z-20 shrink-0">
         <SaveToLibraryButton
-          disabled={!canSave}
-          isSaving={isSaving}
+          disabled={!canSave && saveStatus === 'idle'}
           onClick={() => {
             void handleSave();
           }}
+          status={saveStatus}
         />
       </div>
 

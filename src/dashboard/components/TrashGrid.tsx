@@ -1,10 +1,11 @@
 import { useCallback, useMemo, type ReactElement } from 'react';
 import { CodeBlock } from '../../components/CodeBlock';
+import { TechIcon } from '../../components/TechIcon';
+import { useTranslation } from '../../hooks/useTranslation';
 import { permanentlyDeleteNote, restoreNote } from '../../storage/notesStorage';
 import type { Note } from '../../types/note';
 import { noteToSnippetItem } from '../../utils/noteHelpers';
 import { getTechAbbreviation } from '../../utils/techIcon';
-import { TechIcon } from '../../components/TechIcon';
 
 interface TrashGridProps {
   notes: Note[];
@@ -12,9 +13,11 @@ interface TrashGridProps {
 }
 
 export function TrashGrid({ notes, isLoading }: TrashGridProps): ReactElement {
+  const { t, locale } = useTranslation();
+
   const snippets = useMemo(
-    () => notes.map((note) => noteToSnippetItem(note)),
-    [notes],
+    () => notes.map((note) => noteToSnippetItem(note, locale)),
+    [locale, notes],
   );
 
   const handleRestore = useCallback((id: string): void => {
@@ -25,14 +28,17 @@ export function TrashGrid({ notes, isLoading }: TrashGridProps): ReactElement {
     void permanentlyDeleteNote(id);
   }, []);
 
+  const countLabel =
+    snippets.length === 1
+      ? t('trashCountOne', { count: snippets.length })
+      : t('trashCountMany', { count: snippets.length });
+
   return (
     <section>
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-syntax-text">Trash</h2>
+        <h2 className="text-lg font-semibold text-syntax-text">{t('trashTitle')}</h2>
         <p className="text-sm text-syntax-muted">
-          {isLoading
-            ? 'Loading…'
-            : `${snippets.length} deleted note${snippets.length === 1 ? '' : 's'}`}
+          {isLoading ? t('libraryLoading') : countLabel}
         </p>
       </div>
 
@@ -70,14 +76,14 @@ export function TrashGrid({ notes, isLoading }: TrashGridProps): ReactElement {
                   onClick={() => handleRestore(snippet.id)}
                   type="button"
                 >
-                  Restore
+                  {t('trashRestore')}
                 </button>
                 <button
                   className="h-9 flex-1 rounded-full border border-red-400/20 text-xs text-red-300 transition hover:border-red-400/40 hover:bg-red-500/10"
                   onClick={() => handlePermanentDelete(snippet.id)}
                   type="button"
                 >
-                  Delete permanently
+                  {t('trashDeletePermanently')}
                 </button>
               </div>
             </article>
@@ -85,7 +91,7 @@ export function TrashGrid({ notes, isLoading }: TrashGridProps): ReactElement {
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-syntax-border bg-syntax-card p-10 text-center">
-          <p className="text-sm text-syntax-muted">Trash is empty.</p>
+          <p className="text-sm text-syntax-muted">{t('trashEmpty')}</p>
         </div>
       )}
     </section>

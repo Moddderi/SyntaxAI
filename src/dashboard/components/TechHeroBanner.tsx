@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { TechIcon } from '../../components/TechIcon';
+import { useTranslation } from '../../hooks/useTranslation';
 import { getTechBrandColor } from '../../utils/techIcon';
 
 interface TechHeroBannerProps {
@@ -15,8 +16,12 @@ export function TechHeroBanner({
   snippetsCount,
   onBackToStack,
 }: TechHeroBannerProps): ReactElement {
+  const { t } = useTranslation();
   const accentColor = getTechBrandColor(techSlug);
-  const snippetLabel = `${snippetsCount} snippet${snippetsCount === 1 ? '' : 's'}`;
+  const snippetLabel =
+    snippetsCount === 1
+      ? t('techHeroSnippetOne', { count: snippetsCount })
+      : t('techHeroSnippetMany', { count: snippetsCount });
 
   return (
     <section
@@ -32,7 +37,7 @@ export function TechHeroBanner({
           type="button"
         >
           <span aria-hidden="true">←</span>
-          Back to stack
+          {t('techHeroBack')}
         </button>
       ) : null}
 
@@ -59,8 +64,7 @@ export function TechHeroBanner({
           </div>
 
           <p className="max-w-2xl text-sm leading-relaxed text-syntax-muted">
-            Collection of snippets, patterns and notes for{' '}
-            <span className="font-medium text-syntax-text">{techName}</span>
+            {t('techHeroDescription', { tech: techName })}
           </p>
         </div>
       </div>

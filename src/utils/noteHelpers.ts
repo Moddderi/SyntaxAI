@@ -87,13 +87,14 @@ export function formatTopicLabel(topic: string): string {
   return topic.replace(/^#+/, '').trim();
 }
 
-export function noteToSnippetItem(note: Note): SnippetItem {
+export function noteToSnippetItem(note: Note, locale?: Locale): SnippetItem {
   const resolvedTech = resolveNoteTechnology({
     title: note.title,
     code: note.code,
     body: note.body,
     sourceUrl: note.sourceUrl,
     language: note.language,
+    preferredPrimaryTech: note.primaryTech,
   });
 
   return {
@@ -102,7 +103,7 @@ export function noteToSnippetItem(note: Note): SnippetItem {
     primaryTech: resolvedTech.primaryTech,
     language: resolvedTech.language,
     code: note.code,
-    updatedAt: formatRelativeTime(note.createdAt),
+    updatedAt: formatRelativeTime(note.createdAt, locale),
     codePreview: getCodePreview(note.code),
     summary: note.summary,
     previewLine: getNotePreviewLine(note.summary, note.code, note.body),
@@ -125,6 +126,7 @@ export function buildNoteFromCapture(
     body: resolvedBody,
     sourceUrl,
     language: detected.language,
+    preferredPrimaryTech: detected.primaryTech,
   });
 
   return {

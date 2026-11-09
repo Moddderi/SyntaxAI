@@ -146,7 +146,7 @@ export function CaptureTextArea({
       ) : null}
 
       <button
-        aria-label="Detect note"
+        aria-label={t('detectNote')}
         className={`absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full transition ${
           canDetect && !isAnalyzing
             ? 'bg-syntax-accent text-syntax-accent-fg shadow-[var(--syntax-glow-strong)] hover:bg-syntax-accent/90'
@@ -154,7 +154,7 @@ export function CaptureTextArea({
         }`}
         disabled={!canDetect || isAnalyzing}
         onClick={onDetect}
-        title="Detect note (⌘/Ctrl + Enter)"
+        title={t('detectNoteShortcut')}
         type="button"
       >
         {isAnalyzing ? <DetectSpinner /> : <SendIcon className="h-4 w-4" />}

@@ -1,4 +1,5 @@
 import type { KeyboardEvent, ReactElement } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface DetectNoteButtonProps {
   disabled?: boolean;
@@ -11,6 +12,8 @@ export function DetectNoteButton({
   isAnalyzing = false,
   onClick,
 }: DetectNoteButtonProps): ReactElement {
+  const { t } = useTranslation();
+
   return (
     <button
       className="h-10 shrink-0 rounded-full border border-syntax-accent/40 bg-syntax-accent/10 px-4 text-xs font-semibold text-syntax-accent transition hover:border-syntax-accent hover:bg-syntax-accent/20 disabled:cursor-not-allowed disabled:opacity-50"
@@ -18,7 +21,7 @@ export function DetectNoteButton({
       onClick={onClick}
       type="button"
     >
-      {isAnalyzing ? 'Detecting…' : 'Detect note'}
+      {isAnalyzing ? t('detectNoteAnalyzing') : t('detectNote')}
     </button>
   );
 }

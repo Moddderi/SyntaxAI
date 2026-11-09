@@ -1,293 +1,449 @@
-import { resolveDeviconSlug } from './techIcon';
+import {
+  TECH_BY_SLUG,
+  TECH_CATALOG,
+  getTechDef,
+  resolveTechSlug,
+  type TechDef,
+  type TechKind,
+} from './techCatalog';
 
-interface TechSignalRule {
+/**
+ * Technology detection engine.
+ *
+ * Every catalog entry is scored against the captured text (code + notes + page URL).
+ * The best framework/library/tool becomes the "primary technology" (card icon);
+ * the best language becomes the base language (nested icon). AI hints are blended in
+ * but cannot override strong local evidence.
+ */
+
+const SCORE = { strong: 10, medium: 5, weak: 2, domain: 12, weakDomain: 4, mention: 3, titleMention: 8 } as const;
+const PRIMARY_THRESHOLD = 10;
+const LANGUAGE_THRESHOLD = 5;
+const SCORE_CAP = 40;
+const MAX_TEXT_LENGTH = 24_000;
+
+const JS_FAMILY = new Set(['javascript', 'typescript']);
+
+const LANGUAGE_FAMILIES: ReadonlyArray<ReadonlySet<string>> = [
+  JS_FAMILY,
+  new Set(['html5', 'css3', 'sass', 'xml']),
+  new Set(['c', 'cplusplus', 'objectivec']),
+  new Set(['sql']),
+];
+
+function sameFamily(a: string, b: string): boolean {
+  return LANGUAGE_FAMILIES.some((family) => family.has(a) && family.has(b));
+}
+
+const KIND_RANK: Record<TechKind, number> = {
+  framework: 4,
+  library: 3,
+  platform: 2,
+  tool: 2,
+  database: 2,
+  utility: 1,
+  language: 0,
+};
+
+export interface TechDetectionInput {
+  title?: string;
+  body?: string;
+  code?: string;
+  url?: string;
+}
+
+export interface TechDetectionHints {
+  /** Language suggested by AI / the user. */
+  language?: string;
+  /** Primary technology suggested by AI / the user. */
+  primaryTech?: string;
+}
+
+export interface TechCandidate {
   slug: string;
-  patterns: RegExp[];
-  weight: number;
+  score: number;
+}
+
+export interface TechDetection {
+  primaryTech: string;
+  language: string;
+  confidence: 'high' | 'medium' | 'low';
+  /** Best non-language candidates, strongest first (after dropping implied hosts). */
+  candidates: TechCandidate[];
+  languageScores: TechCandidate[];
+}
+
+// ─────────────────────────── Compiled lookups ───────────────────────────
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+}
+
+interface CompiledTech {
+  def: TechDef;
+  domainPatterns: RegExp[];
+  weakDomainPatterns: RegExp[];
+  mentionPattern: RegExp | null;
+}
+
+function compileDomain(domain: string): RegExp {
+  return new RegExp(`(?:^|//|\\.|@)${escapeRegex(domain.toLowerCase())}(?:[/?#:]|$)`);
+}
+
+const COMPILED: CompiledTech[] = TECH_CATALOG.map((def) => ({
+  def,
+  domainPatterns: (def.domains ?? []).map(compileDomain),
+  weakDomainPatterns: (def.weakDomains ?? []).map(compileDomain),
+  mentionPattern: def.mentions?.length
+    ? new RegExp(`(?<![\\w.-])(?:${def.mentions.join('|')})(?![\\w-])`, 'gi')
+    : null,
+}));
+
+const LANGUAGE_SLUGS = new Set(
+  TECH_CATALOG.filter((tech) => tech.kind === 'language').map((tech) => tech.slug),
+);
+
+export const PRIMARY_TECH_SLUGS: readonly string[] = TECH_CATALOG.map((tech) => tech.slug);
+
+// ─────────────────────────────── Scoring ───────────────────────────────
+
+function clampText(text: string): string {
+  if (text.length <= MAX_TEXT_LENGTH) {
+    return text;
+  }
+
+  return `${text.slice(0, 17_000)}\n${text.slice(-7_000)}`;
+}
+
+function countMatches(pattern: RegExp, text: string, max: number): number {
+  pattern.lastIndex = 0;
+  let count = 0;
+
+  while (count < max && pattern.exec(text) !== null) {
+    count += 1;
+
+    if (pattern.lastIndex === 0) {
+      break;
+    }
+  }
+
+  pattern.lastIndex = 0;
+  return count;
+}
+
+function scoreTech(
+  compiled: CompiledTech,
+  signalText: string,
+  proseText: string,
+  titleText: string,
+  url: string,
+): number {
+  const { def } = compiled;
+  let score = 0;
+
+  def.strong?.forEach((pattern) => {
+    if (pattern.test(signalText)) score += SCORE.strong;
+  });
+  def.medium?.forEach((pattern) => {
+    if (pattern.test(signalText)) score += SCORE.medium;
+  });
+  def.weak?.forEach((pattern) => {
+    if (pattern.test(signalText)) score += SCORE.weak;
+  });
+
+  if (def.custom) {
+    score += def.custom(signalText);
+  }
+
+  if (url) {
+    if (compiled.domainPatterns.some((pattern) => pattern.test(url))) {
+      score += SCORE.domain;
+    } else if (compiled.weakDomainPatterns.some((pattern) => pattern.test(url))) {
+      score += SCORE.weakDomain;
+    }
+  }
+
+  if (compiled.mentionPattern && proseText) {
+    score += Math.min(3, countMatches(compiled.mentionPattern, proseText, 3)) * SCORE.mention;
+
+    if (titleText && countMatches(compiled.mentionPattern, titleText, 1) > 0) {
+      score += SCORE.titleMention;
+    }
+  }
+
+  return Math.min(SCORE_CAP, score);
+}
+
+function scoreAll(input: TechDetectionInput): Map<string, number> {
+  const title = clampText(input.title ?? '');
+  const body = clampText(input.body ?? '');
+  const code = clampText(input.code ?? '');
+  const url = (input.url ?? '').toLowerCase();
+
+  const signalText = [title, body, code].filter(Boolean).join('\n');
+  const proseText = [title, body].filter(Boolean).join('\n');
+  const scores = new Map<string, number>();
+
+  COMPILED.forEach((compiled) => {
+    const score = scoreTech(compiled, signalText, proseText, title, url);
+
+    if (score > 0) {
+      scores.set(compiled.def.slug, score);
+    }
+  });
+
+  return scores;
+}
+
+// ────────────────────────────── Decisions ──────────────────────────────
+
+/** True when `host` (transitively) implies `target`, e.g. nextjs -> react. */
+function implies(hostSlug: string, targetSlug: string, depth = 0): boolean {
+  if (depth > 4) {
+    return false;
+  }
+
+  const host = TECH_BY_SLUG.get(hostSlug);
+
+  if (!host?.implies) {
+    return false;
+  }
+
+  return host.implies.some(
+    (slug) => slug === targetSlug || implies(slug, targetSlug, depth + 1),
+  );
 }
 
 /**
- * Higher weight = stronger signal. Framework/library beats base language.
- * Slugs must match Devicon icon names where possible.
+ * A weak candidate whose language has no evidence at all, in text that is clearly written in
+ * another language, is a false positive (Blade `@include` inside SCSS, `pragma` in Solidity).
  */
-const TECH_SIGNAL_RULES: TechSignalRule[] = [
-  {
-    slug: 'redux',
-    weight: 14,
-    patterns: [
-      /\buseSelector\b/,
-      /\buseDispatch\b/,
-      /\bcreateSlice\b/,
-      /\bconfigureStore\b/,
-      /@reduxjs\/toolkit/,
-      /from ['"]react-redux['"]/,
-      /from ['"]redux['"]/,
-    ],
-  },
-  {
-    slug: 'zustand',
-    weight: 14,
-    patterns: [
-      /from ['"]zustand['"]/,
-      /from ['"]zustand\//,
-      /\bcreate\s*\(\s*\(?\s*set\s*[,)]/,
-      /\buseStore\s*\(/,
-    ],
-  },
-  {
-    slug: 'nextjs',
-    weight: 13,
-    patterns: [
-      /from ['"]next\//,
-      /\bgetServerSideProps\b/,
-      /\bgetStaticProps\b/,
-      /\buseRouter\b/,
-      /\bNextResponse\b/,
-      /\bNextRequest\b/,
-    ],
-  },
-  {
-    slug: 'react',
-    weight: 12,
-    patterns: [
-      /from ['"]react['"]/,
-      /from ['"]react-dom/,
-      /\buse(?:State|Effect|Callback|Memo|Ref|Context|Reducer|LayoutEffect|ImperativeHandle|Id|DeferredValue|Transition|SyncExternalStore)\b/,
-      /<\/?[A-Z][A-Za-z0-9]*[\s/>]/,
-      /className=/,
-    ],
-  },
-  {
-    slug: 'vuejs',
-    weight: 12,
-    patterns: [
-      /from ['"]vue['"]/,
-      /\bdefineComponent\b/,
-      /\bref\s*\(/,
-      /\bcomputed\s*\(/,
-      /\bonMounted\b/,
-      /<template>/,
-    ],
-  },
-  {
-    slug: 'angular',
-    weight: 12,
-    patterns: [
-      /@Component\s*\(/,
-      /@Injectable\s*\(/,
-      /from ['"]@angular\//,
-      /\bNgModule\b/,
-    ],
-  },
-  {
-    slug: 'svelte',
-    weight: 12,
-    patterns: [/<script[^>]*lang=["']ts["']/, /\bon:click\b/, /export let /],
-  },
-  {
-    slug: 'django',
-    weight: 13,
-    patterns: [
-      /from django/,
-      /import django/,
-      /@api_view/,
-      /models\.Model/,
-      /class Meta:/,
-      /django\.db/,
-    ],
-  },
-  {
-    slug: 'fastapi',
-    weight: 13,
-    patterns: [
-      /from fastapi/,
-      /import FastAPI/,
-      /@app\.(get|post|put|delete|patch)\(/,
-      /APIRouter\s*\(/,
-    ],
-  },
-  {
-    slug: 'flask',
-    weight: 12,
-    patterns: [/from flask/, /Flask\s*\(/, /@app\.route\s*\(/],
-  },
-  {
-    slug: 'nestjs',
-    weight: 12,
-    patterns: [
-      /@nestjs\/common/,
-      /@Controller\s*\(/,
-      /@Injectable\s*\(/,
-      /@Module\s*\(/,
-    ],
-  },
-  {
-    slug: 'prisma',
-    weight: 11,
-    patterns: [/from ['"]@prisma\/client['"]/, /\bprisma\.\w+\(/, /PrismaClient/],
-  },
-  {
-    slug: 'zod',
-    weight: 12,
-    patterns: [
-      /from ['"]zod['"]/,
-      /import \* as z from ['"]zod['"]/,
-      /\bz\.(?:string|number|boolean|object|array|enum|union|discriminatedUnion|literal|tuple|record|map|set|date|function|promise|void|null|undefined|any|unknown|never|bigint|nan|symbol|int|float|custom|preprocess|pipe|readonly|coerce|catch|default|describe|brand|transform)\s*\(/,
-      /\bZod(?:Schema|Type|Object|Error|Issue|Effects)\b/,
-    ],
-  },
-  {
-    slug: 'tailwindcss',
-    weight: 11,
-    patterns: [
-      /\b(?:bg|text|border|rounded|shadow|flex|grid|gap|p|px|py|m|mx|my|w|h|min-h|max-w)-[\w-/[\]:]+/,
-      /\b(?:hover|focus|active|md|lg|xl|2xl):[\w-]+/,
-      /className=["'][^"']*(?:bg-|text-|flex|grid|rounded-)/,
-      /class=["'][^"']*(?:bg-|text-|flex|grid|rounded-)/,
-    ],
-  },
-  {
-    slug: 'docker',
-    weight: 10,
-    patterns: [/^FROM\s+/m, /^RUN\s+/m, /^COPY\s+/m, /^WORKDIR\s+/m],
-  },
-  {
-    slug: 'kubernetes',
-    weight: 10,
-    patterns: [/^apiVersion:/m, /^kind:\s/m, /metadata:\s*\n\s*name:/m],
-  },
-  {
-    slug: 'graphql',
-    weight: 10,
-    patterns: [/\bquery\s+\w+/, /\bmutation\s+\w+/, /\bsubscription\s+\w+/],
-  },
-  {
-    slug: 'postgresql',
-    weight: 9,
-    patterns: [/\bSELECT\b.+\bFROM\b/i, /\bINSERT INTO\b/i, /\bCREATE TABLE\b/i],
-  },
-  {
-    slug: 'mongodb',
-    weight: 9,
-    patterns: [/mongoose\./, /MongoClient/, /\.findOne\s*\(/, /\.aggregate\s*\(/],
-  },
-  {
-    slug: 'typescript',
-    weight: 6,
-    patterns: [
-      /:\s*(?:string|number|boolean|void|unknown|never)\b/,
-      /\binterface\s+\w+/,
-      /\btype\s+\w+\s*=/,
-      /<\w+(?:,\s*\w+)*>/,
-    ],
-  },
-  {
-    slug: 'javascript',
-    weight: 4,
-    patterns: [/\bconst\s+\w+\s*=/, /\bfunction\s+\w+/, /=>\s*{/, /require\s*\(/],
-  },
-  {
-    slug: 'python',
-    weight: 5,
-    patterns: [/^def\s+\w+/m, /^class\s+\w+.*:/m, /import\s+\w+/, /from\s+\w+\s+import/],
-  },
-  {
-    slug: 'go',
-    weight: 5,
-    patterns: [/^func\s+/m, /^package\s+\w+/m, /:=/],
-  },
-  {
-    slug: 'rust',
-    weight: 5,
-    patterns: [/^fn\s+\w+/m, /let mut\s+/, /impl\s+\w+/],
-  },
-];
+function dropOffTopicCandidates(
+  candidates: TechCandidate[],
+  scores: Map<string, number>,
+): TechCandidate[] {
+  let topLanguage = { slug: '', score: 0 };
 
-/** Framework/library slugs — preferred over base languages in AI output. */
-export const PRIMARY_TECH_SLUGS = [
-  'react',
-  'redux',
-  'zustand',
-  'nextjs',
-  'vuejs',
-  'angular',
-  'svelte',
-  'django',
-  'fastapi',
-  'flask',
-  'nestjs',
-  'prisma',
-  'zod',
-  'tailwindcss',
-  'docker',
-  'kubernetes',
-  'graphql',
-  'nodejs',
-  'express',
-  'mongodb',
-  'postgresql',
-  'mysql',
-  'typescript',
-  'javascript',
-  'python',
-  'go',
-  'rust',
-  'bash',
-  'csharp',
-  'java',
-  'kotlin',
-  'swift',
-  'flutter',
-  'dart',
-] as const;
+  LANGUAGE_SLUGS.forEach((slug) => {
+    const score = scores.get(slug) ?? 0;
 
-const BASE_LANGUAGE_SLUGS = new Set([
-  'javascript',
-  'typescript',
-  'python',
-  'go',
-  'rust',
-  'java',
-  'kotlin',
-  'csharp',
-  'cpp',
-  'cplusplus',
-  'bash',
-  'html5',
-  'css3',
-  'html',
-  'css',
-]);
+    if (score > topLanguage.score) {
+      topLanguage = { slug, score };
+    }
+  });
 
-const PRIMARY_TO_BASE_LANGUAGE: Record<string, string> = {
-  react: 'javascript',
-  redux: 'javascript',
-  zustand: 'typescript',
-  vuejs: 'javascript',
-  svelte: 'javascript',
-  angular: 'typescript',
-  nextjs: 'typescript',
-  nuxtjs: 'javascript',
-  nestjs: 'typescript',
-  express: 'javascript',
-  nodejs: 'javascript',
-  prisma: 'typescript',
-  zod: 'typescript',
-  django: 'python',
-  fastapi: 'python',
-  flask: 'python',
-  tailwindcss: 'css3',
-  graphql: 'javascript',
-  docker: 'bash',
-  kubernetes: 'bash',
-  postgresql: 'sql',
-  mysql: 'sql',
-  mongodb: 'javascript',
-  flutter: 'dart',
-};
+  if (topLanguage.score < 20) {
+    return candidates;
+  }
+
+  return candidates.filter((candidate) => {
+    const base = TECH_BY_SLUG.get(candidate.slug)?.base;
+
+    if (!base || candidate.score >= 20 || base === topLanguage.slug) {
+      return true;
+    }
+
+    if (sameFamily(base, topLanguage.slug)) {
+      return true;
+    }
+
+    return (scores.get(base) ?? 0) >= LANGUAGE_THRESHOLD;
+  });
+}
+
+function pickCandidates(scores: Map<string, number>): TechCandidate[] {
+  const raw: TechCandidate[] = [];
+
+  scores.forEach((score, slug) => {
+    const def = TECH_BY_SLUG.get(slug);
+
+    if (def && def.kind !== 'language' && score >= PRIMARY_THRESHOLD) {
+      raw.push({ slug, score });
+    }
+  });
+
+  // Drop hosts that a more specific stack is built on (react < nextjs, vuejs < nuxtjs, ...).
+  let candidates = raw.filter(
+    (candidate) => !raw.some((other) => other.slug !== candidate.slug && implies(other.slug, candidate.slug)),
+  );
+
+  // Utilities (axios, lodash) only win when nothing else was found.
+  if (candidates.some((candidate) => TECH_BY_SLUG.get(candidate.slug)?.kind !== 'utility')) {
+    candidates = candidates.filter((candidate) => TECH_BY_SLUG.get(candidate.slug)?.kind !== 'utility');
+  }
+
+  return candidates.sort((a, b) => {
+    const rankDiff =
+      KIND_RANK[TECH_BY_SLUG.get(b.slug)?.kind ?? 'tool'] -
+      KIND_RANK[TECH_BY_SLUG.get(a.slug)?.kind ?? 'tool'];
+
+    return rankDiff !== 0 ? rankDiff : b.score - a.score;
+  });
+}
+
+function pickLanguage(
+  scores: Map<string, number>,
+  primary: TechDef | undefined,
+  candidates: TechCandidate[],
+  hintLanguage: string | undefined,
+): { slug: string | null; ranked: TechCandidate[] } {
+  const adjusted = new Map<string, number>();
+
+  LANGUAGE_SLUGS.forEach((slug) => {
+    adjusted.set(slug, scores.get(slug) ?? 0);
+  });
+
+  const bump = (slug: string | undefined, amount: number): void => {
+    if (slug && adjusted.has(slug)) {
+      adjusted.set(slug, (adjusted.get(slug) ?? 0) + amount);
+    }
+  };
+
+  // A stack's own language is a tie-breaker, not an override. TypeScript in particular is only
+  // implied when the text shows typed code: plain JS snippets of TS-first stacks stay JavaScript.
+  const bumpBase = (slug: string | undefined, amount: number): void => {
+    if (slug === 'typescript' && (scores.get('typescript') ?? 0) < LANGUAGE_THRESHOLD) {
+      bump('javascript', (scores.get('javascript') ?? 0) > 0 ? amount : 0);
+      return;
+    }
+
+    bump(slug, amount);
+  };
+
+  bumpBase(primary?.base, 8);
+  candidates.slice(1).forEach((candidate) => bumpBase(TECH_BY_SLUG.get(candidate.slug)?.base, 3));
+  bump(hintLanguage, 6);
+
+  // JS frameworks render markup, but the code is JavaScript/TypeScript — not HTML/CSS.
+  const jsFramework = Boolean(primary?.base && JS_FAMILY.has(primary.base));
+  const ranked = [...adjusted.entries()]
+    .filter(([slug, score]) => score > 0 && (!jsFramework || JS_FAMILY.has(slug)))
+    .map(([slug, score]) => ({ slug, score }))
+    .sort((a, b) => b.score - a.score);
+
+  if (ranked.length === 0) {
+    return { slug: null, ranked };
+  }
+
+  let top = ranked[0];
+  const scoreOf = (slug: string): number => adjusted.get(slug) ?? 0;
+
+  if (top.slug === 'javascript' && scoreOf('typescript') >= LANGUAGE_THRESHOLD) {
+    top = { slug: 'typescript', score: scoreOf('typescript') };
+  } else if (top.slug === 'c' && scoreOf('cplusplus') >= 8) {
+    top = { slug: 'cplusplus', score: scoreOf('cplusplus') };
+  } else if (top.slug === 'css3' && scoreOf('sass') >= 10) {
+    top = { slug: 'sass', score: scoreOf('sass') };
+  }
+
+  return { slug: top.score >= LANGUAGE_THRESHOLD ? top.slug : null, ranked };
+}
+
+/**
+ * AI says "nodejs", local says "express" -> keep the more specific local answer.
+ * AI says "react", local strongly says "nextjs" -> same.
+ */
+function shouldTrustLocal(
+  local: TechCandidate | undefined,
+  aiSlug: string,
+  scores: Map<string, number>,
+): boolean {
+  if (!local) {
+    return false;
+  }
+
+  if (local.slug === aiSlug || implies(local.slug, aiSlug)) {
+    return true;
+  }
+
+  // The AI pick is corroborated by the text itself (e.g. react + zustand in one snippet).
+  if ((scores.get(aiSlug) ?? 0) >= PRIMARY_THRESHOLD) {
+    return false;
+  }
+
+  return local.score >= 20;
+}
+
+export function detectTech(
+  input: TechDetectionInput,
+  hints: TechDetectionHints = {},
+): TechDetection {
+  const scores = scoreAll(input);
+  const candidates = dropOffTopicCandidates(pickCandidates(scores), scores);
+  const topLocal = candidates[0];
+
+  const hintLanguageSlug = hints.language ? resolveTechSlug(hints.language) : undefined;
+  const hintPrimarySlug = hints.primaryTech ? resolveTechSlug(hints.primaryTech) : undefined;
+  const hintLanguageDef = hintLanguageSlug ? getTechDef(hintLanguageSlug) : undefined;
+
+  // A hinted *framework* in the language slot (common AI slip) is treated as a primary hint.
+  const aiPrimary =
+    hintPrimarySlug && TECH_BY_SLUG.get(hintPrimarySlug)?.kind !== 'language'
+      ? hintPrimarySlug
+      : hintLanguageDef && hintLanguageDef.kind !== 'language'
+        ? hintLanguageDef.slug
+        : undefined;
+
+  let primarySlug: string | undefined;
+
+  if (aiPrimary && !shouldTrustLocal(topLocal, aiPrimary, scores)) {
+    primarySlug = aiPrimary;
+  } else if (topLocal) {
+    primarySlug = topLocal.slug;
+  }
+
+  const primaryDef = primarySlug ? TECH_BY_SLUG.get(primarySlug) : undefined;
+  const effectiveCandidates =
+    primarySlug && topLocal?.slug !== primarySlug
+      ? [{ slug: primarySlug, score: scores.get(primarySlug) ?? 0 }, ...candidates]
+      : candidates;
+
+  const hintedBase =
+    hintLanguageDef?.kind === 'language'
+      ? hintLanguageDef.slug
+      : hintLanguageDef?.base ?? (hintPrimarySlug ? getTechDef(hintPrimarySlug)?.base : undefined);
+
+  const { slug: languageSlug, ranked } = pickLanguage(
+    scores,
+    primaryDef,
+    effectiveCandidates,
+    hintedBase,
+  );
+
+  const language =
+    languageSlug ??
+    (hintedBase && LANGUAGE_SLUGS.has(hintedBase) ? hintedBase : undefined) ??
+    primaryDef?.base ??
+    'javascript';
+
+  let resolvedPrimary = primarySlug;
+
+  if (!resolvedPrimary) {
+    const aiLanguagePrimary = hintPrimarySlug && LANGUAGE_SLUGS.has(hintPrimarySlug) ? hintPrimarySlug : undefined;
+    resolvedPrimary = languageSlug === 'javascript' && aiLanguagePrimary === 'typescript' ? 'typescript' : languageSlug ?? aiLanguagePrimary ?? language;
+  }
+
+  const strength = Math.max(topLocal?.score ?? 0, ranked[0]?.score ?? 0);
+
+  return {
+    primaryTech: resolvedPrimary,
+    language,
+    confidence: strength >= 20 ? 'high' : strength >= 10 ? 'medium' : 'low',
+    candidates,
+    languageScores: ranked.slice(0, 4),
+  };
+}
+
+// ───────────────────────── Compatibility helpers ─────────────────────────
+// Thin wrappers kept for existing callers.
+
+/** Framework/library slug from signals — never a base language. */
+export function inferLibraryFromSignals(source: string): string | null {
+  return pickCandidates(scoreAll({ code: source }))[0]?.slug ?? null;
+}
 
 export function isBaseLanguageSlug(slug: string): boolean {
-  return BASE_LANGUAGE_SLUGS.has(resolveDeviconSlug(slug));
+  return LANGUAGE_SLUGS.has(resolveTechSlug(slug));
 }
 
 export function resolveBaseLanguage(
@@ -295,89 +451,15 @@ export function resolveBaseLanguage(
   primaryTech: string,
   hintedLanguage?: string,
 ): string {
-  const hint = hintedLanguage ? resolveDeviconSlug(hintedLanguage) : null;
-
-  if (hint && BASE_LANGUAGE_SLUGS.has(hint)) {
-    return hint;
-  }
-
-  if (/:\s*[\w<]|interface |type \w+ =/.test(code)) {
-    return 'typescript';
-  }
-
-  if (/\bdef \w+\(/.test(code)) {
-    return 'python';
-  }
-
-  if (/\bfn \w+\(/.test(code) || /\bpackage main\b/.test(code)) {
-    return 'go';
-  }
-
-  if (/#include|std::/.test(code)) {
-    return 'cplusplus';
-  }
-
-  return PRIMARY_TO_BASE_LANGUAGE[resolveDeviconSlug(primaryTech)] ?? 'javascript';
-}
-
-function scoreTechSignals(code: string): Map<string, number> {
-  const scores = new Map<string, number>();
-
-  TECH_SIGNAL_RULES.forEach((rule) => {
-    const matched = rule.patterns.some((pattern) => pattern.test(code));
-
-    if (matched) {
-      scores.set(rule.slug, (scores.get(rule.slug) ?? 0) + rule.weight);
-    }
-  });
-
-  return scores;
-}
-
-function getTopScoredSlug(scores: Map<string, number>): string | null {
-  let topSlug: string | null = null;
-  let topScore = 0;
-
-  scores.forEach((score, slug) => {
-    if (score > topScore) {
-      topScore = score;
-      topSlug = slug;
-    }
-  });
-
-  return topScore >= 8 ? topSlug : null;
-}
-
-/** Returns framework/library slug from code/title/body signals — never a base language. */
-export function inferLibraryFromSignals(source: string): string | null {
-  const slug = getTopScoredSlug(scoreTechSignals(source));
-
-  if (!slug || isBaseLanguageSlug(slug)) {
-    return null;
-  }
-
-  return slug;
+  return detectTech({ code }, { primaryTech, language: hintedLanguage }).language;
 }
 
 /**
- * Picks the best primary technology slug for icon display.
- *
- * Priority: library/framework signals → non-base AI slug → base language fallback.
+ * Best primary technology for icon display.
+ * Priority: library/framework signals -> AI non-language slug -> base language.
  */
 export function resolvePrimaryTechnology(code: string, aiLanguage: string): string {
-  const fromSignals = inferLibraryFromSignals(code);
-
-  if (fromSignals) {
-    return fromSignals;
-  }
-
-  const normalizedAi = resolveDeviconSlug(aiLanguage);
-
-  if (!isBaseLanguageSlug(normalizedAi)) {
-    return normalizedAi;
-  }
-
-  return normalizedAi;
+  return detectTech({ code }, { primaryTech: aiLanguage, language: aiLanguage }).primaryTech;
 }
 
 export function buildTechSlugPromptList(): string {

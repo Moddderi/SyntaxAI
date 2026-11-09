@@ -8,6 +8,7 @@ import {
   type ReactElement,
 } from 'react';
 import { TechIcon } from '../../components/TechIcon';
+import { useTranslation } from '../../hooks/useTranslation';
 import type { Note } from '../../types/note';
 import { searchNotes } from '../../utils/noteHelpers';
 import { SearchIcon } from './icons';
@@ -25,6 +26,7 @@ export function QuickSearchModal({
   onClose,
   onSelectNote,
 }: QuickSearchModalProps): ReactElement | null {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -102,7 +104,7 @@ export function QuickSearchModal({
       role="presentation"
     >
       <div
-        aria-label="Quick search"
+        aria-label={t('quickSearchAriaLabel')}
         aria-modal="true"
         className="w-full max-w-xl overflow-hidden rounded-2xl border border-syntax-border bg-syntax-card shadow-2xl"
         onClick={(event) => event.stopPropagation()}
@@ -112,11 +114,11 @@ export function QuickSearchModal({
           <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-syntax-muted" />
           <input
             ref={inputRef}
-            aria-label="Search notes"
+            aria-label={t('searchAriaLabel')}
             className="h-14 w-full bg-transparent py-2 pl-11 pr-4 text-sm text-syntax-text outline-none placeholder:text-syntax-muted"
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={handleInputKeyDown}
-            placeholder="Search by title, code, or topics…"
+            placeholder={t('quickSearchPlaceholder')}
             type="search"
             value={query}
           />
@@ -147,7 +149,7 @@ export function QuickSearchModal({
             ))
           ) : (
             <p className="px-3 py-6 text-center text-sm text-syntax-muted">
-              {query.trim() ? 'No matching notes.' : 'Start typing to search your library.'}
+              {query.trim() ? t('searchNoResults') : t('quickSearchEmpty')}
             </p>
           )}
         </div>

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type MouseEvent, type ReactElement } from 'react';
 import { NestedTechIcons } from '../../components/NestedTechIcons';
+import { TechIcon } from '../../components/TechIcon';
 import { useNotes } from '../../hooks/useNotes';
+import { useTranslation } from '../../hooks/useTranslation';
 import { deleteNote } from '../../storage/notesStorage';
 import {
   computeTechnologyNavItems,
@@ -11,7 +13,6 @@ import {
 import { resolveDeviconSlug } from '../../utils/techIcon';
 import type { SearchResultItem } from '../types/capture.types';
 import { SearchIcon } from './icons';
-import { TechIcon } from '../../components/TechIcon';
 
 const COPY_FEEDBACK_MS = 2000;
 
@@ -24,6 +25,7 @@ function SearchResultCard({
   onDelete: (id: string) => void;
   onOpenDetail: (id: string) => void;
 }): ReactElement {
+  const { t } = useTranslation();
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopyCode = useCallback(
@@ -71,7 +73,9 @@ function SearchResultCard({
             <div className="flex shrink-0 items-center gap-1">
               <div className="relative">
                 <button
-                  aria-label={isCopied ? 'Code copied' : 'Copy code'}
+                  aria-label={
+                    isCopied ? t('snippetActionCopied') : t('snippetActionCopyCode')
+                  }
                   className="rounded-lg p-1 text-sm text-syntax-muted transition hover:bg-syntax-bg hover:text-syntax-accent"
                   onClick={(event) => void handleCopyCode(event)}
                   type="button"
@@ -80,13 +84,13 @@ function SearchResultCard({
                 </button>
                 {isCopied ? (
                   <span className="pointer-events-none absolute -top-7 right-0 whitespace-nowrap rounded-md bg-syntax-accent px-2 py-0.5 text-[10px] font-semibold text-syntax-accent-fg">
-                    Copied!
+                    {t('snippetActionCopied')}
                   </span>
                 ) : null}
               </div>
 
               <button
-                aria-label="Delete note"
+                aria-label={t('snippetActionDelete')}
                 className="rounded-lg p-1 text-syntax-muted opacity-70 transition hover:bg-syntax-bg hover:text-red-400 hover:opacity-100"
                 onClick={(event) => {
                   event.stopPropagation();
@@ -132,6 +136,7 @@ export function SearchView({
   onOpenDetail: (noteId: string) => void;
 }): ReactElement {
   const { notes } = useNotes();
+  const { t, locale } = useTranslation();
   const [query, setQuery] = useState('');
   const [selectedTech, setSelectedTech] = useState<string | null>(null);
 
@@ -157,14 +162,14 @@ export function SearchView({
         primaryTech: resolveDeviconSlug(note.primaryTech),
         language: resolveDeviconSlug(note.language),
         title: note.title,
-        capturedAt: formatRelativeTime(note.createdAt),
+        capturedAt: formatRelativeTime(note.createdAt, locale),
         code: note.code,
         codePreview: getCodePreview(note.code),
         summary: note.summary,
         previewLine: getNotePreviewLine(note.summary, note.code, note.body),
         topics: note.topics,
       })),
-    [notes],
+    [locale, notes],
   );
 
   const filteredResults = useMemo(() => {
@@ -203,10 +208,10 @@ export function SearchView({
       <div className="relative">
         <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-syntax-muted" />
         <input
-          aria-label="Search notes"
+          aria-label={t('searchAriaLabel')}
           className="h-11 w-full rounded-xl border border-syntax-border bg-syntax-bg py-2 pl-10 pr-14 text-sm text-syntax-text outline-none transition placeholder:text-syntax-muted focus:border-syntax-accent/40"
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Найти по коду, теме, заголовку..."
+          placeholder={t('searchPlaceholderSidepanel')}
           type="search"
           value={query}
         />
@@ -217,7 +222,7 @@ export function SearchView({
 
       <section>
         <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-syntax-muted">
-          Filter · Technologies
+          {t('searchFilterTechnologies')}
         </h2>
         {technologyFilters.length > 0 ? (
           <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
@@ -230,7 +235,7 @@ export function SearchView({
               onClick={() => setSelectedTech(null)}
               type="button"
             >
-              All
+              {t('searchFilterAll')}
               <span className="text-[10px] opacity-70">{notes.length}</span>
             </button>
 
@@ -256,16 +261,14 @@ export function SearchView({
             })}
           </div>
         ) : (
-          <p className="text-xs text-syntax-muted">
-            Technologies appear as you add notes.
-          </p>
+          <p className="text-xs text-syntax-muted">{t('searchFilterEmpty')}</p>
         )}
       </section>
 
       <section>
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-syntax-muted">
-            Results
+            {t('searchResults')}
           </h2>
           <span className="text-[10px] font-medium text-syntax-accent">
             {filteredResults.length}
@@ -283,7 +286,7 @@ export function SearchView({
             ))
           ) : (
             <div className="rounded-2xl border border-dashed border-syntax-border bg-syntax-card p-6 text-center text-xs text-syntax-muted">
-              No notes match your search.
+              {t('searchNoResults')}
             </div>
           )}
         </div>

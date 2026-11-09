@@ -1,5 +1,5 @@
-import { useMemo, type ReactElement } from 'react';
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
+import { useMemo, useState, type ReactElement } from 'react';
+import { Cell, Pie, PieChart, Tooltip } from 'recharts';
 import type { Note } from '../../types/note';
 import { useTranslation } from '../../hooks/useTranslation';
 import type { TranslationKey } from '../../i18n/translations';
@@ -95,6 +95,9 @@ function ActivityHeatmap({
   const dateLocale = getDateLocale(locale);
 
   const noteUnit = (count: number): string =>
+    count === 1 ? t('analyticsNoteOne') : t('analyticsNoteMany');
+
+  const streakUnit = (count: number): string =>
     count === 1 ? t('analyticsDay') : t('analyticsDays');
 
   return (
@@ -110,7 +113,7 @@ function ActivityHeatmap({
         <span className="inline-flex items-center gap-1.5 rounded-full border border-syntax-accent/30 bg-syntax-accent/10 px-3 py-1 text-xs font-medium text-syntax-accent">
           {t('analyticsCurrentStreakBadge', {
             count: heatmap.currentStreak,
-            unit: noteUnit(heatmap.currentStreak),
+            unit: streakUnit(heatmap.currentStreak),
           })}
           <FlameIcon className="h-3.5 w-3.5 text-syntax-accent drop-shadow-[0_0_6px_var(--syntax-accent)]" />
         </span>
@@ -234,6 +237,15 @@ function InputMethodBar({
 
 export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactElement {
   const { t, locale } = useTranslation();
+  // Fresh mount id so the donut replays whenever Usage is opened again.
+  const [chartMountId] = useState(() => Date.now());
+  const prefersReducedMotion = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }, []);
   const languageBreakdown = useMemo(
     () => computeLanguageBreakdown(notes),
     [notes],
@@ -292,30 +304,34 @@ export function AnalyticsView({ notes, isLoading }: AnalyticsViewProps): ReactEl
               </h2>
               <p className="mb-4 text-xs text-syntax-muted">{t('analyticsStackBreakdownDesc')}</p>
 
-              <div className="relative mx-auto h-40 w-full max-w-[180px]">
-                <ResponsiveContainer height="100%" width="100%">
-                  <PieChart>
-                    <Pie
-                      cx="50%"
-                      cy="50%"
-                      data={pieData}
-                      dataKey="value"
-                      innerRadius={42}
-                      outerRadius={68}
-                      paddingAngle={2}
-                      stroke="var(--syntax-bg)"
-                      strokeWidth={2}
-                    >
-                      {pieData.map((entry) => (
-                        <Cell key={entry.slug} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      content={<AnalyticsTooltip t={t} />}
-                      wrapperStyle={{ zIndex: 50, pointerEvents: 'none' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+              <div className="relative mx-auto flex h-40 w-[180px] items-center justify-center">
+                {/* Fixed size: ResponsiveContainer hangs with a spinner in CSS grid/flex. */}
+                <PieChart height={160} width={180}>
+                  <Pie
+                    key={chartMountId}
+                    animationBegin={0}
+                    animationDuration={prefersReducedMotion ? 0 : 780}
+                    animationEasing="ease-out"
+                    cx="50%"
+                    cy="50%"
+                    data={pieData}
+                    dataKey="value"
+                    innerRadius={42}
+                    isAnimationActive={!prefersReducedMotion}
+                    outerRadius={68}
+                    paddingAngle={pieData.length > 1 ? 2 : 0}
+                    stroke="var(--syntax-bg)"
+                    strokeWidth={2}
+                  >
+                    {pieData.map((entry) => (
+                      <Cell key={entry.slug} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    content={<AnalyticsTooltip t={t} />}
+                    wrapperStyle={{ zIndex: 50, pointerEvents: 'none' }}
+                  />
+                </PieChart>
 
                 <div className="pointer-events-none absolute inset-0 z-0 flex flex-col items-center justify-center">
                   <span className="text-xl font-semibold text-syntax-text">{totalNotes}</span>

@@ -15,7 +15,7 @@ export function RecentNotesSection({
   onOpenNoteDetail: (noteId: string) => void;
 }): ReactElement {
   const { notes } = useNotes();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const recentNotes = notes.slice(0, LAST_CAPTURES_LIMIT);
 
   return (
@@ -60,7 +60,7 @@ export function RecentNotesSection({
               <div className="min-w-0 flex-1">
                 <h3 className="truncate text-sm font-medium text-syntax-text">{note.title}</h3>
                 <p className="mt-0.5 text-[11px] text-syntax-muted">
-                  {formatRelativeTime(note.createdAt)}
+                  {formatRelativeTime(note.createdAt, locale)}
                 </p>
               </div>
             </article>

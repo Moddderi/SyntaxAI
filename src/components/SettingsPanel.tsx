@@ -10,6 +10,7 @@ import { exportNotesToJsonFile } from '../utils/exportNotes';
 import { openPricingPage } from '../utils/openPricingPage';
 import { PRO_PLAN } from '../utils/usageLimits';
 import { SettingsLanguageControl } from './SettingsLanguageControl';
+import { useAuthSession } from '../hooks/useAuthSession';
 
 interface SettingsToggleProps {
   checked: boolean;
@@ -92,12 +93,14 @@ export function SettingsPanel({
   showAlerts = true,
 }: SettingsPanelProps): ReactElement {
   const { t } = useTranslation();
+  const { billingEnabled } = useAuthSession();
   const { isLight, setTheme } = useTheme();
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [captureSettings, setCaptureSettings] = useState<CaptureSettings>({
     enablePasteCapture: true,
     enableContextCapture: true,
+    enablePasteExplanations: true,
   });
   const [isExporting, setIsExporting] = useState(false);
 
@@ -192,7 +195,7 @@ export function SettingsPanel({
         />
 
         <SettingsDivider />
-        <SettingsGroupLabel>{t('settingsGroupCapture')}</SettingsGroupLabel>
+        <SettingsGroupLabel>{t('settingsGroupAi')}</SettingsGroupLabel>
 
         <SettingsRow
           description={t('settingsContextCaptureDesc')}
@@ -202,6 +205,21 @@ export function SettingsPanel({
               checked={captureSettings.enableContextCapture}
               onChange={(enabled) => {
                 void handleCaptureSettingChange('enableContextCapture', enabled);
+              }}
+            />
+          }
+        />
+
+        <SettingsDivider />
+
+        <SettingsRow
+          description={t('settingsPasteExplanationsDesc')}
+          label={t('settingsPasteExplanationsLabel')}
+          trailing={
+            <SettingsToggle
+              checked={captureSettings.enablePasteExplanations}
+              onChange={(enabled) => {
+                void handleCaptureSettingChange('enablePasteExplanations', enabled);
               }}
             />
           }
@@ -231,31 +249,53 @@ export function SettingsPanel({
         <SettingsGroupLabel>{t('settingsGroupPlan')}</SettingsGroupLabel>
 
         <div className="px-5 py-4">
-          <p className="text-sm font-medium text-syntax-text">{t('settingsFreePlan')}</p>
-          <p className="mt-1 max-w-xl text-[13px] leading-relaxed text-syntax-muted">
-            {t('settingsFreePlanDesc', {
-              price: PRO_PLAN.priceLabel,
-              period: PRO_PLAN.periodLabel,
-            })}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {onOpenUsage ? (
-              <button
-                className="h-9 rounded-full border border-syntax-border px-4 text-[13px] text-syntax-text transition hover:border-syntax-accent/40 hover:text-syntax-accent"
-                onClick={handleOpenUsage}
-                type="button"
-              >
-                {t('settingsViewUsage')}
-              </button>
-            ) : null}
-            <button
-              className="h-9 rounded-full bg-syntax-accent px-4 text-[13px] font-semibold text-syntax-accent-fg transition hover:opacity-90"
-              onClick={openPricingPage}
-              type="button"
-            >
-              {t('settingsUpgradePro')}
-            </button>
-          </div>
+          {billingEnabled ? (
+            <>
+              <p className="text-sm font-medium text-syntax-text">{t('settingsFreePlan')}</p>
+              <p className="mt-1 max-w-xl text-[13px] leading-relaxed text-syntax-muted">
+                {t('settingsFreePlanDesc', {
+                  price: PRO_PLAN.priceLabel,
+                  period: PRO_PLAN.periodLabel,
+                })}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {onOpenUsage ? (
+                  <button
+                    className="h-9 rounded-full border border-syntax-border px-4 text-[13px] text-syntax-text transition hover:border-syntax-accent/40 hover:text-syntax-accent"
+                    onClick={handleOpenUsage}
+                    type="button"
+                  >
+                    {t('settingsViewUsage')}
+                  </button>
+                ) : null}
+                <button
+                  className="h-9 rounded-full bg-syntax-accent px-4 text-[13px] font-semibold text-syntax-accent-fg transition hover:opacity-90"
+                  onClick={openPricingPage}
+                  type="button"
+                >
+                  {t('settingsUpgradePro')}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-medium text-syntax-text">{t('settingsBetaPlan')}</p>
+              <p className="mt-1 max-w-xl text-[13px] leading-relaxed text-syntax-muted">
+                {t('settingsBetaPlanDesc')}
+              </p>
+              {onOpenUsage ? (
+                <div className="mt-4">
+                  <button
+                    className="h-9 rounded-full border border-syntax-border px-4 text-[13px] text-syntax-text transition hover:border-syntax-accent/40 hover:text-syntax-accent"
+                    onClick={handleOpenUsage}
+                    type="button"
+                  >
+                    {t('settingsViewUsage')}
+                  </button>
+                </div>
+              ) : null}
+            </>
+          )}
         </div>
 
         <SettingsDivider />

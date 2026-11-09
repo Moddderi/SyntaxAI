@@ -3,8 +3,8 @@ import { SettingsView } from './components/SettingsView';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { NoteDetailModal } from '../components/NoteDetailModal';
 import { deleteNote, toggleStar } from '../storage/notesStorage';
-import { useLocale } from '../hooks/useLocale';
 import { useNotes } from '../hooks/useNotes';
+import { useTranslation } from '../hooks/useTranslation';
 import {
   consumeOpenLibraryTabIntent,
   consumeOpenSettingsIntent,
@@ -13,11 +13,12 @@ import {
 } from '../utils/dashboardNavigation';
 import {
   filterNotesByLibraryTab,
-  getLibraryTabTitle,
+  getLibraryTabTitleKey,
 } from '../utils/analyticsHelpers';
 import type { LibraryTabId } from './types/dashboard.types';
 import type { Note } from '../types/note';
 import { AnalyticsView } from './components/AnalyticsView';
+import { BugReportView } from './components/BugReportView';
 import { FeedbackView } from './components/FeedbackView';
 import { DashboardTopBar } from './components/DashboardTopBar';
 import { QuickSearchModal } from './components/QuickSearchModal';
@@ -33,14 +34,15 @@ import { useAuthSession } from '../hooks/useAuthSession';
 import { openAuthPage } from '../utils/openAuthPage';
 
 export function Dashboard(): ReactElement {
-  useLocale();
-  const { status: authStatus, user } = useAuthSession();
+  const { t } = useTranslation();
+  const { status: authStatus, user, billingEnabled, refresh: refreshAuth } = useAuthSession();
   const { notes, trashNotes, isLoading } = useNotes();
   const [activeTab, setActiveTab] = useState<LibraryTabId>('all');
   const [selectedTechnology, setSelectedTechnology] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
   const [selectedNoteForDetail, setSelectedNoteForDetail] = useState<Note | null>(null);
   const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
 
@@ -74,14 +76,27 @@ export function Dashboard(): ReactElement {
       return formatTechnologyLabel(selectedTechnology);
     }
 
-    return getLibraryTabTitle(activeTab);
-  }, [activeTab, selectedTechnology]);
+    return t(getLibraryTabTitleKey(activeTab));
+  }, [activeTab, selectedTechnology, t]);
 
   const handleTabChange = useCallback((tab: LibraryTabId): void => {
     setSelectedTechnology(null);
     setActiveTab(tab);
     setIsSettingsOpen(false);
     setIsFeedbackOpen(false);
+    setIsBugReportOpen(false);
+  }, []);
+
+  const openFeedbackView = useCallback((): void => {
+    setIsSettingsOpen(false);
+    setIsBugReportOpen(false);
+    setIsFeedbackOpen(true);
+  }, []);
+
+  const openBugReportView = useCallback((): void => {
+    setIsSettingsOpen(false);
+    setIsFeedbackOpen(false);
+    setIsBugReportOpen(true);
   }, []);
 
   const handleTechnologySelect = useCallback((techSlug: string): void => {
@@ -126,6 +141,7 @@ export function Dashboard(): ReactElement {
       if (libraryTab) {
         setIsSettingsOpen(false);
         setIsFeedbackOpen(false);
+        setIsBugReportOpen(false);
         setSelectedTechnology(null);
         setActiveTab(libraryTab);
       }
@@ -133,6 +149,8 @@ export function Dashboard(): ReactElement {
       const shouldOpenSettings = await consumeOpenSettingsIntent();
 
       if (shouldOpenSettings) {
+        setIsBugReportOpen(false);
+        setIsFeedbackOpen(false);
         setIsSettingsOpen(true);
       }
     };
@@ -164,6 +182,7 @@ export function Dashboard(): ReactElement {
       ) {
         setIsSettingsOpen(false);
         setIsFeedbackOpen(false);
+        setIsBugReportOpen(false);
         setSelectedTechnology(null);
         setActiveTab(libraryTab);
         void chrome.storage.local.remove(OPEN_LIBRARY_TAB_STORAGE_KEY);
@@ -192,46 +211,57 @@ export function Dashboard(): ReactElement {
   }, []);
 
   const isFeedbackView = isFeedbackOpen;
-  const isSettingsView = isSettingsOpen && !isFeedbackView;
-  const isAnalyticsView = activeTab === 'analytics' && !isSettingsView && !isFeedbackView;
-  const isTrashView = activeTab === 'trash' && !isSettingsView && !isFeedbackView;
+  const isBugReportView = isBugReportOpen && !isFeedbackView;
+  const isSettingsView = isSettingsOpen && !isFeedbackView && !isBugReportView;
+  const isAnalyticsView =
+    activeTab === 'analytics' && !isSettingsView && !isFeedbackView && !isBugReportView;
+  const isTrashView =
+    activeTab === 'trash' && !isSettingsView && !isFeedbackView && !isBugReportView;
   const isStackBrowseView =
-    activeTab === 'stack' && selectedTechnology === null && !isSettingsView && !isFeedbackView;
-  const isTechnologyDetailView = selectedTechnology !== null && !isSettingsView && !isFeedbackView;
+    activeTab === 'stack' &&
+    selectedTechnology === null &&
+    !isSettingsView &&
+    !isFeedbackView &&
+    !isBugReportView;
+  const isTechnologyDetailView =
+    selectedTechnology !== null && !isSettingsView && !isFeedbackView && !isBugReportView;
   const viewKey = isFeedbackView
     ? 'feedback'
-    : isSettingsView
-      ? 'settings'
-      : isAnalyticsView
-        ? 'analytics'
-        : isTrashView
-          ? 'trash'
-          : isStackBrowseView
-            ? 'stack'
-            : isTechnologyDetailView && selectedTechnology
-              ? `tech:${selectedTechnology}`
-              : activeTab;
+    : isBugReportView
+      ? 'bug'
+      : isSettingsView
+        ? 'settings'
+        : isAnalyticsView
+          ? 'analytics'
+          : isTrashView
+            ? 'trash'
+            : isStackBrowseView
+              ? 'stack'
+              : isTechnologyDetailView && selectedTechnology
+                ? `tech:${selectedTechnology}`
+                : activeTab;
 
   return (
     <div className="flex h-screen overflow-hidden bg-syntax-bg text-syntax-text">
       {authStatus === 'loading' ? (
-        <div className="flex flex-1 items-center justify-center text-sm text-syntax-muted">…</div>
+        <div className="flex h-full w-full flex-1 items-center justify-center text-sm text-syntax-muted">
+          …
+        </div>
       ) : authStatus === 'signed_out' ? (
         <AuthGate />
       ) : (
         <>
       <Sidebar
         activeTab={activeTab}
+        billingEnabled={billingEnabled}
         isLoading={isLoading}
         notes={notes}
         onOpenSettings={() => {
           setIsFeedbackOpen(false);
+          setIsBugReportOpen(false);
           setIsSettingsOpen(true);
         }}
-        onOpenBetaFeedback={() => {
-          setIsSettingsOpen(false);
-          setIsFeedbackOpen(true);
-        }}
+        onOpenBetaFeedback={openFeedbackView}
         isSettingsActive={isSettingsView}
         onTabChange={handleTabChange}
       />
@@ -239,21 +269,28 @@ export function Dashboard(): ReactElement {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <main className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
           <DashboardTopBar
+            isBugReportActive={isBugReportView}
             isTrashActive={isTrashView}
+            onAuthRefresh={refreshAuth}
             onLoginClick={openAuthPage}
-            signedInEmail={user?.email ?? null}
+            onOpenBugReport={openBugReportView}
             onOpenQuickSearch={() => setIsQuickSearchOpen(true)}
             onOpenTrash={() => handleTabChange('trash')}
+            signedInUser={user}
             trashCount={trashNotes.length}
           />
 
           <div className="syntax-view-enter" key={viewKey}>
           {isFeedbackView ? (
             <FeedbackView />
+          ) : isBugReportView ? (
+            <BugReportView />
           ) : isSettingsView ? (
             <SettingsView
               onOpenUsage={() => {
                 setIsSettingsOpen(false);
+                setIsBugReportOpen(false);
+                setIsFeedbackOpen(false);
                 setActiveTab('analytics');
               }}
             />
@@ -282,13 +319,15 @@ export function Dashboard(): ReactElement {
               <SnippetGrid
                 emptyMessage={
                   selectedTechnology
-                    ? `No notes for ${formatTechnologyLabel(selectedTechnology)} yet.`
+                    ? t('libraryEmptyForTech', {
+                        tech: formatTechnologyLabel(selectedTechnology),
+                      })
                     : undefined
                 }
                 isLoading={isLoading}
                 notes={filteredNotes}
                 onOpenDetail={handleOpenNoteDetail}
-                title={isTechnologyDetailView ? 'Snippets' : gridTitle}
+                title={isTechnologyDetailView ? t('librarySnippets') : gridTitle}
               />
             </>
           )}
@@ -314,7 +353,7 @@ export function Dashboard(): ReactElement {
 
       <ConfirmDeleteModal
         isOpen={deleteNoteId !== null}
-        noteTitle={notes.find((item) => item.id === deleteNoteId)?.title ?? 'this note'}
+        noteTitle={notes.find((item) => item.id === deleteNoteId)?.title ?? t('libraryThisNote')}
         onCancel={() => setDeleteNoteId(null)}
         onConfirm={() => {
           if (!deleteNoteId) {

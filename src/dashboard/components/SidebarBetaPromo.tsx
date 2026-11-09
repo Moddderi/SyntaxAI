@@ -3,10 +3,14 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { SparklesIcon } from './icons';
 
 interface SidebarBetaPromoProps {
+  billingEnabled: boolean;
   onClick: () => void;
 }
 
-export function SidebarBetaPromo({ onClick }: SidebarBetaPromoProps): ReactElement {
+export function SidebarBetaPromo({
+  billingEnabled,
+  onClick,
+}: SidebarBetaPromoProps): ReactElement {
   const { t } = useTranslation();
 
   return (
@@ -23,11 +27,17 @@ export function SidebarBetaPromo({ onClick }: SidebarBetaPromoProps): ReactEleme
           <span className="block text-[13px] font-medium leading-snug text-syntax-text">
             {t('betaFeedbackTitle')}
           </span>
-          <span className="mt-1 block text-[11px] leading-relaxed text-syntax-muted">
-            {t('betaFeedbackHint')}{' '}
-            <span className="text-syntax-accent">{t('betaFeedbackReward')}</span>{' '}
-            {t('betaFeedbackHintSuffix')}
-          </span>
+          {billingEnabled ? (
+            <span className="mt-1 block text-[11px] leading-relaxed text-syntax-muted">
+              {t('betaFeedbackHint')}{' '}
+              <span className="text-syntax-accent">{t('betaFeedbackReward')}</span>{' '}
+              {t('betaFeedbackHintSuffix')}
+            </span>
+          ) : (
+            <span className="mt-1 block text-[11px] leading-relaxed text-syntax-muted">
+              {t('betaFeedbackHintSoft')}
+            </span>
+          )}
         </span>
       </div>
     </button>

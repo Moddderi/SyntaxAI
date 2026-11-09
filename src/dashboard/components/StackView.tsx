@@ -1,5 +1,6 @@
 import { useMemo, type ReactElement } from 'react';
 import { TechIcon } from '../../components/TechIcon';
+import { useTranslation } from '../../hooks/useTranslation';
 import type { Note } from '../../types/note';
 import {
   computeStackTechItems,
@@ -20,7 +21,11 @@ function StackTechCard({
   item: StackTechItem;
   onSelect: (slug: string) => void;
 }): ReactElement {
-  const noteLabel = `${item.count} note${item.count === 1 ? '' : 's'}`;
+  const { t, locale } = useTranslation();
+  const noteLabel =
+    item.count === 1
+      ? t('stackNoteCountOne', { count: item.count })
+      : t('stackNoteCountMany', { count: item.count });
 
   return (
     <button
@@ -66,11 +71,13 @@ function StackTechCard({
             {noteLabel}
           </span>
           <span>·</span>
-          <span>Updated {formatRelativeTime(item.lastActivityAt)}</span>
+          <span>
+            {t('stackUpdated', { time: formatRelativeTime(item.lastActivityAt, locale) })}
+          </span>
         </div>
 
         <p className="mt-3 text-[12px] text-syntax-muted opacity-0 transition group-hover:opacity-100">
-          Open {item.label} notes →
+          {t('stackOpenNotes', { label: item.label })}
         </p>
       </div>
     </button>
@@ -95,24 +102,30 @@ export function StackView({
   isLoading,
   onSelectTechnology,
 }: StackViewProps): ReactElement {
+  const { t } = useTranslation();
   const stackItems = useMemo(() => computeStackTechItems(notes), [notes]);
+
+  const summaryKey = stackItems.length === 1 ? 'stackSummaryTechOne' : 'stackSummary';
 
   return (
     <section className="animate-fade-in">
       <header className="mb-8">
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-syntax-accent">
-          Technologies
+          {t('stackEyebrow')}
         </p>
-        <h1 className="text-2xl font-semibold tracking-tight text-syntax-text">Your stack</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-syntax-text">
+          {t('stackTitle')}
+        </h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-syntax-muted">
-          Every note is tagged with a primary technology. Pick a stack to browse snippets,
-          patterns, and context for that tool.
+          {t('stackSubtitle')}
         </p>
 
         {!isLoading && stackItems.length > 0 ? (
           <p className="mt-3 text-[13px] text-syntax-muted">
-            {stackItems.length} technolog{stackItems.length === 1 ? 'y' : 'ies'} · {notes.length}{' '}
-            note{notes.length === 1 ? '' : 's'} total
+            {t(summaryKey, {
+              techCount: stackItems.length,
+              noteCount: notes.length,
+            })}
           </p>
         ) : null}
       </header>
@@ -130,10 +143,9 @@ export function StackView({
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-syntax-border bg-syntax-bg text-syntax-muted">
             <span className="text-xl">⌘</span>
           </div>
-          <h2 className="text-base font-medium text-syntax-text">No technologies yet</h2>
+          <h2 className="text-base font-medium text-syntax-text">{t('stackEmptyTitle')}</h2>
           <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-syntax-muted">
-            Capture code from a page or screenshot — SyntaxAI detects React, TypeScript, Prisma,
-            and more automatically.
+            {t('stackEmptyBody')}
           </p>
         </div>
       )}

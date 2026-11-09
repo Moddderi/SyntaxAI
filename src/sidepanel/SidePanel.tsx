@@ -5,7 +5,6 @@ import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { NoteDetailModal } from '../components/NoteDetailModal';
 import { deleteNote, toggleStar } from '../storage/notesStorage';
 import { useTheme } from '../hooks/useTheme';
-import { useLocale } from '../hooks/useLocale';
 import { CONTEXT_CAPTURE_STORAGE_KEY } from '../types/context';
 import { CaptureView } from './components/CaptureView';
 import { GlobalModeTabs } from './components/GlobalModeTabs';
@@ -14,10 +13,11 @@ import { SidePanelHeader } from './components/SidePanelHeader';
 import type { SidePanelMode } from './types/capture.types';
 import type { Note } from '../types/note';
 import { useNotes } from '../hooks/useNotes';
+import { useTranslation } from '../hooks/useTranslation';
 
 export function SidePanel(): ReactElement {
   useTheme();
-  useLocale();
+  const { t } = useTranslation();
   const { status: authStatus } = useAuthSession();
   const [activeMode, setActiveMode] = useState<SidePanelMode>('capture');
   const [selectedNoteForDetail, setSelectedNoteForDetail] = useState<Note | null>(null);
@@ -65,7 +65,7 @@ export function SidePanel(): ReactElement {
   }, []);
 
   return (
-    <main className="flex min-h-screen flex-col bg-syntax-bg">
+    <main className="flex h-full min-h-screen flex-col bg-syntax-bg">
       {authStatus === 'loading' ? (
         <div className="flex flex-1 items-center justify-center p-8 text-sm text-syntax-muted">
           …
@@ -102,7 +102,7 @@ export function SidePanel(): ReactElement {
 
       <ConfirmDeleteModal
         isOpen={deleteNoteId !== null}
-        noteTitle={notes.find((item) => item.id === deleteNoteId)?.title ?? 'this note'}
+        noteTitle={notes.find((item) => item.id === deleteNoteId)?.title ?? t('libraryThisNote')}
         onCancel={() => setDeleteNoteId(null)}
         onConfirm={() => {
           if (!deleteNoteId) {
