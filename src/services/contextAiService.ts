@@ -1,14 +1,20 @@
 import type { MixedContentAnalysisResult, PageContext } from '../types/context';
 import { getLocale } from '../storage/localeStorage';
 import { resolveNoteTechnology } from '../utils/pageContextTechDetection';
-import { apiFetchAuthed } from './apiClient';
-import { AiServiceError, normalizeTopics } from './aiService';
+import {
+  AiServiceError,
+  normalizeTopics,
+  postAiRequest,
+  readAiHttpErrorMessage,
+} from './aiService';
 
 interface RawMixedContentAnalysisResult {
   suggestedTitle: string;
   formattedNote: string;
   primaryCode: string;
   language: string;
+  /** Added by newer API versions; older ones only return `language`. */
+  primaryTech?: string;
   tags: string[];
 }
 
@@ -47,6 +53,8 @@ function normalizeMixedContentResult(
     body: formattedNote,
     sourceUrl: pageContext.url,
     language: raw.language.trim().toLowerCase(),
+    preferredPrimaryTech:
+      typeof raw.primaryTech === 'string' ? raw.primaryTech.trim().toLowerCase() : undefined,
   });
 
   const suggestedTitle =
@@ -64,41 +72,17 @@ function normalizeMixedContentResult(
   };
 }
 
-async function readAiErrorMessage(response: Response): Promise<string> {
-  if (response.status === 401) {
-    return 'Sign in to SyntaxAI to use AI analysis.';
-  }
-
-  if (response.status === 503) {
-    return 'AI is temporarily unavailable. Try again later.';
-  }
-
-  try {
-    const payload = (await response.json()) as AnalyzeMixedApiResponse;
-    if (typeof payload.error === 'string' && payload.error.trim()) {
-      return payload.error;
-    }
-  } catch {
-    // fall through
-  }
-
-  return `AI request failed with status ${response.status}.`;
-}
-
 export async function analyzeMixedPageContextWithAI(
   pageContext: PageContext,
 ): Promise<MixedContentAnalysisResult> {
   const locale = await getLocale();
-  const response = await apiFetchAuthed('/api/v1/ai/analyze-mixed', {
-    method: 'POST',
-    body: JSON.stringify({
-      locale,
-      pageContext,
-    }),
+  const response = await postAiRequest('/api/v1/ai/analyze-mixed', {
+    locale,
+    pageContext,
   });
 
   if (!response.ok) {
-    throw new AiServiceError(await readAiErrorMessage(response));
+    throw new AiServiceError(await readAiHttpErrorMessage(response));
   }
 
   const payload = (await response.json()) as AnalyzeMixedApiResponse;

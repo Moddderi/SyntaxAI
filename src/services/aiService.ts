@@ -1,8 +1,5 @@
 import { getLocale } from '../storage/localeStorage';
-import {
-  resolveBaseLanguage,
-  resolvePrimaryTechnology,
-} from '../utils/techDetection';
+import { detectTech } from '../utils/techDetection';
 import { resolveDeviconSlug } from '../utils/techIcon';
 import { apiFetchAuthed } from './apiClient';
 
@@ -133,14 +130,12 @@ function normalizeResult(
   const aiLanguage = raw.language.trim().toLowerCase();
   const rawTopics = raw.topics ?? raw.tags ?? [];
 
-  const primaryTech = resolvePrimaryTechnology(
-    detectionSource,
-    resolveDeviconSlug(aiPrimaryTech),
-  );
-  const language = resolveBaseLanguage(
-    detectionSource,
-    primaryTech,
-    resolveDeviconSlug(aiLanguage),
+  const { primaryTech, language } = detectTech(
+    { code: detectionSource },
+    {
+      primaryTech: resolveDeviconSlug(aiPrimaryTech),
+      language: resolveDeviconSlug(aiLanguage),
+    },
   );
 
   return {
@@ -161,13 +156,52 @@ function assertHasInput(promptOrCode: string, imagesBase64?: string[]): void {
   throw new AiServiceError('Nothing to analyze: provide code, text, or an image.');
 }
 
-async function readAiErrorMessage(response: Response): Promise<string> {
+/**
+ * POST JSON to an AI endpoint with a long timeout and human-readable failures
+ * (timeout / offline) instead of an opaque "analysis failed".
+ */
+export async function postAiRequest(path: string, body: unknown): Promise<Response> {
+  try {
+    // /api/v1/ai/* gets the long (60 s) timeout inside apiFetch.
+    return await apiFetchAuthed(path, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new AiServiceError(
+        'AI took too long to respond. Try a shorter selection or try again.',
+      );
+    }
+
+    throw new AiServiceError(
+      'Cannot reach SyntaxAI right now. Check your connection and try again.',
+    );
+  }
+}
+
+export async function readAiHttpErrorMessage(response: Response): Promise<string> {
   if (response.status === 401) {
     return 'Sign in to SyntaxAI to use AI analysis.';
   }
 
+  if (response.status === 429) {
+    return 'Too many AI requests. Wait a minute and try again.';
+  }
+
+  if (response.status === 413) {
+    return 'That content is too large to analyze. Use a shorter selection or smaller image.';
+  }
+
   if (response.status === 503) {
     return 'AI is temporarily unavailable. Try again later.';
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+  const looksLikeHtml = contentType.includes('text/html');
+
+  if (response.status === 403 && looksLikeHtml) {
+    return 'Blocked by an edge firewall in front of the API. Try again or check api.syntaxai.app.';
   }
 
   try {
@@ -179,6 +213,10 @@ async function readAiErrorMessage(response: Response): Promise<string> {
     // fall through
   }
 
+  if (response.status === 403) {
+    return 'AI request forbidden (403). Sign in again or check API access.';
+  }
+
   return `AI request failed with status ${response.status}.`;
 }
 
@@ -188,17 +226,14 @@ export async function analyzeSnippetWithAI(
   assertHasInput(input.promptOrCode, input.imagesBase64);
 
   const locale = await getLocale();
-  const response = await apiFetchAuthed('/api/v1/ai/analyze-snippet', {
-    method: 'POST',
-    body: JSON.stringify({
-      locale,
-      promptOrCode: input.promptOrCode,
-      imagesBase64: input.imagesBase64,
-    }),
+  const response = await postAiRequest('/api/v1/ai/analyze-snippet', {
+    locale,
+    promptOrCode: input.promptOrCode,
+    imagesBase64: input.imagesBase64,
   });
 
   if (!response.ok) {
-    throw new AiServiceError(await readAiErrorMessage(response));
+    throw new AiServiceError(await readAiHttpErrorMessage(response));
   }
 
   const payload = (await response.json()) as AnalyzeSnippetApiResponse;

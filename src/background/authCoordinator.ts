@@ -1,6 +1,5 @@
 import {
   DEVICE_TOKEN_STORAGE_KEY,
-  SESSION_CACHE_STORAGE_KEY,
   TOKEN_EXPIRES_AT_STORAGE_KEY,
   USER_ID_STORAGE_KEY,
 } from '../constants/storageKeys';
@@ -29,18 +28,19 @@ function isAuthMessage(message: unknown): message is SyntaxAiAuthMessage {
   );
 }
 
-async function handleAuthHandoff(message: SyntaxAiAuthMessage): Promise<SyntaxAiAuthResultResponse> {
+export async function handleAuthPayloadFromTab(payload: {
+  token: string;
+  expiresAt: string;
+  userId: string;
+}): Promise<SyntaxAiAuthResultResponse> {
   await saveAuthCredentials({
-    token: message.token.trim(),
-    expiresAt: message.expiresAt,
-    userId: message.userId,
+    token: payload.token.trim(),
+    expiresAt: payload.expiresAt,
+    userId: payload.userId,
   });
 
+  // Credentials are enough for AuthGate — never clear them if session fetch is slow/flaky.
   const session = await refreshSession();
-
-  if (!session) {
-    return { ok: false, signedIn: false, error: 'session_failed' };
-  }
 
   try {
     await runNotesSyncCycle();
@@ -48,7 +48,15 @@ async function handleAuthHandoff(message: SyntaxAiAuthMessage): Promise<SyntaxAi
     console.warn('[SyntaxAI] Sync after auth failed', error);
   }
 
-  return { ok: true, signedIn: true };
+  return { ok: true, signedIn: true, error: session ? undefined : 'session_pending' };
+}
+
+async function handleAuthHandoff(message: SyntaxAiAuthMessage): Promise<SyntaxAiAuthResultResponse> {
+  return handleAuthPayloadFromTab({
+    token: message.token,
+    expiresAt: message.expiresAt,
+    userId: message.userId,
+  });
 }
 
 export async function runStartupAuthAndSync(): Promise<void> {
@@ -104,13 +112,23 @@ export function registerAuthMessageHandlers(): void {
       return;
     }
 
-    if (
-      changes[DEVICE_TOKEN_STORAGE_KEY] ||
-      changes[SESSION_CACHE_STORAGE_KEY] ||
-      changes[TOKEN_EXPIRES_AT_STORAGE_KEY] ||
-      changes[USER_ID_STORAGE_KEY]
-    ) {
-      void refreshSession().catch(() => undefined);
+    // Only react to credential writes — never SESSION_CACHE.
+    // refreshSession → saveSessionCache would otherwise loop forever and flicker AuthGate.
+    const tokenChange = changes[DEVICE_TOKEN_STORAGE_KEY];
+    const hasCredentialChange =
+      Boolean(tokenChange) ||
+      Boolean(changes[TOKEN_EXPIRES_AT_STORAGE_KEY]) ||
+      Boolean(changes[USER_ID_STORAGE_KEY]);
+
+    if (!hasCredentialChange) {
+      return;
     }
+
+    // Token cleared → nothing to refresh.
+    if (tokenChange && typeof tokenChange.newValue !== 'string') {
+      return;
+    }
+
+    void refreshSession().catch(() => undefined);
   });
 }

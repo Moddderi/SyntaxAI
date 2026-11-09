@@ -5,14 +5,24 @@ function isChromeStorageAvailable(): boolean {
   return typeof chrome !== 'undefined' && Boolean(chrome.storage?.local);
 }
 
+const FLUSH_DEBOUNCE_MS = 400;
+let flushDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
 function requestBackgroundFlush(): void {
   if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
     return;
   }
 
-  void chrome.runtime
-    .sendMessage({ type: RUNTIME_MESSAGE.SYNTAXAI_SYNC_FLUSH })
-    .catch(() => undefined);
+  if (flushDebounceTimer) {
+    clearTimeout(flushDebounceTimer);
+  }
+
+  flushDebounceTimer = setTimeout(() => {
+    flushDebounceTimer = null;
+    void chrome.runtime
+      .sendMessage({ type: RUNTIME_MESSAGE.SYNTAXAI_SYNC_FLUSH })
+      .catch(() => undefined);
+  }, FLUSH_DEBOUNCE_MS);
 }
 
 export async function getDirtyNoteIds(): Promise<string[]> {

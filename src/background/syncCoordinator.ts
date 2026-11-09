@@ -1,35 +1,32 @@
-import { runNotesSyncCycle } from '../services/notesSyncService';
+import {
+  pushDirtyNotesToServer,
+  runNotesSyncCycle,
+} from '../services/notesSyncService';
 import { RUNTIME_MESSAGE, type SyntaxAiRuntimeMessage } from '../types/runtimeMessages';
 
 const SYNC_ALARM_NAME = 'syntaxai-notes-sync';
 const SYNC_INTERVAL_MINUTES = 5;
 
-let flushInFlight: Promise<void> | null = null;
+let flushChain: Promise<void> = Promise.resolve();
 
-async function flushSyncSafely(): Promise<void> {
-  if (flushInFlight) {
-    await flushInFlight;
-    return;
-  }
-
-  flushInFlight = runNotesSyncCycle()
+function enqueueSync(task: () => Promise<void>): void {
+  flushChain = flushChain
+    .then(task)
     .catch((error) => {
       console.warn('[SyntaxAI] Notes sync failed', error);
-    })
-    .finally(() => {
-      flushInFlight = null;
     });
-
-  await flushInFlight;
 }
 
 export function registerSyncMessageHandlers(): void {
   chrome.runtime.onMessage.addListener((message: SyntaxAiRuntimeMessage): boolean => {
-    if (
-      message.type === RUNTIME_MESSAGE.SYNTAXAI_SYNC_FLUSH ||
-      message.type === RUNTIME_MESSAGE.SYNTAXAI_SYNC_PULL
-    ) {
-      void flushSyncSafely();
+    if (message.type === RUNTIME_MESSAGE.SYNTAXAI_SYNC_FLUSH) {
+      // Local-first: push dirties only. Pull runs on alarm / explicit pull.
+      enqueueSync(() => pushDirtyNotesToServer());
+      return false;
+    }
+
+    if (message.type === RUNTIME_MESSAGE.SYNTAXAI_SYNC_PULL) {
+      enqueueSync(() => runNotesSyncCycle());
       return false;
     }
 
@@ -48,9 +45,15 @@ export function startSyncAlarms(): void {
 
   chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === SYNC_ALARM_NAME) {
-      void flushSyncSafely();
+      enqueueSync(() => runNotesSyncCycle());
     }
   });
 }
 
-export { flushSyncSafely as runBackgroundNotesSync };
+export function runBackgroundNotesSync(): Promise<void> {
+  const next = flushChain.then(() => runNotesSyncCycle());
+  flushChain = next.catch((error) => {
+    console.warn('[SyntaxAI] Notes sync failed', error);
+  });
+  return next;
+}

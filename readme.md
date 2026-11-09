@@ -55,9 +55,38 @@ Reload the extension in the browser after changes.
 
 ### AI (server key)
 
-End users **never** paste an OpenAI key. The extension calls `https://syntaxai.app/api/v1/ai/*` with the device token after sign-in. The production key is `OPENAI_API_KEY` on **syntaxai-web** (Vercel / `.env.local`) — never in the extension bundle.
+End users **never** paste an OpenAI key. The extension calls `https://api.syntaxai.app/api/v1/ai/*` (Railway) with the device token after sign-in. The production key is `OPENAI_API_KEY` on **syntaxai-web** (Railway / `.env.local`) — never in the extension bundle.
 
 **Security:** `dist/` and `dist-firefox/` are gitignored — do not commit build output.
+
+### Permissions (store review)
+
+| Permission | Why |
+|------------|-----|
+| `storage` | Notes, settings, sign-in token |
+| `activeTab` + `scripting` | Read the user's selection **only** when they trigger capture (shortcut / context menu); the capture script is injected on demand |
+| `contextMenus` | "Add to SyntaxAI" |
+| `alarms` | Background notes sync |
+| `sidePanel` (Chrome) | Capture panel |
+| Host `syntaxai.app`, `www.syntaxai.app`, `api.syntaxai.app` | Sign-in handoff + API |
+
+There is no `<all_urls>` / `tabs` permission and no always-on content script outside syntaxai.app.
+
+## Testing
+
+```bash
+npm test          # vitest (tech detection, sync mapper, auth storage)
+npm run typecheck
+```
+
+## Release
+
+```bash
+npm run package:all     # builds + zips → release/syntaxai-chrome-<v>.zip, release/syntaxai-firefox-<v>.zip
+npm run lint:firefox    # web-ext lint on dist-firefox (needs network once for npx)
+```
+
+Bump `version` in `package.json`, `manifest.json` **and** `manifest.firefox.json` together — `package-extension.mjs` refuses to zip on a mismatch. Store submission guide: `docs/STORE_PUBLISHING.md`.
 
 ## Browsers
 

@@ -34,6 +34,7 @@ export async function fetchSession(): Promise<SyntaxAiSessionResponse | null> {
     return null;
   }
 
+  // Transient edge / network failures should not wipe local auth — fall back to cache.
   if (!response.ok) {
     throw new Error(`Session request failed (${response.status})`);
   }

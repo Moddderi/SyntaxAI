@@ -1,7 +1,21 @@
 # SyntaxAI Web → Extension integration (v1)
 
-Backend is live at **`https://syntaxai.app`** (repo: `syntaxai-web`).  
+Production split:
+
+| Role | Host |
+|------|------|
+| Marketing + login UI + `POST /api/device-token` | **`https://syntaxai.app`** (Vercel) |
+| Heavy API: session, notes, AI, feedback | **`https://api.syntaxai.app`** (Railway) |
+| Database | Neon |
+
 Beta: **login required**, **no billing/limits**, notes are **local-first** then sync to account.
+
+```ts
+export const SITE_URL = 'https://syntaxai.app';
+export const API_BASE = 'https://api.syntaxai.app'; // NOT the Vercel host
+```
+
+Call **`API_BASE`** for all Bearer traffic. Hitting `syntaxai.app/api/v1/*` burns Vercel CDN/functions.
 
 ---
 
@@ -9,12 +23,12 @@ Beta: **login required**, **no billing/limits**, notes are **local-first** then 
 
 | Piece | Status |
 |--------|--------|
-| Google / GitHub login | ✅ |
-| Device token `sat_…` (~1 year) | ✅ `POST /api/device-token` |
+| Google / GitHub login | ✅ site |
+| Device token `sat_…` (~1 year) | ✅ `POST ${SITE_URL}/api/device-token` (cookie) |
 | Handoff page | ✅ `https://syntaxai.app/auth/extension` |
 | `postMessage` after mint | ✅ see payload below |
-| Session for extension | ✅ `GET /api/v1/session` |
-| Notes pull / push | ✅ `GET` / `POST /api/v1/notes` |
+| Session for extension | ✅ `GET ${API_BASE}/api/v1/session` |
+| Notes pull / push | ✅ `GET` / `POST ${API_BASE}/api/v1/notes` |
 | Free/Pro enforcement | ❌ off (`billing.enabled: false`) |
 
 ---
@@ -84,7 +98,7 @@ Authorization: Bearer sat_…
 Check session (startup / popup open):
 
 ```http
-GET https://syntaxai.app/api/v1/session
+GET https://api.syntaxai.app/api/v1/session
 ```
 
 Example response:
@@ -105,10 +119,22 @@ Example response:
 
 Also: `GET /api/me` (same Bearer) for a lighter profile.
 
+Update display name from the extension account menu:
+
+```http
+PATCH https://syntaxai.app/api/v1/me
+Content-Type: application/json
+Authorization: Bearer sat_…
+
+{ "name": "Oleh" }
+```
+
+Response: `{ "id", "email", "name", "plan" }`.
+
 ### Manifest
 
 - Content script: `https://syntaxai.app/*` (and `http://localhost:3000/*` for local web if needed).
-- Host permissions: `https://syntaxai.app/*` (for `fetch` from background).
+- Host permissions: `https://syntaxai.app/*` and `https://api.syntaxai.app/*`.
 
 ---
 
@@ -194,9 +220,11 @@ Suggested triggers: extension startup, popup/sidepanel focus, after push, every 
 ## 3. Config constants (extension)
 
 ```ts
-export const SYNTAXAI_API_BASE = 'https://syntaxai.app';
-export const AUTH_URL = `${SYNTAXAI_API_BASE}/auth/extension`;
-export const UPGRADE_URL = `${SYNTAXAI_API_BASE}/pricing`; // beta: optional / later
+// src/constants/api.ts
+export const SITE_URL = 'https://syntaxai.app';
+export const API_BASE_URL = 'https://api.syntaxai.app';
+export const AUTH_URL = `${SITE_URL}/auth/extension`;
+export const UPGRADE_URL = `${SITE_URL}/pricing`;
 ```
 
 ---
@@ -209,8 +237,9 @@ Requires sign-in (`Authorization: Bearer sat_…`). OpenAI key stays on the serv
 |--------|------|------|
 | `POST` | `/api/v1/ai/analyze-snippet` | `{ locale, promptOrCode, imagesBase64? }` |
 | `POST` | `/api/v1/ai/analyze-mixed` | `{ locale, pageContext }` |
+| `POST` | `/api/v1/feedback` | `{ type: 'feedback' \| 'bug', locale?, email?, …fields }` → email to `hello@syntaxai.app` via Resend |
 
-Response: `{ result: … }`. Extension normalizes tech/topics locally after the call.
+Response: `{ result: … }` for AI; `{ ok: true }` for feedback. Extension normalizes tech/topics locally after AI calls.
 
 ---
 

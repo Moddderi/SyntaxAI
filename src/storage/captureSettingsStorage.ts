@@ -5,13 +5,16 @@ export const CAPTURE_SETTINGS_CHANGED_EVENT = 'syntaxai-capture-settings-changed
 export interface CaptureSettings {
   /** Paste code, text, or screenshots in the side panel. */
   enablePasteCapture: boolean;
-  /** AI adds page context around selection during capture. */
+  /** AI writes note body / explanations for page selection capture. */
   enableContextCapture: boolean;
+  /** AI shows and saves a short explanation for paste / image analyze. */
+  enablePasteExplanations: boolean;
 }
 
 const DEFAULT_CAPTURE_SETTINGS: CaptureSettings = {
   enablePasteCapture: true,
   enableContextCapture: true,
+  enablePasteExplanations: true,
 };
 
 function isChromeStorageAvailable(): boolean {
@@ -36,6 +39,10 @@ function normalizeCaptureSettings(raw: unknown): CaptureSettings {
         : typeof record.includeContextDescription === 'boolean'
           ? record.includeContextDescription
           : DEFAULT_CAPTURE_SETTINGS.enableContextCapture,
+    enablePasteExplanations:
+      typeof record.enablePasteExplanations === 'boolean'
+        ? record.enablePasteExplanations
+        : DEFAULT_CAPTURE_SETTINGS.enablePasteExplanations,
   };
 }
 

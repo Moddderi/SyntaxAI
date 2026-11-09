@@ -1,17 +1,24 @@
-export const SYNTAXAI_API_BASE = 'https://syntaxai.app';
+/** Marketing site + OAuth / device-token (Vercel). */
+export const SITE_URL = 'https://syntaxai.app';
 
-export const API_BASE_URL = SYNTAXAI_API_BASE;
+/** Heavy API for the extension — Bearer traffic (Railway). Do not use SITE_URL here. */
+export const API_BASE_URL = 'https://api.syntaxai.app';
 
-export const AUTH_URL = `${SYNTAXAI_API_BASE}/auth/extension`;
+/** @deprecated Use API_BASE_URL — kept for older imports. */
+export const SYNTAXAI_API_BASE = API_BASE_URL;
 
-export const UPGRADE_URL = `${SYNTAXAI_API_BASE}/pricing`;
+/** Handoff page on the marketing host (Vercel). Prefer www in openAuthPage. */
+export const AUTH_URL = `${SITE_URL}/auth/extension`;
+
+export const UPGRADE_URL = `${SITE_URL}/pricing`;
 
 export const PRICING_URL = UPGRADE_URL;
 
-export const AUTH_SIGN_IN_URL = `${SYNTAXAI_API_BASE}/auth/signin`;
+export const AUTH_SIGN_IN_URL = `${SITE_URL}/auth/signin`;
 
 /** Web handoff postMessage origin(s) — must match content script checks. */
 export const SYNTAXAI_WEB_ORIGINS = [
   'https://syntaxai.app',
+  'https://www.syntaxai.app',
   'http://localhost:3000',
 ] as const;

@@ -81,12 +81,10 @@ function normalizeNote(raw: Record<string, unknown>): Note | null {
     body,
     sourceUrl,
     language: storedLanguage,
+    preferredPrimaryTech: storedPrimaryTech,
   });
 
-  const shouldUseStoredFramework =
-    storedPrimaryTech !== 'javascript' && storedPrimaryTech !== 'typescript';
-
-  const primaryTech = shouldUseStoredFramework ? storedPrimaryTech : resolvedTech.primaryTech;
+  const primaryTech = resolvedTech.primaryTech;
   const language = isBaseLanguageSlug(storedLanguage)
     ? resolvedTech.language
     : resolveBaseLanguage(code, primaryTech, storedLanguage);
@@ -176,10 +174,11 @@ function nowIso(): string {
 }
 
 async function persistNotes(notes: Note[], syncIds: string[], skipSyncQueue = false): Promise<void> {
+  // Local write first — sync queue must not block the UI critical path.
   await writeNotesToStorage(notes, { skipSyncQueue });
 
   if (!skipSyncQueue && syncIds.length > 0) {
-    await enqueueNoteSyncIds(syncIds);
+    void enqueueNoteSyncIds(syncIds);
   }
 }
 

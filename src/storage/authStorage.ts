@@ -62,6 +62,22 @@ export async function saveSessionCache(session: SyntaxAiSessionResponse): Promis
     return;
   }
 
+  // Skip identical writes — each set() fires storage.onChanged and used to re-trigger refresh.
+  const existing = await getSessionCache();
+
+  if (
+    existing &&
+    existing.user.id === session.user.id &&
+    existing.user.email === session.user.email &&
+    existing.user.name === session.user.name &&
+    existing.user.plan === session.user.plan &&
+    existing.billing.enabled === session.billing.enabled &&
+    existing.sync.notesPath === session.sync.notesPath &&
+    existing.sync.strategy === session.sync.strategy
+  ) {
+    return;
+  }
+
   await chrome.storage.local.set({
     [SESSION_CACHE_STORAGE_KEY]: session,
   });
