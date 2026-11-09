@@ -34,11 +34,13 @@ function extensionBuildPlugin(target: ExtensionTarget, outDir: string): Plugin {
         env,
         stdio: 'inherit',
       });
-      execSync('vite build --config vite.content.config.ts', {
-        cwd: __dirname,
-        env,
-        stdio: 'inherit',
-      });
+      for (const contentEntry of ['authHandoff', 'pageCapture']) {
+        execSync('vite build --config vite.content.config.ts', {
+          cwd: __dirname,
+          env: { ...env, CONTENT_ENTRY: contentEntry },
+          stdio: 'inherit',
+        });
+      }
     },
   };
 }

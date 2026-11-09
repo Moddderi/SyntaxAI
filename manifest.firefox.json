@@ -6,7 +6,18 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "syntaxai@syntaxai.app",
-      "strict_min_version": "109.0"
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": [
+          "authenticationInfo",
+          "personallyIdentifyingInfo",
+          "websiteContent",
+          "browsingActivity"
+        ]
+      }
+    },
+    "gecko_android": {
+      "strict_min_version": "142.0"
     }
   },
   "icons": {
@@ -18,7 +29,6 @@
     "default_title": "SyntaxAI",
     "default_icon": {
       "16": "icons/icon-16.png",
-      "32": "icons/icon-48.png",
       "48": "icons/icon-48.png",
       "128": "icons/icon-128.png"
     }
@@ -28,7 +38,7 @@
     "default_panel": "src/sidepanel/index.html",
     "default_icon": {
       "16": "icons/icon-16.png",
-      "32": "icons/icon-48.png"
+      "48": "icons/icon-48.png"
     }
   },
   "options_ui": {
@@ -39,8 +49,12 @@
     "scripts": ["background.js"],
     "type": "module"
   },
-  "permissions": ["storage", "tabs", "scripting", "activeTab", "contextMenus", "alarms"],
-  "host_permissions": ["https://syntaxai.app/*", "<all_urls>"],
+  "permissions": ["storage", "scripting", "activeTab", "contextMenus", "alarms"],
+  "host_permissions": [
+    "https://syntaxai.app/*",
+    "https://www.syntaxai.app/*",
+    "https://api.syntaxai.app/*"
+  ],
   "commands": {
     "capture-context": {
       "suggested_key": {
@@ -52,12 +66,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content/contentScript.js"],
-      "run_at": "document_idle"
+      "matches": ["https://syntaxai.app/*", "https://www.syntaxai.app/*"],
+      "js": ["content/authHandoff.js"],
+      "run_at": "document_start"
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' data: https://cdn.jsdelivr.net;"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.syntaxai.app; img-src 'self' data: https://cdn.jsdelivr.net;"
   }
 }

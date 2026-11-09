@@ -16,7 +16,36 @@ function openSidePanelForTab(tabId: number): void {
   });
 }
 
+const PAGE_CAPTURE_SCRIPT = 'content/pageCapture.js';
+
+/**
+ * The capture script is injected on demand (shortcut / context menu grant `activeTab`),
+ * so the extension never needs blanket access to every website.
+ */
+async function injectPageCaptureScript(tabId: number): Promise<boolean> {
+  if (!chrome.scripting?.executeScript) {
+    return false;
+  }
+
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: [PAGE_CAPTURE_SCRIPT],
+    });
+    return true;
+  } catch (error) {
+    console.warn('[SyntaxAI] Could not inject capture script', error);
+    return false;
+  }
+}
+
 async function requestPageContext(tabId: number): Promise<GetPageContextResponse> {
+  const injected = await injectPageCaptureScript(tabId);
+
+  if (!injected) {
+    return { success: false, pageContext: null };
+  }
+
   try {
     return await chrome.tabs.sendMessage(tabId, {
       type: CONTEXT_CAPTURE_MESSAGE.GET_PAGE_CONTEXT,
@@ -144,14 +173,25 @@ function handleContextMenuCapture(
   startContextCapture(tab, info.selectionText?.trim());
 }
 
-export async function ensureContextCaptureMenu(): Promise<void> {
-  await chrome.contextMenus.removeAll();
+let menuSetup: Promise<void> = Promise.resolve();
 
-  chrome.contextMenus.create({
-    id: CONTEXT_MENU_CAPTURE_ID,
-    contexts: ['selection'],
-    title: 'Add to SyntaxAI',
-  });
+/** Serialized so startup + onInstalled never race into "duplicate menu id" errors. */
+export function ensureContextCaptureMenu(): Promise<void> {
+  menuSetup = menuSetup
+    .then(async () => {
+      await chrome.contextMenus.removeAll();
+
+      chrome.contextMenus.create({
+        id: CONTEXT_MENU_CAPTURE_ID,
+        contexts: ['selection'],
+        title: 'Add to SyntaxAI',
+      });
+    })
+    .catch((error: unknown) => {
+      console.warn('[SyntaxAI] Context menu setup failed', error);
+    });
+
+  return menuSetup;
 }
 
 export function registerContextCaptureListeners(): void {

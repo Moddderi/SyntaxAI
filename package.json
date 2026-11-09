@@ -9,11 +9,19 @@
     "build:chrome": "tsc -b && vite build",
     "build:firefox": "tsc -b && vite build --mode firefox",
     "build:all": "npm run build:chrome && npm run build:firefox",
+    "package:chrome": "npm run build:chrome && node scripts/package-extension.mjs chrome",
+    "package:firefox": "npm run build:firefox && node scripts/package-extension.mjs firefox",
+    "package:all": "npm run package:chrome && npm run package:firefox",
+    "lint:firefox": "npx --yes web-ext lint --source-dir dist-firefox",
     "firefox:run": "npm run build:firefox && web-ext run --source-dir dist-firefox",
     "typecheck": "tsc -b",
-    "icons:generate": "python3 scripts/generate-extension-icons.py"
+    "icons:generate": "python3 scripts/generate-extension-icons.py",
+    "icons:devicon": "node scripts/generate-devicon-index.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/work-sans": "^5.3.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
@@ -33,6 +41,7 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
-    "vite": "^7.0.5"
+    "vite": "^7.0.5",
+    "vitest": "^5.1.0"
   }
 }

@@ -3,16 +3,12 @@
   "name": "SyntaxAI",
   "description": "AI-powered developer notebook — capture, organize, and search your code snippets.",
   "version": "0.1.0",
+  "minimum_chrome_version": "116",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
   },
-  "theme_icons": [
-    { "light": "icons/icon-light-16.png", "dark": "icons/icon-16.png", "size": 16 },
-    { "light": "icons/icon-light-48.png", "dark": "icons/icon-48.png", "size": 48 },
-    { "light": "icons/icon-light-128.png", "dark": "icons/icon-128.png", "size": 128 }
-  ],
   "action": {
     "default_title": "SyntaxAI",
     "default_icon": {
@@ -29,8 +25,12 @@
     "service_worker": "background.js",
     "type": "module"
   },
-  "permissions": ["sidePanel", "storage", "tabs", "scripting", "activeTab", "contextMenus", "alarms"],
-  "host_permissions": ["https://syntaxai.app/*", "<all_urls>"],
+  "permissions": ["sidePanel", "storage", "scripting", "activeTab", "contextMenus", "alarms"],
+  "host_permissions": [
+    "https://syntaxai.app/*",
+    "https://www.syntaxai.app/*",
+    "https://api.syntaxai.app/*"
+  ],
   "commands": {
     "capture-context": {
       "suggested_key": {
@@ -42,13 +42,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content/contentScript.js"],
-      "type": "module",
-      "run_at": "document_idle"
+      "matches": ["https://syntaxai.app/*", "https://www.syntaxai.app/*"],
+      "js": ["content/authHandoff.js"],
+      "run_at": "document_start"
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' data: https://cdn.jsdelivr.net;"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.syntaxai.app; img-src 'self' data: https://cdn.jsdelivr.net;"
   }
 }
