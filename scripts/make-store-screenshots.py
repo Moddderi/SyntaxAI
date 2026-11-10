@@ -79,14 +79,14 @@ def store_shots() -> dict[str, Image.Image]:
     return {
         "1-capture-sidepanel.png": capture_panels(),
         "2-ai-note.png": full_bleed("note-detail.png"),
-        "3-library.png": full_bleed("library-list.png"),
+        "3-library.png": full_bleed("library-grid.png"),
         "4-insights.png": full_bleed("usage-insights.png"),
         "5-stack.png": full_bleed("stack.png"),
     }
 
 
 def site_shots() -> dict[str, Image.Image]:
-    library = load("library-list.png")
+    library = load("library-grid.png")
     # Hero uses an aspect-[1500/951] frame: crop the empty right edge to match it exactly.
     crop_w = round(library.height * 1500 / 951)
     library = resize(library.crop((0, 0, crop_w, library.height)), 3000, 1902)
