@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "SyntaxAI",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "ШІ-блокнот для розробників — зберігайте, впорядковуйте й шукайте фрагменти коду.",
+    "description": "Short description shown in the store (max 132 characters)"
+  }
+}

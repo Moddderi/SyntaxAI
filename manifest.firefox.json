@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "SyntaxAI",
-  "description": "AI-powered developer notebook — capture, organize, and search your code snippets.",
-  "version": "0.1.0",
+  "name": "__MSG_extName__",
+  "description": "__MSG_extDescription__",
+  "default_locale": "en",
+  "version": "0.1.1",
   "browser_specific_settings": {
     "gecko": {
       "id": "syntaxai@syntaxai.app",

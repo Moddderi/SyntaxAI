@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "SyntaxAI",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "AI-powered developer notebook — capture, organize, and search your code snippets.",
+    "description": "Short description shown in the store (max 132 characters)"
+  }
+}
