@@ -7,7 +7,7 @@ export const API_BASE_URL = 'https://api.syntaxai.app';
 /** @deprecated Use API_BASE_URL — kept for older imports. */
 export const SYNTAXAI_API_BASE = API_BASE_URL;
 
-/** Handoff page on the marketing host (Vercel). Prefer www in openAuthPage. */
+/** Handoff page on the canonical marketing host (Vercel) — never www, see openAuthPage. */
 export const AUTH_URL = `${SITE_URL}/auth/extension`;
 
 export const UPGRADE_URL = `${SITE_URL}/pricing`;
