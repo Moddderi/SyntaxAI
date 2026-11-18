@@ -14,8 +14,9 @@ import { AiInsightIcon } from './AiInsightIcon';
 import { SyntaxSectionHead } from './SyntaxSectionHead';
 import { CodeBlock } from './CodeBlock';
 import { MarkdownContent } from './MarkdownContent';
-import { StarIcon, TrashIcon } from '../dashboard/components/icons';
+import { ShareLinkIcon, StarIcon, TrashIcon } from '../dashboard/components/icons';
 import { NestedTechIcons } from './NestedTechIcons';
+import { ShareNoteModal } from './ShareNoteModal';
 
 interface NoteDetailModalProps {
   note: Note | null;
@@ -56,6 +57,7 @@ export function NoteDetailModal({
   const [isSaving, setIsSaving] = useState(false);
   const [editForm, setEditForm] = useState<EditFormState | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   useEffect(() => {
     if (note) {
@@ -64,6 +66,7 @@ export function NoteDetailModal({
       setIsCopied(false);
       setIsEditing(false);
       setSaveError(null);
+      setIsShareOpen(false);
     }
   }, [note]);
 
@@ -74,6 +77,11 @@ export function NoteDetailModal({
 
     const handleKeyDown = (event: globalThis.KeyboardEvent): void => {
       if (event.key === 'Escape') {
+        if (isShareOpen) {
+          setIsShareOpen(false);
+          return;
+        }
+
         if (isEditing) {
           setIsEditing(false);
           setEditForm(buildEditFormState(note));
@@ -87,7 +95,7 @@ export function NoteDetailModal({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isEditing, note, onClose]);
+  }, [isEditing, isShareOpen, note, onClose]);
 
   const persistTitle = useCallback(
     (nextTitle: string): void => {
@@ -216,9 +224,14 @@ export function NoteDetailModal({
   });
 
   return (
+    <>
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-syntax-overlay p-4"
-      onClick={onClose}
+      onClick={() => {
+        if (!isShareOpen) {
+          onClose();
+        }
+      }}
       role="presentation"
     >
       <div
@@ -278,6 +291,17 @@ export function NoteDetailModal({
                   type="button"
                 >
                   <StarIcon className="h-4 w-4" filled={note.isStarred} />
+                </button>
+              ) : null}
+
+              {!isEditing ? (
+                <button
+                  aria-label={t('snippetActionShare')}
+                  className={MODAL_ICON_BUTTON_CLASS}
+                  onClick={() => setIsShareOpen(true)}
+                  type="button"
+                >
+                  <ShareLinkIcon className="h-4 w-4" />
                 </button>
               ) : null}
 
@@ -457,5 +481,8 @@ export function NoteDetailModal({
         </footer>
       </div>
     </div>
+
+    <ShareNoteModal isOpen={isShareOpen} note={note} onClose={() => setIsShareOpen(false)} />
+    </>
   );
 }

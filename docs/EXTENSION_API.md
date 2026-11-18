@@ -215,6 +215,19 @@ Merge into local store by `id` / `updatedAt`. If `deletedAt` set → remove or h
 
 Suggested triggers: extension startup, popup/sidepanel focus, after push, every N minutes.
 
+### Public note share (7-day link)
+
+Requires sign-in. Call `pushDirtyNotesToServer()` first so the server knows `noteId`.
+
+| Method | Path | Body |
+|--------|------|------|
+| `POST` | `/api/v1/notes/share` | `{ noteId, snapshot }` — full note snapshot (title, summary?, body?, code, primaryTech, language, topics[], sourceUrl?, sourceType?, noteCreatedAt?) |
+| `DELETE` | `/api/v1/notes/share/:slug` | — revoke link |
+
+`POST` response: `{ ok: true, slug, url, expiresAt }`. Re-sharing the same `noteId` updates the snapshot, extends expiry, keeps the same `slug`.
+
+Public page (no auth): `https://syntaxai.app/s/{slug}` (`noindex`).
+
 ---
 
 ## 3. Config constants (extension)

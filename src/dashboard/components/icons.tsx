@@ -259,6 +259,24 @@ export function TrashIcon({ className = 'h-4 w-4' }: IconProps): ReactElement {
   );
 }
 
+export function ShareLinkIcon({ className = 'h-4 w-4' }: IconProps): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.75"
+      viewBox="0 0 24 24"
+    >
+      <path d="M10 13a5 5 0 0 1 0-7l1-1a5 5 0 0 1 7 7l-1 1" />
+      <path d="M14 11a5 5 0 0 1 0 7l-1 1a5 5 0 0 1-7-7l1-1" />
+    </svg>
+  );
+}
+
 export function ChartBarIcon({ className = 'h-4 w-4' }: IconProps): ReactElement {
   return (
     <svg
