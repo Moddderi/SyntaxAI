@@ -294,17 +294,6 @@ export function NoteDetailModal({
                 </button>
               ) : null}
 
-              {!isEditing ? (
-                <button
-                  aria-label={t('snippetActionShare')}
-                  className={MODAL_ICON_BUTTON_CLASS}
-                  onClick={() => setIsShareOpen(true)}
-                  type="button"
-                >
-                  <ShareLinkIcon className="h-4 w-4" />
-                </button>
-              ) : null}
-
               {onRequestDelete ? (
                 <button
                   aria-label={t('snippetActionDelete')}
@@ -313,6 +302,17 @@ export function NoteDetailModal({
                   type="button"
                 >
                   <TrashIcon className="h-4 w-4" />
+                </button>
+              ) : null}
+
+              {!isEditing ? (
+                <button
+                  className="inline-flex items-center gap-1.5 rounded-full bg-syntax-accent px-3 py-1.5 text-xs font-semibold text-syntax-accent-fg transition hover:bg-syntax-accent/90"
+                  onClick={() => setIsShareOpen(true)}
+                  type="button"
+                >
+                  <ShareLinkIcon className="h-3.5 w-3.5" />
+                  {t('noteShareButton')}
                 </button>
               ) : null}
 

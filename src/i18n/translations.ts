@@ -128,6 +128,7 @@ const en = {
   snippetActionUnstar: 'Remove from starred',
   snippetActionDelete: 'Move to trash',
   snippetActionShare: 'Share public link',
+  noteShareButton: 'Share',
   noteShareTitle: 'Share note',
   noteShareDescription:
     'Create a public link with the full note snapshot. Anyone with the link can view it for 7 days.',
@@ -430,6 +431,7 @@ const uk: Record<TranslationKey, string> = {
   snippetActionUnstar: 'Прибрати з обраного',
   snippetActionDelete: 'У кошик',
   snippetActionShare: 'Поділитися посиланням',
+  noteShareButton: 'Поділитися',
   noteShareTitle: 'Поділитися нотаткою',
   noteShareDescription:
     'Створіть публічне посилання з повним знімком нотатки. Будь-хто з посиланням бачить її 7 днів.',
