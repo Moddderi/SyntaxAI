@@ -1,6 +1,7 @@
 import { useMemo, useState, type CSSProperties, type ReactElement } from 'react';
 import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { CopyIcon } from '../dashboard/components/icons';
 import { getCodePreviewLines, getCodeBlockLanguageLabel, resolvePrismLanguage } from '../utils/codeLanguage';
 
 const CODE_BLOCK_THEME: Record<string, CSSProperties> = {
@@ -99,10 +100,7 @@ export function CodeBlock({
               {isCopied ? (
                 <span className="text-[10px] font-semibold text-syntax-accent">✓</span>
               ) : (
-                <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
-                  <rect height="10" rx="1.5" stroke="currentColor" strokeWidth="1.6" width="10" x="9" y="9" />
-                  <path d="M7 15H6.5A1.5 1.5 0 0 1 5 13.5v-8A1.5 1.5 0 0 1 6.5 4h8A1.5 1.5 0 0 1 16 5.5V7" stroke="currentColor" strokeWidth="1.6" />
-                </svg>
+                <CopyIcon className="h-3.5 w-3.5" />
               )}
             </button>
           ) : null}

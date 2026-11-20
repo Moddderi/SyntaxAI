@@ -12,6 +12,7 @@ import {
 } from '../../utils/noteHelpers';
 import { resolveDeviconSlug } from '../../utils/techIcon';
 import type { SearchResultItem } from '../types/capture.types';
+import { CopyIcon, TrashIcon } from '../../dashboard/components/icons';
 import { SearchIcon } from './icons';
 
 const COPY_FEEDBACK_MS = 2000;
@@ -70,17 +71,21 @@ function SearchResultCard({
               {result.title}
             </h3>
 
-            <div className="flex shrink-0 items-center gap-1">
+            <div className="flex shrink-0 items-center gap-0.5">
               <div className="relative">
                 <button
                   aria-label={
                     isCopied ? t('snippetActionCopied') : t('snippetActionCopyCode')
                   }
-                  className="rounded-lg p-1 text-sm text-syntax-muted transition hover:bg-syntax-bg hover:text-syntax-accent"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-syntax-muted transition hover:bg-syntax-bg hover:text-syntax-accent"
                   onClick={(event) => void handleCopyCode(event)}
                   type="button"
                 >
-                  {isCopied ? '✓' : '📋'}
+                  {isCopied ? (
+                    <span className="text-[11px] font-bold text-syntax-accent">✓</span>
+                  ) : (
+                    <CopyIcon className="h-4 w-4" />
+                  )}
                 </button>
                 {isCopied ? (
                   <span className="pointer-events-none absolute -top-7 right-0 whitespace-nowrap rounded-md bg-syntax-accent px-2 py-0.5 text-[10px] font-semibold text-syntax-accent-fg">
@@ -91,29 +96,14 @@ function SearchResultCard({
 
               <button
                 aria-label={t('snippetActionDelete')}
-                className="rounded-lg p-1 text-syntax-muted opacity-70 transition hover:bg-syntax-bg hover:text-red-400 hover:opacity-100"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-syntax-muted transition hover:bg-syntax-bg hover:text-red-400"
                 onClick={(event) => {
                   event.stopPropagation();
                   onDelete(result.id);
                 }}
                 type="button"
               >
-                <svg
-                  aria-hidden="true"
-                  className="h-3.5 w-3.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.75"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M4 7h16" />
-                  <path d="M10 11v6" />
-                  <path d="M14 11v6" />
-                  <path d="M6 7l1-3h10l1 3" />
-                  <path d="M8 7v12h8V7" />
-                </svg>
+                <TrashIcon className="h-4 w-4" />
               </button>
 
               <span className="min-w-[2.75rem] text-right text-[10px] text-syntax-muted">

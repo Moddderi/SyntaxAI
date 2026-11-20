@@ -64,7 +64,7 @@ export function SnippetQuickActions({
           {isCopied ? (
             <span className="text-[10px] font-bold text-syntax-accent">✓</span>
           ) : (
-            <CopyIcon className="h-3.5 w-3.5" />
+            <CopyIcon className="h-4 w-4" />
           )}
         </button>
       ) : null}
@@ -78,7 +78,7 @@ export function SnippetQuickActions({
         }}
         type="button"
       >
-        <StarIcon className="h-3.5 w-3.5" filled={isStarred} />
+        <StarIcon className="h-4 w-4" filled={isStarred} />
       </button>
 
       <button
@@ -90,7 +90,7 @@ export function SnippetQuickActions({
         }}
         type="button"
       >
-        <TrashIcon className="h-3.5 w-3.5" />
+        <TrashIcon className="h-4 w-4" />
       </button>
     </div>
   );
