@@ -8,7 +8,6 @@ import { getAllNotesRaw, writeNotesFromSync } from '../storage/notesStorage';
 import { hasAuthCredentials } from '../storage/authStorage';
 import {
   getDirtyNoteIds,
-  getNotesSyncSince,
   removeDirtyNoteIds,
   setNotesSyncSince,
 } from '../storage/syncQueueStorage';
@@ -59,10 +58,9 @@ export async function pullNotesFromServer(): Promise<void> {
     return;
   }
 
-  const since = await getNotesSyncSince();
-  const path = since
-    ? `/api/v1/notes?since=${encodeURIComponent(since)}`
-    : '/api/v1/notes';
+  // Always fetch the full library. Incremental `since` skipped notes whose
+  // client updatedAt was older than the other browser's last pull.
+  const path = '/api/v1/notes';
 
   const response = await apiFetchAuthed(path);
 
